@@ -95,6 +95,15 @@ def get_usage(user: User = Depends(get_current_user), db: Session = Depends(get_
             "slots": {
                 "home": settings.adsense_slot_home,
                 "quiz": settings.adsense_slot_quiz,
+                "break": settings.adsense_slot_break,
+            },
+            # How the free-tier ad breaks are paced (client reads these).
+            # Shown every Nth study action, never more often than min_gap_seconds,
+            # and always skippable after skip_after_seconds. Paced to stay light.
+            "pacing": {
+                "every_actions": 3,
+                "min_gap_seconds": 150,
+                "skip_after_seconds": 5,
             },
         },
     }

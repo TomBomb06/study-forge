@@ -95,3 +95,11 @@ if os.path.isdir(_WEB_DIR):
     @app.get("/", include_in_schema=False)
     def _root():
         return FileResponse(os.path.join(_WEB_DIR, "index.html"))
+
+    @app.get("/privacy", include_in_schema=False)
+    def _privacy():
+        return FileResponse(os.path.join(_WEB_DIR, "privacy.html"))
+
+    @app.get("/terms", include_in_schema=False)
+    def _terms():
+        return FileResponse(os.path.join(_WEB_DIR, "terms.html"))

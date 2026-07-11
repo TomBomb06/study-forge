@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     adsense_client_id: str = ""  # "ca-pub-..."
     adsense_slot_home: str = ""
     adsense_slot_quiz: str = ""
+    adsense_slot_break: str = ""  # full-screen ad-break unit between study actions
 
 
 @lru_cache
