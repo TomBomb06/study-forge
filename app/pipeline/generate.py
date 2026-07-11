@@ -293,6 +293,7 @@ class ClaudeGenerator:
 
     def generate(self, text: str, filename: str) -> StudySetContent:
         last_error: Optional[Exception] = None
+        last_raw: str = ""
         for _attempt in range(2):  # retry malformed output once, then fail
             try:
                 response = self._client.messages.create(
@@ -303,9 +304,13 @@ class ClaudeGenerator:
                         {"role": "user", "content": _PROMPT.format(text=text)}
                     ],
                 )
-                raw = response.content[0].text
+                # Read every text block (some models return multiple blocks).
+                raw = "".join(
+                    getattr(b, "text", "") or "" for b in (response.content or [])
+                ).strip()
+                last_raw = raw
                 return StudySetContent.model_validate(_coerce(_extract_json(raw)))
-            except (json.JSONDecodeError, ValidationError, IndexError, AttributeError) as e:
+            except (json.JSONDecodeError, ValidationError, IndexError, AttributeError, TypeError) as e:
                 last_error = e
                 continue
             except GenerationError:
@@ -315,8 +320,12 @@ class ClaudeGenerator:
                 raise GenerationError(
                     f"The AI service returned an error: {e}"
                 ) from e
+        # Surface the underlying reason so problems are diagnosable in the UI.
+        detail = f"{type(last_error).__name__}: {str(last_error)[:250]}"
+        head = last_raw[:200].replace("\n", " ")
         raise GenerationError(
-            "The AI returned malformed study material twice. Please try again."
+            f"The AI returned study material we couldn't use. [debug: {detail} | "
+            f"start of reply: {head!r}]"
         ) from last_error
 
 
