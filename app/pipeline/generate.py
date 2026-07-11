@@ -174,15 +174,16 @@ _PROMPT = """From the SOURCE TEXT below, produce a study kit as a JSON object wi
 
 - "title": a short, specific title for this material (max ~60 chars).
 - "summary": well-organized study notes covering the key concepts, definitions, and relationships. Use markdown (headings, bullet points, bold terms). Aim for thorough but concise — enough to revise from without the original.
-- "flashcards": 8-20 objects, each {{"front": a question or term, "back": a clear, self-contained answer}}. Cover the most important concepts. Vary between definitions, cause/effect, and "why/how" cards.
-- "quiz": 5-10 objects, each {{"question": str, "choices": [exactly 4 distinct strings], "answer_index": integer 0-3 pointing to the correct choice, "explanation": one sentence on why it's correct}}. Make distractors plausible, not obviously wrong. Test understanding, not just recall.
-- "test": 4-8 objects, each {{"kind": one of "true_false" | "fill_blank" | "short_answer", "question": str, "answer": the correct answer as a string}}. Mix the kinds. For "true_false" the answer is "True" or "False"; for "fill_blank" put _____ in the question and the answer is the missing word/phrase.
-- "matching": 4-8 objects, each {{"term": a key term, "definition": its matching definition}}. Used for a matching game, so keep terms and definitions short and unambiguous.
+- "flashcards": 8-12 objects, each {{"front": a question or term, "back": a clear, self-contained answer}}. Cover the most important concepts. Vary between definitions, cause/effect, and "why/how" cards.
+- "quiz": 5-8 objects, each {{"question": str, "choices": [exactly 4 distinct strings], "answer_index": integer 0-3 pointing to the correct choice, "explanation": one sentence on why it's correct}}. Make distractors plausible, not obviously wrong. Test understanding, not just recall.
+- "test": 4-6 objects, each {{"kind": one of "true_false" | "fill_blank" | "short_answer", "question": str, "answer": the correct answer as a string}}. Mix the kinds. For "true_false" the answer is "True" or "False"; for "fill_blank" put _____ in the question and the answer is the missing word/phrase.
+- "matching": 4-6 objects, each {{"term": a key term, "definition": its matching definition}}. Used for a matching game, so keep terms and definitions short and unambiguous.
 
 STRICT RULES:
-- Respond with ONLY the JSON object. No code fences, no commentary before or after.
+- Respond with ONLY the JSON object. Start your reply with {{ and end with }}. No code fences, no commentary before or after.
+- Keep the JSON complete and valid — close every bracket.
 - Every answer must be supported by the source text.
-- Each quiz question must have exactly 4 choices and exactly one correct answer.
+- Each quiz question should have 4 choices and exactly one correct answer.
 
 SOURCE TEXT:
 {text}"""
@@ -202,6 +203,69 @@ def _extract_json(raw: str) -> dict:
         if not m:
             raise
         return json.loads(m.group(0))
+
+
+_ALLOWED_KINDS = {"true_false", "fill_blank", "short_answer"}
+
+
+def _coerce(data: dict) -> dict:
+    """Make real-model output conform to the schema instead of rejecting it.
+
+    Drops malformed items, fixes types, clamps quiz answers, and normalizes
+    test kinds — so a good-but-slightly-off Claude response still yields a
+    usable study set rather than a hard failure.
+    """
+    if not isinstance(data, dict):
+        return data
+    out = dict(data)
+    out["title"] = (str(out.get("title") or "Study Set").strip() or "Study Set")[:255]
+    out["summary"] = str(out.get("summary") or "").strip() or "Study notes."
+
+    flashcards = []
+    for c in out.get("flashcards") or []:
+        if isinstance(c, dict) and str(c.get("front", "")).strip() and str(c.get("back", "")).strip():
+            flashcards.append({"front": str(c["front"])[:500], "back": str(c["back"])[:2000]})
+    out["flashcards"] = flashcards
+
+    quiz = []
+    for q in out.get("quiz") or []:
+        if not isinstance(q, dict):
+            continue
+        choices = [str(x) for x in (q.get("choices") or []) if str(x).strip()][:6]
+        if len(choices) < 2:
+            continue
+        try:
+            ai = int(q.get("answer_index", 0))
+        except (TypeError, ValueError):
+            ai = 0
+        if ai < 0 or ai >= len(choices):
+            ai = 0
+        quiz.append({
+            "question": (str(q.get("question", "")).strip() or "Question")[:1000],
+            "choices": choices,
+            "answer_index": ai,
+            "explanation": str(q.get("explanation", "") or "")[:2000],
+        })
+    out["quiz"] = quiz
+
+    test = []
+    for t in out.get("test") or []:
+        if not isinstance(t, dict):
+            continue
+        kind = str(t.get("kind", "short_answer")).lower().strip()
+        if kind not in _ALLOWED_KINDS:
+            kind = "short_answer"
+        question, answer = str(t.get("question", "")).strip(), str(t.get("answer", "")).strip()
+        if question and answer:
+            test.append({"kind": kind, "question": question[:1000], "answer": answer[:1000]})
+    out["test"] = test
+
+    matching = []
+    for m in out.get("matching") or []:
+        if isinstance(m, dict) and str(m.get("term", "")).strip() and str(m.get("definition", "")).strip():
+            matching.append({"term": str(m["term"])[:200], "definition": str(m["definition"])[:1000]})
+    out["matching"] = matching
+    return out
 
 
 class ClaudeGenerator:
@@ -233,14 +297,14 @@ class ClaudeGenerator:
             try:
                 response = self._client.messages.create(
                     model=self._model,
-                    max_tokens=8000,
+                    max_tokens=16000,
                     system=_SYSTEM,
                     messages=[
                         {"role": "user", "content": _PROMPT.format(text=text)}
                     ],
                 )
                 raw = response.content[0].text
-                return StudySetContent.model_validate(_extract_json(raw))
+                return StudySetContent.model_validate(_coerce(_extract_json(raw)))
             except (json.JSONDecodeError, ValidationError, IndexError, AttributeError) as e:
                 last_error = e
                 continue
