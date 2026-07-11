@@ -1,0 +1,21 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+sqlalchemy>=2.0
+pydantic>=2.6
+email-validator>=2.0
+pydantic-settings>=2.2
+passlib>=1.7
+pyjwt>=2.8
+python-multipart>=0.0.9
+pypdf>=4.0
+pytesseract>=0.3.10
+pillow>=10.0
+httpx>=0.27
+pytest>=8.0
+anthropic>=0.39
+youtube-transcript-api>=0.6
+stripe>=7.0
+# Postgres driver (used in production; sqlite needs nothing extra)
+psycopg[binary]>=3.1
+# Optional — only needed when TRANSCRIBE_PROVIDER=openai
+# openai>=1.0

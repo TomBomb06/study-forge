@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StudyForge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0b0c10; --surface:#14161d; --surface-2:#1c1f28; --border:#282c37;
+    --text:#e8eaf0; --muted:#9aa0ae; --brand:#7c5cff; --brand-2:#5b8cff;
+    --good:#3ecf8e; --bad:#ff5c7c; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.5;}
+  #app{min-height:100%;display:flex;flex-direction:column}
+  .wrap{width:100%;max-width:880px;margin:0 auto;padding:24px}
+  button{font-family:inherit;cursor:pointer;border:none}
+  .btn{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:15px;transition:transform .08s ease,opacity .2s;}
+  .btn:hover{transform:translateY(-1px)} .btn:active{transform:translateY(0)}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
+  .btn.sm{padding:8px 14px;font-size:14px}
+  input,textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:12px;font-size:15px;font-family:inherit;}
+  input:focus,textarea:focus{outline:none;border-color:var(--brand)}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+  .muted{color:var(--muted)}
+  .row{display:flex;gap:12px;align-items:center}
+  .brand{font-weight:800;font-size:20px;letter-spacing:-.02em}
+  .brand span{background:linear-gradient(135deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  header.top{border-bottom:1px solid var(--border);background:rgba(11,12,16,.8);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5}
+  .top .wrap{display:flex;justify-content:space-between;align-items:center;padding:16px 24px}
+  .hidden{display:none!important}
+  .center{min-height:100%;display:flex;align-items:center;justify-content:center;flex:1}
+  h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
+  h2{font-size:20px;font-weight:700;margin:0 0 4px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+  .error{color:var(--bad);font-size:14px;margin-top:10px;min-height:18px}
+  .tabs{display:flex;gap:6px;background:var(--surface-2);padding:6px;border-radius:14px}
+  .tab{flex:1;padding:10px;border-radius:10px;background:transparent;color:var(--muted);font-weight:600;font-size:14px;transition:.15s}
+  .tab.active{background:var(--brand);color:#fff}
+  .dropzone{border:2px dashed var(--border);border-radius:var(--radius);padding:44px 24px;text-align:center;transition:.15s;cursor:pointer;background:var(--surface)}
+  .dropzone:hover,.dropzone.drag{border-color:var(--brand);background:var(--surface-2)}
+  .set-item{display:flex;justify-content:space-between;align-items:center;padding:16px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--surface);cursor:pointer;transition:.15s}
+  .set-item:hover{border-color:var(--brand);transform:translateY(-1px)}
+  /* chooser grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:20px}
+  .mode{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:.15s;text-align:left}
+  .mode:hover{border-color:var(--brand);transform:translateY(-2px)}
+  .mode .ic{font-size:26px}
+  .mode .nm{font-weight:700;margin-top:10px;font-size:16px}
+  .mode .ds{color:var(--muted);font-size:13px;margin-top:3px}
+  .mode .soon{display:inline-block;margin-top:8px;font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:99px;padding:2px 8px}
+  .flash{perspective:1200px;height:280px;margin:16px 0;cursor:pointer;user-select:none}
+  .flash-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+  .flash.flipped .flash-inner{transform:rotateY(180deg)}
+  .flash-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;padding:32px;text-align:center;font-size:19px;font-weight:500}
+  .flash-back{transform:rotateY(180deg);background:var(--surface-2)}
+  .flash-tag{position:absolute;top:14px;left:16px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .choice{display:block;width:100%;text-align:left;padding:14px 16px;margin:8px 0;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:15px;transition:.12s}
+  .choice:hover:not(:disabled){border-color:var(--brand)}
+  .choice.correct{border-color:var(--good);background:rgba(62,207,142,.12)}
+  .choice.wrong{border-color:var(--bad);background:rgba(255,92,124,.12)}
+  .choice:disabled{cursor:default}
+  .progress{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin:14px 0}
+  .progress>div{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand-2));transition:width .3s}
+  .spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .notes{font-size:16px;line-height:1.75}
+  .notes h1,.notes h2,.notes h3{margin:18px 0 8px}
+  .notes ul{margin:8px 0;padding-left:22px}
+  .notes li{margin:4px 0}
+  .pill{display:inline-block;padding:4px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
+  .stack>*+*{margin-top:12px}
+  .big-score{font-size:44px;font-weight:800;letter-spacing:-.02em}
+  a.link{color:var(--brand-2);cursor:pointer;text-decoration:none;font-weight:600}
+  /* video slideshow */
+  .slide{min-height:260px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:22px;font-weight:600;line-height:1.5;padding:30px}
+  /* matching */
+  .match-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .match-item{padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);cursor:pointer;transition:.12s;font-size:15px}
+  .match-item:hover{border-color:var(--brand)}
+  .match-item.sel{border-color:var(--brand);background:rgba(124,92,255,.15)}
+  .match-item.done{border-color:var(--good);background:rgba(62,207,142,.12);cursor:default;opacity:.7}
+  .match-item.bad{border-color:var(--bad);background:rgba(255,92,124,.15)}
+  input[type=range]{accent-color:var(--brand)}
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:12px 18px;
+    border-radius:12px;font-size:14px;font-weight:500;z-index:50;transition:.25s;pointer-events:none;max-width:90vw}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.bad{border-color:var(--bad)} #toast.good{border-color:var(--good)}
+  .adbox{border:1px dashed var(--border);border-radius:12px;padding:16px;text-align:center;background:var(--surface)}
+  .adbox .tag{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .empty{text-align:center;padding:36px 20px}
+  .empty .big{font-size:40px} .empty h2{margin:12px 0 6px}
+  .steps{display:flex;flex-direction:column;gap:10px;max-width:420px;margin:18px auto 0;text-align:left}
+  .step{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+  .step .num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+  .skeleton{background:linear-gradient(90deg,var(--surface-2) 25%,#232733 37%,var(--surface-2) 63%);background-size:400% 100%;animation:sk 1.4s ease infinite;border-radius:10px}
+  @keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+  /* phones */
+  @media (max-width:600px){
+    .wrap{padding:16px}
+    .top .wrap{padding:12px 16px}
+    .brand{font-size:18px}
+    h1{font-size:23px}
+    .match-cols{grid-template-columns:1fr}
+    .grid{grid-template-columns:1fr 1fr;gap:10px}
+    .mode{padding:16px}
+    .flash{height:230px}
+    .slide{font-size:18px;min-height:200px}
+    .tab{font-size:13px;padding:9px 6px}
+    .btn{padding:11px 16px}
+    .set-item{flex-wrap:wrap;gap:8px}
+  }
+  @media (max-width:380px){ .grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const API="";
+const state={token:localStorage.getItem("sf_token")||null,sets:[],current:null};
+const el=document.getElementById("app");
+
+async function api(path,{method="GET",body=null,form=null}={}){
+  const headers={}; if(state.token) headers["Authorization"]="Bearer "+state.token;
+  let payload=null;
+  if(form){payload=form;} else if(body){headers["Content-Type"]="application/json";payload=JSON.stringify(body);}
+  let res;
+  try{ res=await fetch(API+path,{method,headers,body:payload}); }
+  catch(netErr){ throw new Error("Can’t reach StudyForge — make sure the app window (start.command) is still open."); }
+  const t=await res.text(); let d=null; try{d=t?JSON.parse(t):null;}catch{d=t;}
+  if(res.status===401 && state.token){ setToken(null); renderAuth(); throw new Error("Your session expired — please log in again."); }
+  if(!res.ok){ const m=(d&&d.detail); throw new Error((typeof m==="string"?m:null)||("Request failed ("+res.status+")")); }
+  return d;
+}
+let _toastT=null;
+function toast(msg,kind=""){
+  let el=document.getElementById("toast");
+  if(!el){ el=document.createElement("div"); el.id="toast"; document.body.appendChild(el); }
+  el.className=kind; el.textContent=msg;
+  requestAnimationFrame(()=>el.classList.add("show",kind));
+  clearTimeout(_toastT); _toastT=setTimeout(()=>el.classList.remove("show"),2600);
+}
+function setToken(t){state.token=t; if(t)localStorage.setItem("sf_token",t); else localStorage.removeItem("sf_token");}
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function stopSpeech(){ try{window.speechSynthesis.cancel();}catch{} }
+
+// tiny markdown -> html (escaped first)
+function mdLite(s){
+  let h=esc(s);
+  h=h.replace(/^### (.*)$/gm,"<h3>$1</h3>").replace(/^## (.*)$/gm,"<h2>$1</h2>").replace(/^# (.*)$/gm,"<h2>$1</h2>");
+  h=h.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");
+  h=h.replace(/(^|\n)[-*] (.*)/g,"$1<li>$2</li>");
+  h=h.replace(/(<li>[\s\S]*?<\/li>)/g,m=>"<ul>"+m.replace(/\n(?!<li>)/g,"")+"</ul>");
+  h=h.replace(/\n{2,}/g,"<br><br>").replace(/\n/g,"<br>");
+  return h;
+}
+
+// ---------- Auth ----------
+function renderAuth(){
+  let mode="signup";
+  el.innerHTML=`<div class="center"><div class="wrap" style="max-width:420px">
+    <div style="text-align:center;margin-bottom:26px">
+      <div class="brand" style="font-size:30px">Study<span>Forge</span></div>
+      <p class="muted" style="margin-top:8px">Turn anything into a study kit.</p></div>
+    <div class="card">
+      <div class="tabs"><button class="tab active" id="t-signup">Sign up</button><button class="tab" id="t-login">Log in</button></div>
+      <div class="field" style="margin-top:16px"><label>Email</label><input id="email" type="email" placeholder="you@example.com"/></div>
+      <div class="field"><label>Password</label><input id="password" type="password" placeholder="At least 8 characters"/></div>
+      <button class="btn" id="submit" style="width:100%">Create account</button>
+      <div class="error" id="err"></div></div>
+    <p class="muted" style="text-align:center;font-size:13px;margin-top:16px">Runs locally on your computer. Your uploads stay on your machine.</p>
+   </div></div>`;
+  const setMode=m=>{mode=m;document.getElementById("t-signup").classList.toggle("active",m==="signup");document.getElementById("t-login").classList.toggle("active",m==="login");document.getElementById("submit").textContent=m==="signup"?"Create account":"Log in";document.getElementById("err").textContent="";};
+  document.getElementById("t-signup").onclick=()=>setMode("signup");
+  document.getElementById("t-login").onclick=()=>setMode("login");
+  document.getElementById("submit").onclick=async()=>{
+    const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value,err=document.getElementById("err"),btn=document.getElementById("submit");
+    err.textContent=""; if(!email||!password){err.textContent="Enter an email and password.";return;}
+    const label=btn.textContent; btn.disabled=true; btn.textContent=mode==="signup"?"Creating account…":"Logging in…";
+    try{const r=await api("/auth/"+(mode==="signup"?"signup":"login"),{method:"POST",body:{email,password}});setToken(r.access_token);renderHome();}
+    catch(e){err.textContent=e.message; btn.disabled=false; btn.textContent=label;}
+  };
+  document.getElementById("password").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("submit").click();});
+}
+
+function shell(inner){
+  stopSpeech();
+  el.innerHTML=`<header class="top"><div class="wrap">
+     <div class="brand" id="home-link" style="cursor:pointer">Study<span>Forge</span></div>
+     <div class="row" style="gap:8px">
+       <button class="btn ghost sm" id="progress-link">📊 Progress</button>
+       <button class="btn ghost sm" id="logout">Log out</button>
+     </div></div></header>
+   <div class="wrap" id="body">${inner}</div>`;
+  document.getElementById("logout").onclick=()=>{setToken(null);state.current=null;renderAuth();};
+  document.getElementById("home-link").onclick=renderHome;
+  document.getElementById("progress-link").onclick=renderProgress;
+}
+
+const MASTERY_COLOR={Learning:"var(--muted)",Familiar:"var(--brand-2)",Strong:"var(--brand)",Mastered:"var(--good)"};
+
+// ---------- Ads (free users only; paid = no ads) ----------
+let _adsenseLoaded=false;
+function loadAdsenseScript(clientId){
+  if(_adsenseLoaded||!clientId)return; _adsenseLoaded=true;
+  const sc=document.createElement("script");
+  sc.async=true; sc.crossOrigin="anonymous";
+  sc.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+encodeURIComponent(clientId);
+  document.head.appendChild(sc);
+}
+async function loadUsage(){
+  try{ state.usage=await api("/me/usage"); }catch{ state.usage=null; return state.usage; }
+  state.showAds=!!state.usage.show_ads;
+  state.ads=state.usage.ads||{};
+  if(state.showAds && state.ads.provider==="adsense") loadAdsenseScript(state.ads.client_id);
+  return state.usage;
+}
+// Renders an ad into container `el` for a given slot, or a value-add upsell
+// placeholder when no real ad network is configured yet. No-op for paid users.
+function renderAd(host,kind){
+  if(!host||!state.showAds){ if(host)host.innerHTML=""; return; }
+  const a=state.ads||{};
+  if(a.provider==="adsense" && a.client_id){
+    const slot=(a.slots&&a.slots[kind])||"";
+    host.innerHTML=`<ins class="adsbygoogle" style="display:block" data-ad-client="${esc(a.client_id)}" data-ad-slot="${esc(slot)}" data-ad-format="auto" data-full-width-responsive="true"></ins>`;
+    try{(window.adsbygoogle=window.adsbygoogle||[]).push({});}catch{}
+    return;
+  }
+  host.innerHTML=`<div class="adbox"><div class="tag">Advertisement</div>
+     <div style="font-weight:600;margin-top:6px">Studying ad-free is one tap away</div>
+     <div class="muted" style="font-size:13px;margin-top:2px">Upgrade to remove ads and unlock AI video lessons.</div>
+     <button class="btn sm" id="ad-up-${kind}" style="margin-top:10px">Go ad-free</button></div>`;
+  const b=document.getElementById("ad-up-"+kind); if(b)b.onclick=renderUpgrade;
+}
+
+async function renderUpgrade(){
+  shell(`<a class="link" id="back">← Back</a><h1 style="margin-top:12px">Go ad-free & unlock AI videos</h1>
+     <p class="muted" style="margin-top:0">Free is great — upgrade when you want no ads and AI video lessons.</p>
+     <div id="up"></div>`);
+  document.getElementById("back").onclick=renderHome;
+  const box=document.getElementById("up"); box.innerHTML=`<div class="center" style="min-height:24vh"><div class="spinner"></div></div>`;
+  let u; try{u=await api("/me/usage");}catch(e){box.innerHTML=`<p class="error">${esc(e.message)}</p>`;return;}
+  const plans=Object.entries(u.plans).filter(([k])=>k!=="free");
+  box.innerHTML=`<div class="grid">${plans.map(([k,p])=>`<div class="card">
+       <div style="font-weight:700;font-size:18px">${esc(p.name)}</div>
+       <div style="font-weight:800;font-size:22px;margin-top:4px">$${p.price_usd}<span class="muted" style="font-size:13px;font-weight:500">/mo</span></div>
+       <div class="muted" style="font-size:13px;margin-top:8px">✓ No ads<br>✓ ${p.monthly_videos} AI videos / month<br>✓ Everything in Free</div>
+       <button class="btn upg" data-p="${k}" style="margin-top:14px;width:100%">Choose ${esc(p.name)}</button></div>`).join("")}</div>
+     ${u.billing_provider!=="stripe"?`<div class="muted" style="font-size:12px;margin-top:12px">Demo mode — upgrading here doesn’t charge real money yet. Real payments connect via Stripe.</div>`:""}`;
+  box.querySelectorAll(".upg").forEach(b=>b.onclick=async()=>{
+    try{const r=await api("/billing/checkout/plan",{method:"POST",body:{plan:b.dataset.p}});
+      if(r.url){toast("Opening secure checkout…");location.href=r.url;return;}
+      toast("You’re upgraded ✓ — ads off","good"); state.showAds=false; renderHome();
+    }catch(e){toast(e.message,"bad");}
+  });
+}
+
+// ---------- Home / input ----------
+async function renderHome(){
+  shell(`<h1>Your study sets</h1>
+    <p class="muted" style="margin-top:0">Turn a file, pasted text, or a web link into a study kit — then choose how you want to study it.</p>
+    <div class="tabs" style="margin:18px 0 0;flex-wrap:wrap">
+      <button class="tab active" data-src="file">File</button>
+      <button class="tab" data-src="text">Paste text</button>
+      <button class="tab" data-src="link">Web / YouTube</button>
+      <button class="tab" data-src="media">Audio/Video</button></div>
+    <div id="source" style="margin:16px 0"></div>
+    <div id="job"></div><div id="due"></div><div id="list" class="stack"></div>
+    <div id="adbanner" style="margin-top:18px"></div>`);
+  const tabs=el.querySelectorAll(".tab");
+  tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove("active"));t.classList.add("active");renderSource(t.dataset.src);});
+  renderSource("file"); await loadSets();
+  await loadUsage(); renderAd(document.getElementById("adbanner"),"home");
+  if(state.pendingShare) showImport(state.pendingShare);
+}
+function renderSource(src){
+  const box=document.getElementById("source");
+  if(src==="file"){
+    box.innerHTML=`<div class="dropzone" id="drop"><input id="file" type="file" accept=".pdf,.txt,.png,.jpg,.jpeg" multiple class="hidden"/>
+      <div style="font-size:32px">＋</div><div style="font-weight:600;margin-top:6px">Drop file(s) or click to upload</div>
+      <div class="muted" style="font-size:13px;margin-top:4px">PDF · TXT · PNG · JPG — up to 25 MB · select several to combine</div></div>`;
+    const drop=document.getElementById("drop"),file=document.getElementById("file");
+    drop.onclick=()=>file.click();
+    ["dragover","dragenter"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("drag");}));
+    ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("drag");}));
+    drop.addEventListener("drop",e=>{ const fs=e.dataTransfer.files; if(fs.length) handleFiles(fs); });
+    file.onchange=()=>{ if(file.files.length) handleFiles(file.files); };
+  }else if(src==="text"){
+    box.innerHTML=`<div class="card">
+      <div class="field"><label>Title (optional)</label><input id="t-title" placeholder="e.g. Chapter 4 notes"/></div>
+      <div class="field"><label>Your notes or text</label><textarea id="t-content" rows="8" placeholder="Paste or type anything you want to study…"></textarea></div>
+      <button class="btn" id="t-go">Add material</button></div>`;
+    document.getElementById("t-go").onclick=()=>{
+      const content=document.getElementById("t-content").value.trim(),title=document.getElementById("t-title").value.trim();
+      if(content.length<40){flashError("Please paste a bit more text (at least a few sentences).");return;}
+      startJob(()=>api("/uploads/text",{method:"POST",body:{content,title:title||null}}),title||"your text");
+    };
+  }else if(src==="link"){
+    box.innerHTML=`<div class="card">
+      <div class="field"><label>Web link or YouTube URL</label><input id="l-url" placeholder="https://en.wikipedia.org/wiki/Photosynthesis"/></div>
+      <button class="btn" id="l-go">Add material</button>
+      <div class="muted" style="font-size:13px;margin-top:10px">Article pages and YouTube videos with captions both work.</div></div>`;
+    document.getElementById("l-go").onclick=()=>{
+      const url=document.getElementById("l-url").value.trim();
+      if(!/^https?:\/\/.+/i.test(url)){flashError("Enter a full web address starting with http:// or https://");return;}
+      const isYT=/youtube\.com|youtu\.be/i.test(url);
+      startJob(()=>api(isYT?"/uploads/youtube":"/uploads/link",{method:"POST",body:{url}}),url);
+    };
+  }else{
+    box.innerHTML=`<div class="dropzone" id="mdrop"><input id="mfile" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.mp4,.mov,.webm" class="hidden"/>
+        <div style="font-size:30px">🎙️</div><div style="font-weight:600;margin-top:6px">Upload a lecture recording</div>
+        <div class="muted" style="font-size:13px;margin-top:4px">MP3 · WAV · M4A · MP4 · MOV · WEBM — we’ll transcribe it</div></div>
+      <div class="muted" style="font-size:12px;margin-top:10px">Transcription is a premium add-on — if it isn’t switched on yet, you’ll get a friendly note instead of a charge.</div>`;
+    const md=document.getElementById("mdrop"),mf=document.getElementById("mfile");
+    md.onclick=()=>mf.click();
+    mf.onchange=()=>{ if(mf.files[0]){const form=new FormData();form.append("file",mf.files[0]);startJob(()=>api("/uploads/media",{method:"POST",form}),mf.files[0].name);} };
+  }
+}
+function flashError(msg){document.getElementById("job").innerHTML=`<div class="card" style="margin-bottom:20px"><div style="color:var(--bad);font-weight:600">${esc(msg)}</div></div>`;}
+
+function setItemHTML(s){
+  const col=MASTERY_COLOR[s.mastery]||"var(--muted)";
+  const badge=`<span class="pill" style="color:${col};border-color:${col}">${esc(s.mastery)}</span>`;
+  const dueBadge=s.due?`<span class="pill" style="color:var(--bad);border-color:var(--bad)">Review due</span>`:"";
+  return `<div class="set-item" data-id="${s.id}"><div>
+      <div style="font-weight:600">${esc(s.title)}</div>
+      <div class="muted" style="font-size:13px">${esc(s.source_filename)} · ${new Date(s.created_at).toLocaleDateString()}</div>
+    </div><div class="row" style="gap:6px">${dueBadge}${badge}<span class="pill">Study →</span></div></div>`;
+}
+async function loadSets(){
+  const list=document.getElementById("list"), due=document.getElementById("due");
+  list.innerHTML=`<div class="stack">${'<div class="skeleton" style="height:64px"></div>'.repeat(2)}</div>`;
+  try{
+    state.sets=await api("/study-sets");
+    if(!state.sets.length){
+      if(due)due.innerHTML="";
+      list.innerHTML=`<div class="empty">
+        <div class="big">🎒</div>
+        <h2>Welcome to StudyForge</h2>
+        <p class="muted">Add anything you're studying above — a PDF, your typed notes, or a web link — and we'll turn it into a full study kit you can learn from your way.</p>
+        <div class="steps">
+          <div class="step"><div class="num">1</div><div><b>Add your material</b><div class="muted" style="font-size:13px">Upload a file, paste text, or drop a web link.</div></div></div>
+          <div class="step"><div class="num">2</div><div><b>Pick how to study</b><div class="muted" style="font-size:13px">Notes, read-aloud, video, flashcards, quiz, test, or a matching game.</div></div></div>
+          <div class="step"><div class="num">3</div><div><b>Track your progress</b><div class="muted" style="font-size:13px">Quiz yourself and we'll resurface weak topics when it's time to review.</div></div></div>
+        </div></div>`;
+      return;
+    }
+    // Due-for-review callout (only sets reviewed at least once and now due).
+    const dueSets=state.sets.filter(s=>s.due && s.review_level>0);
+    if(due){ due.innerHTML = dueSets.length
+      ? `<div class="card" style="margin-bottom:16px;border-color:var(--brand)">
+           <div style="font-weight:700">🔁 Due for review (${dueSets.length})</div>
+           <div class="muted" style="font-size:13px;margin:4px 0 12px">These are ready for another pass to lock them in.</div>
+           <div class="stack">${dueSets.map(setItemHTML).join("")}</div></div>`
+      : ""; }
+    list.innerHTML=`<div style="font-weight:600;margin:6px 0">All study sets</div>`+state.sets.map(setItemHTML).join("");
+    el.querySelectorAll(".set-item").forEach(n=>n.onclick=()=>openSet(n.dataset.id));
+  }catch(e){list.innerHTML=`<p class="error">${esc(e.message)}</p>`;}
+}
+
+// ---------- Progress dashboard ----------
+async function renderProgress(){
+  shell(`<a class="link" id="back">← Back</a><h1 style="margin-top:12px">Your progress</h1><div id="prog"></div>`);
+  document.getElementById("back").onclick=renderHome;
+  const box=document.getElementById("prog");
+  box.innerHTML=`<div class="center" style="min-height:30vh"><div class="spinner"></div></div>`;
+  let p; try{p=await api("/me/progress");}catch(e){box.innerHTML=`<p class="error">${esc(e.message)}</p>`;return;}
+  const t=p.totals;
+  const stat=(n,l)=>`<div class="card" style="text-align:center;flex:1"><div class="big-score" style="font-size:30px">${n}</div><div class="muted" style="font-size:13px">${l}</div></div>`;
+  box.innerHTML=`
+    <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
+      ${stat(t.sets,"study sets")}
+      ${stat(t.quizzes_taken,"quizzes taken")}
+      ${stat(t.avg_score!=null?t.avg_score+"%":"—","avg score")}
+      ${stat(t.due_count,"due for review")}
+    </div>
+    ${p.trend.length?`<div class="card" style="margin-bottom:16px"><div style="font-weight:700;margin-bottom:10px">Quiz scores over time</div>${trendChart(p.trend)}</div>`:""}
+    <div class="card"><div style="font-weight:700;margin-bottom:10px">Mastery by set</div>
+      ${p.sets.length?p.sets.map(masteryRow).join(""):`<div class="muted">Take a quiz to start tracking mastery.</div>`}</div>`;
+  box.querySelectorAll(".set-item").forEach(n=>n.onclick=()=>openSet(n.dataset.id));
+}
+function trendChart(trend){
+  const W=620,H=140,pad=24, pts=trend.slice(-20);
+  if(pts.length<2){const v=pts[0]?pts[0].pct:0;return `<div class="muted">One data point so far: ${v}%. Take more quizzes to see a trend.</div>`;}
+  const n=pts.length, dx=(W-2*pad)/(n-1);
+  const xy=pts.map((p,i)=>[pad+i*dx, H-pad-(p.pct/100)*(H-2*pad)]);
+  const line=xy.map((c,i)=>(i?"L":"M")+c[0].toFixed(1)+" "+c[1].toFixed(1)).join(" ");
+  const dots=xy.map((c,i)=>`<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="3" fill="var(--brand)"><title>${pts[i].pct}% · ${esc(pts[i].title)}</title></circle>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">
+     <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="var(--border)"/>
+     <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="var(--border)"/>
+     <path d="${line}" fill="none" stroke="var(--brand)" stroke-width="2"/>${dots}
+     <text x="${pad-4}" y="${pad+4}" text-anchor="end" fill="var(--muted)" font-size="10">100</text>
+     <text x="${pad-4}" y="${H-pad}" text-anchor="end" fill="var(--muted)" font-size="10">0</text>
+   </svg>`;
+}
+function masteryRow(r){
+  const col=MASTERY_COLOR[r.mastery]||"var(--muted)";
+  const when=r.next_review?new Date(r.next_review):null;
+  const sched=r.due?`<span style="color:var(--bad)">Due now</span>`:(when?`Next: ${when.toLocaleDateString()}`:"Not started");
+  return `<div class="set-item" data-id="${r.id}" style="cursor:pointer">
+     <div><div style="font-weight:600">${esc(r.title)}</div>
+       <div class="muted" style="font-size:12px">${sched}</div></div>
+     <span class="pill" style="color:${col};border-color:${col}">${esc(r.mastery)}</span></div>`;
+}
+
+function handleFiles(fileList){
+  const fs=Array.from(fileList);
+  if(fs.length===1){ startFileUpload(fs[0]); return; }
+  const form=new FormData(); fs.forEach(f=>form.append("files",f));
+  startJob(()=>api("/uploads/multi",{method:"POST",form}), `${fs.length} files combined`);
+}
+function startFileUpload(f){const form=new FormData();form.append("file",f);startJob(()=>api("/uploads",{method:"POST",form}),f.name);}
+async function startJob(createFn,label){
+  const job=document.getElementById("job");
+  job.innerHTML=`<div class="card" style="text-align:center;margin-bottom:20px"><div class="spinner"></div>
+     <div style="font-weight:600;margin-top:14px">Processing “${esc(label)}”…</div>
+     <div class="muted" style="font-size:13px;margin-top:4px">Building your study kit. This can take 30s–2 min.</div>
+     <div class="progress"><div id="bar" style="width:8%"></div></div></div>`;
+  try{
+    const created=await createFn(); let pct=8; const bar=()=>document.getElementById("bar");
+    const poll=setInterval(async()=>{
+      pct=Math.min(pct+7,90); if(bar())bar().style.width=pct+"%";
+      let j; try{j=await api("/jobs/"+created.id);}catch{return;}
+      if(j.status==="completed"){clearInterval(poll);if(bar())bar().style.width="100%";job.innerHTML="";await loadSets();openSet(j.study_set_id);}
+      else if(j.status==="failed"){clearInterval(poll);
+        job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="font-weight:600;color:var(--bad)">Couldn’t create a study set</div>
+          <div class="muted" style="margin-top:6px">${esc(j.error||"Unknown error")}</div>
+          <button class="btn ghost sm" style="margin-top:14px" onclick="document.getElementById('job').innerHTML=''">Dismiss</button></div>`;}
+    },1200);
+  }catch(e){job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="color:var(--bad);font-weight:600">Couldn’t start</div><div class="muted" style="margin-top:6px">${esc(e.message)}</div></div>`;}
+}
+
+// ---------- Study set: the CHOOSER ----------
+const MODES=[
+  {id:"guide", ic:"📖", nm:"Study guide", ds:"Read the condensed notes"},
+  {id:"audio", ic:"🎧", nm:"Read aloud",  ds:"Have the notes read to you"},
+  {id:"video", ic:"🎬", nm:"Video",       ds:"Narrated slideshow"},
+  {id:"cards", ic:"🃏", nm:"Flashcards",  ds:"Flip through key ideas"},
+  {id:"quiz",  ic:"❓", nm:"Quiz",         ds:"Multiple-choice questions"},
+  {id:"time",  ic:"🏁", nm:"Time Attack",  ds:"Beat the clock & your best"},
+  {id:"test",  ic:"📝", nm:"Practice test", ds:"Mixed question types"},
+  {id:"match", ic:"🧩", nm:"Matching game", ds:"Match terms to definitions"},
+];
+
+async function openSet(id){
+  shell(`<div class="center" style="min-height:40vh"><div class="spinner"></div></div>`);
+  let s; try{s=await api("/study-sets/"+id);}catch(e){shell(`<p class="error">${esc(e.message)}</p>`);return;}
+  state.current=s; renderChooser();
+}
+function renderChooser(){
+  const s=state.current;
+  shell(`<a class="link" id="back">← All study sets</a>
+    <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:12px">
+      <h1 style="margin:0">${esc(s.title)}</h1>
+      <button class="btn ghost sm" id="share-btn">🔗 Share</button></div>
+    <p class="muted" style="margin-top:6px">How do you want to study this?</p>
+    <div id="share-box"></div>
+    <div class="grid" id="grid"></div>`);
+  document.getElementById("back").onclick=renderHome;
+  document.getElementById("share-btn").onclick=async()=>{
+    const box=document.getElementById("share-box");
+    try{
+      const r=await api("/study-sets/"+s.id+"/share",{method:"POST"});
+      const link=location.origin+r.share_path;
+      box.innerHTML=`<div class="card" style="margin-bottom:16px">
+         <div style="font-weight:600;font-size:14px">Share this link — anyone can add this set to their library:</div>
+         <div class="row" style="gap:8px;margin-top:10px"><input id="share-link" readonly value="${esc(link)}"/>
+           <button class="btn sm" id="copy-link">Copy</button></div></div>`;
+      document.getElementById("copy-link").onclick=()=>{
+        const inp=document.getElementById("share-link"); inp.select();
+        navigator.clipboard?.writeText(link).then(()=>toast("Link copied ✓","good"),()=>toast("Copied","good"));
+      };
+    }catch(e){toast(e.message,"bad");}
+  };
+  const g=document.getElementById("grid");
+  g.innerHTML=MODES.map(m=>`<div class="mode" data-m="${m.id}"><div class="ic">${m.ic}</div>
+     <div class="nm">${m.nm}</div><div class="ds">${m.ds}</div>
+     ${m.id==="video"?'<span class="soon">narrated slideshow · HD AI video later</span>':''}
+     ${m.id==="audio"?'<span class="soon">your Mac’s voice</span>':''}</div>`).join("");
+  g.querySelectorAll(".mode").forEach(n=>n.onclick=()=>openMode(n.dataset.m));
+}
+function modeShell(title){
+  shell(`<a class="link" id="back">← Study options</a>
+    <div class="row" style="justify-content:space-between;margin-top:12px">
+      <h1 style="margin:0">${esc(title)}</h1><span class="pill">${esc(state.current.title)}</span></div>
+    <div id="view" style="margin-top:16px"></div>`);
+  document.getElementById("back").onclick=renderChooser;
+  return document.getElementById("view");
+}
+function openMode(m){
+  const s=state.current;
+  if(m==="guide") return renderGuide();
+  if(m==="audio") return renderAudio();
+  if(m==="video") return renderVideo();
+  if(m==="cards") return renderCards();
+  if(m==="quiz")  return renderQuiz();
+  if(m==="time")  return renderTimeAttack();
+  if(m==="test")  return renderTest();
+  if(m==="match") return renderMatch();
+}
+
+// ---------- Study guide ----------
+function renderGuide(){
+  const v=modeShell("Study guide");
+  v.innerHTML=`<div class="card notes">${mdLite(state.current.summary)}</div>`;
+}
+
+// ---------- Read aloud ----------
+function renderAudio(){
+  const v=modeShell("Read aloud");
+  const text=state.current.summary.replace(/[#*_`>]/g," ");
+  v.innerHTML=`<div class="card">
+     <div class="row" style="gap:10px;flex-wrap:wrap">
+       <button class="btn" id="play">▶ Play</button>
+       <button class="btn ghost" id="pause">⏸ Pause</button>
+       <button class="btn ghost" id="stop">⏹ Stop</button>
+       <span class="muted" style="margin-left:auto">Speed</span>
+       <input type="range" id="rate" min="0.6" max="1.6" step="0.1" value="1" style="width:120px"/>
+     </div>
+     <div id="status" class="muted" style="margin-top:14px;font-size:14px">Ready to read your notes aloud.</div>
+     <div class="notes" style="margin-top:16px;max-height:340px;overflow:auto">${mdLite(state.current.summary)}</div>
+   </div>`;
+  let rate=1; const status=document.getElementById("status");
+  if(!("speechSynthesis" in window)){status.textContent="Your browser doesn’t support read-aloud. Try Safari or Chrome.";return;}
+  document.getElementById("rate").oninput=e=>{rate=parseFloat(e.target.value);};
+  document.getElementById("play").onclick=()=>{
+    if(window.speechSynthesis.paused){window.speechSynthesis.resume();status.textContent="Reading…";return;}
+    stopSpeech();
+    const u=new SpeechSynthesisUtterance(text); u.rate=rate;
+    u.onend=()=>{status.textContent="Finished.";}; u.onstart=()=>{status.textContent="Reading…";};
+    window.speechSynthesis.speak(u);
+  };
+  document.getElementById("pause").onclick=()=>{window.speechSynthesis.pause();status.textContent="Paused.";};
+  document.getElementById("stop").onclick=()=>{stopSpeech();status.textContent="Stopped.";};
+}
+
+// ---------- Video (narrated slideshow) ----------
+function renderVideo(){
+  const v=modeShell("Video");
+  const raw=state.current.summary.replace(/[#*_`>]/g," ");
+  const slides=raw.split(/(?<=[.!?])\s+|\n+/).map(x=>x.trim()).filter(x=>x.length>15);
+  if(!slides.length) slides.push(state.current.title);
+  let i=0,playing=false;
+  v.innerHTML=`<div class="card">
+     <div class="progress"><div id="vbar" style="width:0%"></div></div>
+     <div class="slide" id="slide"></div>
+     <div class="row" style="justify-content:center;gap:10px;margin-top:8px">
+       <button class="btn ghost sm" id="prev">◀</button>
+       <button class="btn" id="playpause">▶ Play</button>
+       <button class="btn ghost sm" id="next">▶</button>
+     </div>
+     <div class="muted" style="text-align:center;font-size:13px;margin-top:8px" id="vcount"></div>
+     <div class="muted" style="text-align:center;font-size:12px;margin-top:10px">Narrated by your Mac’s voice. High-definition AI video is a paid add-on we can switch on later.</div>
+   </div>`;
+  const slideEl=document.getElementById("slide"),bar=document.getElementById("vbar"),count=document.getElementById("vcount"),pp=document.getElementById("playpause");
+  const draw=()=>{slideEl.textContent=slides[i];bar.style.width=((i+1)/slides.length*100)+"%";count.textContent=`Slide ${i+1} of ${slides.length}`;};
+  const speakCurrent=()=>{
+    if(!("speechSynthesis" in window))return;
+    stopSpeech(); const u=new SpeechSynthesisUtterance(slides[i]); u.rate=1;
+    u.onend=()=>{ if(playing){ if(i<slides.length-1){i++;draw();speakCurrent();} else {playing=false;pp.textContent="▶ Play";} } };
+    window.speechSynthesis.speak(u);
+  };
+  pp.onclick=()=>{ if(playing){playing=false;stopSpeech();pp.textContent="▶ Play";} else {playing=true;pp.textContent="⏸ Pause";speakCurrent();} };
+  document.getElementById("prev").onclick=()=>{i=(i-1+slides.length)%slides.length;draw();if(playing)speakCurrent();};
+  document.getElementById("next").onclick=()=>{i=(i+1)%slides.length;draw();if(playing)speakCurrent();};
+  draw();
+
+  // Premium: real AI video (metered).
+  const prem=document.createElement("div"); prem.id="prem"; prem.style.marginTop="18px";
+  v.appendChild(prem); renderPremium();
+}
+
+async function renderPremium(){
+  const prem=document.getElementById("prem"); if(!prem)return;
+  prem.innerHTML=`<div class="card"><div class="spinner"></div></div>`;
+  let u; try{u=await api("/me/usage");}catch(e){prem.innerHTML="";return;}
+  const vid=u.video, s=state.current;
+  const packs=Object.entries(u.credit_packs).map(([k,p])=>`<button class="btn ghost sm buypack" data-p="${k}">${p.videos} videos · $${p.price_usd}</button>`).join(" ");
+  const upgrades=Object.entries(u.plans).filter(([k])=>k!=="free"&&k!==vid.plan).map(([k,p])=>`<button class="btn sm upg" data-p="${k}">${p.name} — ${p.monthly_videos}/mo · $${p.price_usd}/mo</button>`).join(" ");
+  prem.innerHTML=`<div class="card">
+     <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+       <div><div style="font-weight:700">✨ Real AI video <span class="pill" style="margin-left:6px">Premium</span></div>
+         <div class="muted" style="font-size:13px;margin-top:4px">A studio-style narrated video generated by AI.</div></div>
+       <div style="text-align:right"><div style="font-weight:700;font-size:18px">${vid.total_remaining}</div><div class="muted" style="font-size:12px">videos left${vid.plan!=="free"?` · ${vid.plan_name}`:""}</div></div>
+     </div>
+     <div id="prem-action" style="margin-top:14px"></div>
+   </div>`;
+  const act=document.getElementById("prem-action");
+  const existing=state.current.video;
+  const genBtn=(label)=>`<button class="btn" id="gen-video">${label}</button><div id="gen-out" class="muted" style="margin-top:12px"></div>`;
+  const wireGen=()=>{
+    document.getElementById("gen-video").onclick=async()=>{
+      const out=document.getElementById("gen-out");
+      out.innerHTML=`<div class="spinner"></div><div class="muted" style="margin-top:8px">Starting your video — this can take a minute or two.</div>`;
+      const res=await fetch("/study-sets/"+s.id+"/video",{method:"POST",headers:{"Authorization":"Bearer "+state.token}});
+      if(res.status===402){ renderPremium(); return; }
+      if(!res.ok){ const e=await res.json().catch(()=>({})); out.innerHTML=`<div style="color:var(--bad)">${esc((e.detail&&e.detail.message)||"Couldn’t start.")}</div>`; return; }
+      pollVideo(out);
+    };
+  };
+  if(existing&&existing.status==="ready"){
+    act.innerHTML=showVideoHTML(existing)+`<div style="margin-top:14px">${vid.can_generate_video?genBtn("Generate another (uses 1)"):""}</div>`;
+    if(vid.can_generate_video) wireGen();
+  }else if(existing&&existing.status==="processing"){
+    act.innerHTML=`<div id="gen-out"><div class="spinner"></div><div class="muted" style="margin-top:8px">Your video is generating…</div></div>`;
+    pollVideo(document.getElementById("gen-out"));
+  }else if(vid.can_generate_video){
+    act.innerHTML=genBtn("Generate AI video (uses 1)"); wireGen();
+  }else{
+    act.innerHTML=`<div style="color:var(--bad);font-weight:600">You’re out of AI videos${vid.plan==="free"?"":" this month"}.</div>
+      <div class="muted" style="margin-top:6px">Upgrade your plan or buy a video pack to keep going.</div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">${upgrades}</div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">${packs}</div>
+      <div class="muted" style="font-size:12px;margin-top:10px">Demo mode — these don’t charge real money yet. Payments connect via Stripe later.</div>`;
+    act.querySelectorAll(".upg").forEach(b=>b.onclick=async()=>{try{const r=await api("/billing/checkout/plan",{method:"POST",body:{plan:b.dataset.p}});if(r.url){toast("Opening secure checkout…");location.href=r.url;return;}toast("Plan updated ✓","good");renderPremium();}catch(e){toast(e.message,"bad");}});
+    act.querySelectorAll(".buypack").forEach(b=>b.onclick=async()=>{try{const r=await api("/billing/checkout/pack",{method:"POST",body:{pack:b.dataset.p}});if(r.url){toast("Opening secure checkout…");location.href=r.url;return;}toast("Video pack added ✓","good");renderPremium();}catch(e){toast(e.message,"bad");}});
+  }
+}
+
+function showVideoHTML(v){
+  if(v.url) return `<video controls playsinline style="width:100%;border-radius:12px" src="${esc(v.url)}"></video>`;
+  return `<div style="color:var(--good);font-weight:600">Video ready ✓ (demo mode)</div>
+     <div class="muted" style="margin-top:6px">${esc(v.note||"Connect a Higgsfield Cloud key to render a real video here.")}</div>`;
+}
+function pollVideo(out){
+  const s=state.current;
+  const iv=setInterval(async()=>{
+    let d; try{ d=await api("/study-sets/"+s.id+"/video"); }catch{ return; }
+    const vv=d.video||{};
+    if(vv.status==="ready"){ clearInterval(iv); state.current.video=vv; out.innerHTML=showVideoHTML(vv); }
+    else if(vv.status==="failed"){ clearInterval(iv);
+      out.innerHTML=`<div style="color:var(--bad);font-weight:600">Video didn’t generate</div>
+        <div class="muted" style="margin-top:6px">${esc(vv.error||"")}</div>
+        <div class="muted" style="font-size:12px;margin-top:6px">Your credit was refunded.</div>`;
+    }
+  },3000);
+}
+
+// ---------- Flashcards ----------
+function renderCards(){
+  const v=modeShell("Flashcards"),s=state.current; let i=0;
+  const draw=()=>{const c=s.flashcards[i];
+    v.innerHTML=`<div class="flash" id="fc"><div class="flash-inner">
+        <div class="flash-face"><span class="flash-tag">Question</span>${esc(c.front)}</div>
+        <div class="flash-face flash-back"><span class="flash-tag">Answer</span>${esc(c.back)}</div></div></div>
+      <div class="row" style="justify-content:space-between">
+        <button class="btn ghost sm" id="prev">← Prev</button>
+        <span class="muted">${i+1} / ${s.flashcards.length} · tap card to flip</span>
+        <button class="btn ghost sm" id="next">Next →</button></div>`;
+    const fc=document.getElementById("fc"); fc.onclick=()=>fc.classList.toggle("flipped");
+    document.getElementById("prev").onclick=()=>{i=(i-1+s.flashcards.length)%s.flashcards.length;draw();};
+    document.getElementById("next").onclick=()=>{i=(i+1)%s.flashcards.length;draw();};
+  }; draw();
+}
+
+// ---------- Quiz ----------
+function renderQuiz(){
+  const v=modeShell("Quiz"),s=state.current; let idx=0,score=0,answered=false;
+  const draw=()=>{const q=s.quiz[idx];
+    v.innerHTML=`<div class="progress"><div style="width:${idx/s.quiz.length*100}%"></div></div>
+      <div class="card"><div class="muted" style="font-size:13px;font-weight:600">Question ${idx+1} of ${s.quiz.length}</div>
+        <h2 style="margin:8px 0 16px">${esc(q.question)}</h2>
+        <div id="choices">${q.choices.map((c,ci)=>`<button class="choice" data-i="${ci}">${esc(c)}</button>`).join("")}</div>
+        <div id="expl" class="muted" style="margin-top:14px"></div>
+        <button class="btn hidden" id="next" style="margin-top:16px">${idx+1<s.quiz.length?"Next question →":"See results"}</button></div>`;
+    answered=false;
+    v.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{
+      if(answered)return; answered=true; const chosen=+b.dataset.i,correct=q.answer_index;
+      v.querySelectorAll(".choice").forEach(x=>{x.disabled=true;if(+x.dataset.i===correct)x.classList.add("correct");else if(+x.dataset.i===chosen)x.classList.add("wrong");});
+      if(chosen===correct)score++; if(q.explanation)document.getElementById("expl").textContent=q.explanation;
+      document.getElementById("next").classList.remove("hidden");
+    });
+    document.getElementById("next").onclick=()=>{idx++;idx<s.quiz.length?draw():finish();};
+  };
+  const finish=async()=>{const pct=Math.round(score/s.quiz.length*100);
+    v.innerHTML=`<div class="card" style="text-align:center"><div class="muted" style="font-weight:600">You scored</div>
+      <div class="big-score">${score}/${s.quiz.length}</div><div class="pill" style="margin-top:8px">${pct}%</div>
+      <div style="margin-top:20px"><button class="btn" id="retry">Try again</button></div></div>
+      <div id="quizad" style="margin-top:16px"></div>`;
+    document.getElementById("retry").onclick=()=>{idx=0;score=0;draw();};
+    if(state.showAds===undefined) await loadUsage();
+    renderAd(document.getElementById("quizad"),"quiz");
+    try{await api("/study-sets/"+s.id+"/quiz/attempts",{method:"POST",body:{score,total:s.quiz.length}});}catch{}
+  }; draw();
+}
+
+// ---------- Time Attack (timed quiz + high score) ----------
+function renderTimeAttack(){
+  const v=modeShell("Time Attack"),s=state.current;
+  const DURATION=45, key="sf_ta_"+s.id;
+  const best=parseInt(localStorage.getItem(key)||"0",10);
+  v.innerHTML=`<div class="card" style="text-align:center">
+     <div style="font-size:15px">Answer as many as you can in <b>${DURATION} seconds</b>.</div>
+     <div class="muted" style="margin-top:6px">Best score to beat: <b>${best}</b></div>
+     <button class="btn" id="start" style="margin-top:16px">Start</button></div>`;
+  document.getElementById("start").onclick=run;
+  function run(){
+    let time=DURATION, score=0, order=[...s.quiz.keys()], i=0, done=false;
+    for(let j=order.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[order[j],order[k]]=[order[k],order[j]];}
+    const tick=setInterval(()=>{time--; const tEl=document.getElementById("ta-time"); if(tEl)tEl.textContent=time; if(time<=0)finish();},1000);
+    const draw=()=>{
+      const q=s.quiz[order[i%order.length]];
+      v.innerHTML=`<div class="row" style="justify-content:space-between"><span class="pill">Score: <b id="ta-score">${score}</b></span><span class="pill">⏱ <b id="ta-time">${time}</b>s</span></div>
+        <div class="card" style="margin-top:12px"><h2 style="margin:0 0 14px">${esc(q.question)}</h2>
+          <div id="ta-choices">${q.choices.map((c,ci)=>`<button class="choice" data-i="${ci}">${esc(c)}</button>`).join("")}</div></div>`;
+      v.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{
+        if(done)return;
+        const ok=+b.dataset.i===q.answer_index;
+        b.classList.add(ok?"correct":"wrong");
+        if(ok){score++; const sc=document.getElementById("ta-score"); if(sc)sc.textContent=score;}
+        v.querySelectorAll(".choice").forEach(x=>x.disabled=true);
+        setTimeout(()=>{ if(!done){ i++; draw(); } },350);
+      });
+    };
+    const finish=()=>{
+      if(done)return; done=true; clearInterval(tick);
+      const isBest=score>best; if(isBest)localStorage.setItem(key,String(score));
+      v.innerHTML=`<div class="card" style="text-align:center">
+        <div class="muted" style="font-weight:600">Time!</div>
+        <div class="big-score">${score}</div>
+        ${isBest?`<div class="pill" style="color:var(--good);border-color:var(--good);margin-top:8px">🎉 New best!</div>`
+                :`<div class="muted" style="margin-top:8px">Best: ${best}</div>`}
+        <div style="margin-top:20px"><button class="btn" id="again">Play again</button></div></div>`;
+      document.getElementById("again").onclick=run;
+    };
+    draw();
+  }
+}
+
+// ---------- Practice test ----------
+function renderTest(){
+  const v=modeShell("Practice test"),s=state.current;
+  const kindLabel={true_false:"True / False",fill_blank:"Fill in the blank",short_answer:"Short answer"};
+  v.innerHTML=`<div class="stack">${s.test.map((q,i)=>`
+     <div class="card"><div class="muted" style="font-size:13px;font-weight:600">${i+1}. ${kindLabel[q.kind]||""}</div>
+       <div style="margin:8px 0 12px;font-size:16px">${esc(q.question)}</div>
+       ${q.kind==="true_false"
+          ? `<div class="row" style="gap:8px"><button class="btn ghost sm tf" data-i="${i}" data-v="True">True</button><button class="btn ghost sm tf" data-i="${i}" data-v="False">False</button></div>`
+          : `<input class="ans" data-i="${i}" placeholder="Type your answer…"/>`}
+       <button class="btn ghost sm reveal" data-i="${i}" style="margin-top:12px">Show answer</button>
+       <div class="ansbox muted" id="ans-${i}" style="margin-top:10px"></div></div>`).join("")}</div>`;
+  v.querySelectorAll(".reveal").forEach(b=>b.onclick=()=>{const i=b.dataset.i;document.getElementById("ans-"+i).innerHTML=`<strong>Answer:</strong> ${esc(s.test[i].answer)}`;});
+  v.querySelectorAll(".tf").forEach(b=>b.onclick=()=>{
+    const i=b.dataset.i,ok=b.dataset.v===s.test[i].answer;
+    document.getElementById("ans-"+i).innerHTML=(ok?'<span style="color:var(--good)">Correct!</span> ':'<span style="color:var(--bad)">Not quite.</span> ')+`Answer: ${esc(s.test[i].answer)}`;
+  });
+}
+
+// ---------- Matching game ----------
+function renderMatch(){
+  const v=modeShell("Matching game"),s=state.current;
+  const pairs=s.matching.slice(0,8);
+  const terms=pairs.map((p,i)=>({t:p.term,i}));
+  const defs=pairs.map((p,i)=>({d:p.definition,i})).sort(()=>Math.random()-0.5);
+  let sel=null,done=0;
+  v.innerHTML=`<div class="card"><div class="muted" style="font-size:14px">Click a term, then its matching definition.</div>
+     <div class="match-cols">
+       <div id="terms">${terms.map(x=>`<div class="match-item term" data-i="${x.i}">${esc(x.t)}</div>`).join("")}</div>
+       <div id="defs">${defs.map(x=>`<div class="match-item def" data-i="${x.i}">${esc(x.d)}</div>`).join("")}</div>
+     </div>
+     <div id="mstatus" class="muted" style="margin-top:14px"></div></div>`;
+  const status=document.getElementById("mstatus");
+  const clickTerm=e=>{if(e.target.classList.contains("done"))return;v.querySelectorAll(".term").forEach(t=>t.classList.remove("sel"));e.target.classList.add("sel");sel=e.target.dataset.i;};
+  const clickDef=e=>{
+    if(e.target.classList.contains("done")||sel===null)return;
+    if(e.target.dataset.i===sel){
+      const term=v.querySelector(`.term[data-i="${sel}"]`);
+      term.classList.remove("sel");term.classList.add("done");e.target.classList.add("done");
+      sel=null;done++; if(done===pairs.length)status.innerHTML='<span style="color:var(--good);font-weight:600">All matched! 🎉</span>';
+    }else{
+      const bad=e.target;bad.classList.add("bad");setTimeout(()=>bad.classList.remove("bad"),500);
+      status.textContent="Not a match — try again.";
+    }
+  };
+  v.querySelectorAll(".term").forEach(t=>t.onclick=clickTerm);
+  v.querySelectorAll(".def").forEach(d=>d.onclick=clickDef);
+}
+
+// ---------- Sharing / import ----------
+async function showImport(token){
+  const host=document.getElementById("due")||document.getElementById("job"); if(!host)return;
+  let p; try{p=await api("/shared/"+token);}catch(e){ host.innerHTML=`<div class="card" style="margin-bottom:16px"><div style="color:var(--bad);font-weight:600">Shared set not found</div><div class="muted" style="margin-top:6px">The link may be broken or the set was removed.</div></div>`; state.pendingShare=null; return; }
+  const c=p.counts;
+  host.innerHTML=`<div class="card" style="margin-bottom:16px;border-color:var(--brand)">
+     <div style="font-weight:700">📥 A study set was shared with you</div>
+     <div style="font-size:18px;font-weight:700;margin-top:8px">${esc(p.title)}</div>
+     <div class="muted" style="font-size:13px;margin-top:4px">${c.flashcards} flashcards · ${c.quiz} quiz · ${c.test} test · ${c.matching} matching</div>
+     <div class="row" style="gap:8px;margin-top:14px">
+       <button class="btn" id="imp-add">Add to my library</button>
+       <button class="btn ghost" id="imp-no">Dismiss</button></div></div>`;
+  document.getElementById("imp-no").onclick=()=>{state.pendingShare=null;history.replaceState({},"",location.pathname);host.innerHTML="";};
+  document.getElementById("imp-add").onclick=async()=>{
+    try{const r=await api("/shared/"+token+"/import",{method:"POST"});state.pendingShare=null;history.replaceState({},"",location.pathname);toast("Added to your library ✓","good");await loadSets();openSet(r.id);}
+    catch(e){toast(e.message,"bad");}
+  };
+}
+
+// ---------- boot ----------
+const _params=new URLSearchParams(location.search);
+state.pendingShare=_params.get("s");
+const _checkout=_params.get("checkout");
+if(_checkout){ history.replaceState({},"",location.pathname);
+  setTimeout(()=>toast(_checkout==="success"?"Payment complete — your account is updated ✓":"Checkout canceled",_checkout==="success"?"good":""),400); }
+if(state.token) renderHome(); else renderAuth();
+</script>
+</body>
+</html>
