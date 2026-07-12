@@ -91,15 +91,25 @@ def create_pack_checkout(user: User, pack: str) -> str:
 
 
 def verify_event(payload: bytes, sig_header: str) -> dict:
-    """Verify a webhook signature and return the parsed event."""
+    """Verify a webhook signature and return the parsed event as a plain dict.
+
+    We use Stripe's construct_event only to VERIFY the signature (it raises if
+    the payload was tampered with), then parse the raw bytes ourselves. The
+    object construct_event returns is a StripeObject whose ``.get()`` behaves
+    differently across library versions; parsing the raw JSON gives us an
+    ordinary dict that process_event can read the same way in tests and prod.
+    """
+    import json
+
     settings = get_settings()
     stripe = _stripe()
     try:
-        return stripe.Webhook.construct_event(
+        stripe.Webhook.construct_event(
             payload, sig_header, settings.stripe_webhook_secret
         )
     except Exception as e:
         raise PaymentsError(f"Invalid webhook signature: {e}")
+    return json.loads(payload)
 
 
 def process_event(event: dict, db) -> None:
