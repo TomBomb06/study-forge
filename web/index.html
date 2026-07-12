@@ -3,106 +3,183 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>StudyForge</title>
+<title>StudyForge — Turn anything into a study kit</title>
+<meta name="description" content="StudyForge turns any notes, PDF, or web link into flashcards, quizzes, tests, matching games, read-aloud audio, and AI video lessons — in seconds. Free to start." />
+<link rel="canonical" href="https://forge.study/" />
+<meta name="theme-color" content="#0a0b10" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="StudyForge" />
+<meta property="og:title" content="StudyForge — Turn anything into a study kit" />
+<meta property="og:description" content="Flashcards, quizzes, tests, matching games, audio, and AI video lessons from your notes, PDFs, or web links. Free to start." />
+<meta property="og:url" content="https://forge.study/" />
+<meta property="og:image" content="https://forge.study/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="StudyForge — Turn anything into a study kit" />
+<meta name="twitter:description" content="Flashcards, quizzes, tests, matching games, audio, and AI video lessons from your notes, PDFs, or web links." />
+<meta name="twitter:image" content="https://forge.study/og.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%237c5cff'/%3E%3Cpath d='M20 22h16a6 6 0 0 1 6 6v16H26a6 6 0 0 1-6-6V22z' fill='%23ffffff' opacity='.92'/%3E%3Crect x='20' y='19' width='19' height='4' rx='2' fill='%23ffffff'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#0b0c10; --surface:#14161d; --surface-2:#1c1f28; --border:#282c37;
-    --text:#e8eaf0; --muted:#9aa0ae; --brand:#7c5cff; --brand-2:#5b8cff;
-    --good:#3ecf8e; --bad:#ff5c7c; --radius:16px;
+    --bg:#0a0b10; --surface:#13151d; --surface-2:#1a1d27; --surface-3:#21252f;
+    --border:#242833; --border-2:#333a49;
+    --text:#eef0f6; --muted:#969cad; --faint:#6a707f;
+    --brand:#8b6cff; --brand-2:#5b8cff; --brand-ink:#b9a9ff;
+    --good:#3ecf8e; --bad:#ff5c7c; --warn:#ffb454;
+    --radius:16px; --radius-sm:12px;
+    --shadow:0 4px 22px -8px rgba(0,0,0,.55);
+    --shadow-lg:0 26px 60px -14px rgba(0,0,0,.62);
+    --glow:0 0 0 1px rgba(139,108,255,.35),0 10px 34px -8px rgba(139,108,255,.42);
+    --grad:linear-gradient(135deg,var(--brand),var(--brand-2));
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
-  body{font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.5;}
-  #app{min-height:100%;display:flex;flex-direction:column}
-  .wrap{width:100%;max-width:880px;margin:0 auto;padding:24px}
+  body{font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.55;letter-spacing:-.006em;position:relative}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(900px 520px at 50% -12%,rgba(139,108,255,.16),transparent 62%),
+      radial-gradient(760px 520px at 108% 0%,rgba(91,140,255,.10),transparent 56%)}
+  #app{min-height:100%;display:flex;flex-direction:column;position:relative;z-index:1}
+  .wrap{width:100%;max-width:900px;margin:0 auto;padding:26px 24px}
   button{font-family:inherit;cursor:pointer;border:none}
-  .btn{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:15px;transition:transform .08s ease,opacity .2s;}
-  .btn:hover{transform:translateY(-1px)} .btn:active{transform:translateY(0)}
-  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-  .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
-  .btn.sm{padding:8px 14px;font-size:14px}
-  input,textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:12px;font-size:15px;font-family:inherit;}
-  input:focus,textarea:focus{outline:none;border-color:var(--brand)}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+  .btn{position:relative;background:var(--grad);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:15px;letter-spacing:-.01em;box-shadow:0 6px 18px -6px rgba(139,108,255,.55),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .1s ease,box-shadow .2s ease,opacity .2s;}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 11px 26px -6px rgba(139,108,255,.7),inset 0 1px 0 rgba(255,255,255,.22)}
+  .btn:active{transform:translateY(0)}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border);box-shadow:none}
+  .btn.ghost:hover{border-color:var(--border-2);background:var(--surface-3)}
+  .btn.sm{padding:8px 14px;font-size:14px;border-radius:10px}
+  input,textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:12px;font-size:15px;font-family:inherit;transition:border-color .15s,box-shadow .15s;}
+  input::placeholder,textarea::placeholder{color:var(--faint)}
+  input:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(139,108,255,.18)}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.03)}
   .muted{color:var(--muted)}
   .row{display:flex;gap:12px;align-items:center}
-  .brand{font-weight:800;font-size:20px;letter-spacing:-.02em}
-  .brand span{background:linear-gradient(135deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;color:transparent}
-  header.top{border-bottom:1px solid var(--border);background:rgba(11,12,16,.8);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5}
-  .top .wrap{display:flex;justify-content:space-between;align-items:center;padding:16px 24px}
+  .brand{font-weight:800;font-size:20px;letter-spacing:-.03em}
+  .brand span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  header.top{border-bottom:1px solid var(--border);background:rgba(10,11,16,.72);backdrop-filter:blur(12px) saturate(1.4);position:sticky;top:0;z-index:5}
+  .top .wrap{display:flex;justify-content:space-between;align-items:center;padding:15px 24px}
   .hidden{display:none!important}
   .center{min-height:100%;display:flex;align-items:center;justify-content:center;flex:1}
-  h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
-  h2{font-size:20px;font-weight:700;margin:0 0 4px}
+  h1{font-size:29px;font-weight:800;letter-spacing:-.032em;margin:0 0 6px;background:linear-gradient(180deg,#fff,#c7cbd8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  h2{font-size:20px;font-weight:700;letter-spacing:-.02em;margin:0 0 4px}
   .field{margin-bottom:14px}
   .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
   .error{color:var(--bad);font-size:14px;margin-top:10px;min-height:18px}
-  .tabs{display:flex;gap:6px;background:var(--surface-2);padding:6px;border-radius:14px}
+  .tabs{display:flex;gap:6px;background:var(--surface-2);padding:6px;border-radius:14px;border:1px solid var(--border)}
   .tab{flex:1;padding:10px;border-radius:10px;background:transparent;color:var(--muted);font-weight:600;font-size:14px;transition:.15s}
-  .tab.active{background:var(--brand);color:#fff}
-  .dropzone{border:2px dashed var(--border);border-radius:var(--radius);padding:44px 24px;text-align:center;transition:.15s;cursor:pointer;background:var(--surface)}
-  .dropzone:hover,.dropzone.drag{border-color:var(--brand);background:var(--surface-2)}
-  .set-item{display:flex;justify-content:space-between;align-items:center;padding:16px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--surface);cursor:pointer;transition:.15s}
-  .set-item:hover{border-color:var(--brand);transform:translateY(-1px)}
+  .tab:hover{color:var(--text)}
+  .tab.active{background:var(--grad);color:#fff;box-shadow:0 6px 16px -6px rgba(139,108,255,.6)}
+  .dropzone{border:1.5px dashed var(--border-2);border-radius:var(--radius);padding:44px 24px;text-align:center;transition:.18s;cursor:pointer;background:var(--surface)}
+  .dropzone:hover,.dropzone.drag{border-color:var(--brand);background:var(--surface-2);box-shadow:var(--glow)}
+  .set-item{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border:1px solid var(--border);border-radius:14px;margin-bottom:10px;background:var(--surface);cursor:pointer;transition:.16s;box-shadow:var(--shadow)}
+  .set-item:hover{border-color:var(--brand-2);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
   /* chooser grid */
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:20px}
-  .mode{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:.15s;text-align:left}
-  .mode:hover{border-color:var(--brand);transform:translateY(-2px)}
-  .mode .ic{font-size:26px}
-  .mode .nm{font-weight:700;margin-top:10px;font-size:16px}
-  .mode .ds{color:var(--muted);font-size:13px;margin-top:3px}
-  .mode .soon{display:inline-block;margin-top:8px;font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:99px;padding:2px 8px}
+  .mode{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:.16s;text-align:left;overflow:hidden;box-shadow:var(--shadow)}
+  .mode::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:.16s;box-shadow:inset 0 0 0 1px rgba(139,108,255,.45)}
+  .mode:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+  .mode:hover::after{opacity:1}
+  .mode .ic{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;font-size:22px;background:rgba(139,108,255,.14);border:1px solid rgba(139,108,255,.22)}
+  .mode .nm{font-weight:700;margin-top:12px;font-size:16px;letter-spacing:-.01em}
+  .mode .ds{color:var(--muted);font-size:13px;margin-top:3px;line-height:1.45}
+  .mode .soon{display:inline-block;margin-top:10px;font-size:11px;color:var(--brand-ink);background:rgba(139,108,255,.1);border:1px solid rgba(139,108,255,.22);border-radius:99px;padding:2px 9px;font-weight:600}
+  .mode:nth-child(2) .ic{background:rgba(91,140,255,.15);border-color:rgba(91,140,255,.28)}
+  .mode:nth-child(3) .ic{background:rgba(62,207,142,.15);border-color:rgba(62,207,142,.28)}
+  .mode:nth-child(4) .ic{background:rgba(255,180,84,.15);border-color:rgba(255,180,84,.28)}
+  .mode:nth-child(5) .ic{background:rgba(255,92,124,.15);border-color:rgba(255,92,124,.28)}
+  .mode:nth-child(6) .ic{background:rgba(91,140,255,.15);border-color:rgba(91,140,255,.28)}
+  .mode:nth-child(7) .ic{background:rgba(62,207,142,.15);border-color:rgba(62,207,142,.28)}
   .flash{perspective:1200px;height:280px;margin:16px 0;cursor:pointer;user-select:none}
-  .flash-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+  .flash-inner{position:relative;width:100%;height:100%;transition:transform .5s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d}
   .flash.flipped .flash-inner{transform:rotateY(180deg)}
-  .flash-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;padding:32px;text-align:center;font-size:19px;font-weight:500}
+  .flash-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;padding:32px;text-align:center;font-size:19px;font-weight:500;box-shadow:var(--shadow)}
   .flash-back{transform:rotateY(180deg);background:var(--surface-2)}
-  .flash-tag{position:absolute;top:14px;left:16px;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-  .choice{display:block;width:100%;text-align:left;padding:14px 16px;margin:8px 0;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:15px;transition:.12s}
-  .choice:hover:not(:disabled){border-color:var(--brand)}
-  .choice.correct{border-color:var(--good);background:rgba(62,207,142,.12)}
-  .choice.wrong{border-color:var(--bad);background:rgba(255,92,124,.12)}
+  .flash-tag{position:absolute;top:14px;left:16px;font-size:12px;color:var(--brand-ink);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .choice{display:block;width:100%;text-align:left;padding:14px 16px;margin:8px 0;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:15px;transition:.13s}
+  .choice:hover:not(:disabled){border-color:var(--brand);background:var(--surface-3)}
+  .choice.correct{border-color:var(--good);background:rgba(62,207,142,.14)}
+  .choice.wrong{border-color:var(--bad);background:rgba(255,92,124,.14)}
   .choice:disabled{cursor:default}
-  .progress{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin:14px 0}
-  .progress>div{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand-2));transition:width .3s}
+  .progress{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin:14px 0;border:1px solid var(--border)}
+  .progress>div{height:100%;background:var(--grad);transition:width .35s ease;box-shadow:0 0 12px rgba(139,108,255,.5)}
   .spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .notes{font-size:16px;line-height:1.75}
-  .notes h1,.notes h2,.notes h3{margin:18px 0 8px}
+  .notes{font-size:16px;line-height:1.78}
+  .notes h1,.notes h2,.notes h3{margin:20px 0 8px;color:var(--text);-webkit-text-fill-color:currentColor}
   .notes ul{margin:8px 0;padding-left:22px}
-  .notes li{margin:4px 0}
-  .pill{display:inline-block;padding:4px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
+  .notes li{margin:5px 0}
+  .notes strong{color:#fff}
+  .pill{display:inline-block;padding:4px 12px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
   .stack>*+*{margin-top:12px}
-  .big-score{font-size:44px;font-weight:800;letter-spacing:-.02em}
+  .big-score{font-size:46px;font-weight:800;letter-spacing:-.03em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   a.link{color:var(--brand-2);cursor:pointer;text-decoration:none;font-weight:600}
+  a.link:hover{text-decoration:underline}
   /* video slideshow */
   .slide{min-height:260px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:22px;font-weight:600;line-height:1.5;padding:30px}
   /* matching */
   .match-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
-  .match-item{padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);cursor:pointer;transition:.12s;font-size:15px}
-  .match-item:hover{border-color:var(--brand)}
-  .match-item.sel{border-color:var(--brand);background:rgba(124,92,255,.15)}
-  .match-item.done{border-color:var(--good);background:rgba(62,207,142,.12);cursor:default;opacity:.7}
+  .match-item{padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);cursor:pointer;transition:.13s;font-size:15px}
+  .match-item:hover{border-color:var(--brand);background:var(--surface-3)}
+  .match-item.sel{border-color:var(--brand);background:rgba(139,108,255,.18);box-shadow:var(--glow)}
+  .match-item.done{border-color:var(--good);background:rgba(62,207,142,.12);cursor:default;opacity:.65}
   .match-item.bad{border-color:var(--bad);background:rgba(255,92,124,.15)}
   input[type=range]{accent-color:var(--brand)}
   /* toast */
   #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;
-    background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:12px 18px;
-    border-radius:12px;font-size:14px;font-weight:500;z-index:50;transition:.25s;pointer-events:none;max-width:90vw}
+    background:var(--surface-3);border:1px solid var(--border-2);color:var(--text);padding:12px 18px;
+    border-radius:12px;font-size:14px;font-weight:500;z-index:50;transition:.25s;pointer-events:none;max-width:90vw;box-shadow:var(--shadow-lg)}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   #toast.bad{border-color:var(--bad)} #toast.good{border-color:var(--good)}
-  .adbox{border:1px dashed var(--border);border-radius:12px;padding:16px;text-align:center;background:var(--surface)}
-  .adbox .tag{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-  .empty{text-align:center;padding:36px 20px}
-  .empty .big{font-size:40px} .empty h2{margin:12px 0 6px}
-  .steps{display:flex;flex-direction:column;gap:10px;max-width:420px;margin:18px auto 0;text-align:left}
-  .step{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
-  .step .num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+  .adbox{border:1px dashed var(--border-2);border-radius:14px;padding:18px;text-align:center;background:var(--surface)}
+  .adbox .tag{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+  #adgate{position:fixed;inset:0;z-index:9999;background:rgba(8,9,13,.78);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px}
+  #adgate .sheet{background:var(--surface);border:1px solid var(--border);border-radius:18px;max-width:440px;width:100%;padding:22px;box-shadow:var(--shadow-lg)}
+  #adgate .tag{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+  #adgate .adslot{min-height:180px;margin:12px 0;display:flex;align-items:center;justify-content:center;border-radius:12px;overflow:hidden}
+  #adgate .gate-actions{display:flex;align-items:center;gap:10px;margin-top:6px}
+  #adgate .skip{margin-left:auto}
+  .empty{text-align:center;padding:40px 20px}
+  .empty .big{font-size:44px} .empty h2{margin:14px 0 6px}
+  .steps{display:flex;flex-direction:column;gap:10px;max-width:430px;margin:18px auto 0;text-align:left}
+  .step{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px;box-shadow:var(--shadow)}
+  .step .num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
   .skeleton{background:linear-gradient(90deg,var(--surface-2) 25%,#232733 37%,var(--surface-2) 63%);background-size:400% 100%;animation:sk 1.4s ease infinite;border-radius:10px}
   @keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+  /* landing */
+  .lp-nav{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;max-width:1080px;margin:0 auto;padding:18px 24px;background:rgba(10,11,16,.6);backdrop-filter:blur(12px)}
+  .lp-hero{max-width:820px;margin:0 auto;text-align:center;padding:64px 24px 36px}
+  .lp-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--brand-ink);background:rgba(139,108,255,.1);border:1px solid rgba(139,108,255,.25);border-radius:99px;padding:6px 14px;margin-bottom:22px}
+  .lp-h1{font-size:56px;line-height:1.05;font-weight:800;letter-spacing:-.04em;margin:0;background:linear-gradient(180deg,#fff,#b8bccb);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lp-h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lp-sub{font-size:19px;color:var(--muted);max-width:600px;margin:20px auto 30px;line-height:1.6}
+  .lp-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .lp-note{font-size:13px;color:var(--faint);margin-top:16px}
+  .lp-section{max-width:1080px;margin:0 auto;padding:40px 24px}
+  .lp-section h2{font-size:32px;text-align:center;letter-spacing:-.03em;margin:0 0 8px}
+  .lp-section .lead{text-align:center;color:var(--muted);max-width:560px;margin:0 auto 32px}
+  .lp-feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+  .lp-feat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+  .lp-feat .fi{width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:22px;background:rgba(139,108,255,.14);border:1px solid rgba(139,108,255,.22)}
+  .lp-feat h3{font-size:17px;margin:12px 0 4px}
+  .lp-feat p{color:var(--muted);font-size:14px;margin:0;line-height:1.5}
+  .lp-price{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;max-width:860px;margin:0 auto}
+  .lp-plan{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;box-shadow:var(--shadow);position:relative}
+  .lp-plan.feat{border-color:rgba(139,108,255,.5);box-shadow:var(--glow)}
+  .lp-plan .pn{font-weight:700;font-size:18px}
+  .lp-plan .pp{font-size:34px;font-weight:800;letter-spacing:-.02em;margin:6px 0}
+  .lp-plan .pp span{font-size:14px;font-weight:500;color:var(--muted)}
+  .lp-plan ul{list-style:none;padding:0;margin:16px 0 0;font-size:14px;color:var(--muted)}
+  .lp-plan li{padding:5px 0 5px 24px;position:relative}
+  .lp-plan li::before{content:"✓";position:absolute;left:0;color:var(--good);font-weight:700}
+  .lp-badge{position:absolute;top:-11px;left:26px;background:var(--grad);color:#fff;font-size:12px;font-weight:600;padding:3px 12px;border-radius:99px}
+  .lp-foot{border-top:1px solid var(--border);text-align:center;padding:30px 24px;color:var(--muted);font-size:13px;margin-top:20px}
+  .lp-foot a{color:var(--muted);margin:0 8px;text-decoration:none}
+  .lp-foot a:hover{color:var(--text)}
+  @media (max-width:600px){ .lp-h1{font-size:38px} .lp-sub{font-size:17px} .lp-hero{padding:44px 20px 28px} .lp-section h2{font-size:26px} }
   /* phones */
   @media (max-width:600px){
     .wrap{padding:16px}
@@ -123,6 +200,11 @@
 </head>
 <body>
 <div id="app"></div>
+<footer style="max-width:720px;margin:0 auto;padding:28px 22px 40px;text-align:center;font-size:13px;color:var(--muted)">
+  <a href="/privacy" style="color:inherit;margin:0 8px">Privacy Policy</a>·
+  <a href="/terms" style="color:inherit;margin:0 8px">Terms</a>·
+  <span style="margin:0 8px">© StudyForge</span>
+</footer>
 <script>
 const API="";
 const state={token:localStorage.getItem("sf_token")||null,sets:[],current:null};
@@ -163,24 +245,85 @@ function mdLite(s){
   return h;
 }
 
+// ---------- Landing ----------
+function renderLanding(){
+  const feats=[
+    ["📖","Study guide","Clean, organized notes that pull out what actually matters."],
+    ["🃏","Flashcards","Flip-through cards for fast, active recall of key terms."],
+    ["❓","Quizzes & tests","Multiple-choice quizzes and mixed practice tests with instant feedback."],
+    ["🧩","Study games","A matching game and a timed Time Attack mode to make it stick."],
+    ["🎧","Read aloud","Have your notes read to you — study on the go, hands-free."],
+    ["🎬","AI video lessons","Premium narrated video lessons generated from your material."],
+  ];
+  el.innerHTML=`
+  <nav class="lp-nav">
+    <div class="brand" style="font-size:22px">Study<span>Forge</span></div>
+    <div class="row" style="gap:10px">
+      <button class="btn ghost sm" data-auth="login">Log in</button>
+      <button class="btn sm" data-auth="signup">Get started</button>
+    </div>
+  </nav>
+  <header class="lp-hero">
+    <div class="lp-eyebrow">✨ AI-powered study kits</div>
+    <h1 class="lp-h1">Turn anything into a <em>study kit</em>.</h1>
+    <p class="lp-sub">Drop in your notes, a PDF, a photo, or a web link — and StudyForge instantly builds flashcards, quizzes, tests, games, audio, and AI video lessons you can actually learn from.</p>
+    <div class="lp-cta">
+      <button class="btn" data-auth="signup" style="font-size:16px;padding:14px 26px">Start studying free</button>
+      <button class="btn ghost" data-auth="login" style="font-size:16px;padding:14px 22px">Log in</button>
+    </div>
+    <div class="lp-note">Free to start · No credit card required</div>
+  </header>
+  <section class="lp-section">
+    <h2>Every way to study, from one upload</h2>
+    <p class="lead">One upload becomes six ways to learn — pick whatever fits how your brain studies.</p>
+    <div class="lp-feats">${feats.map(f=>`<div class="lp-feat"><div class="fi">${f[0]}</div><h3>${f[1]}</h3><p>${f[2]}</p></div>`).join("")}</div>
+  </section>
+  <section class="lp-section">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><div><strong>Add your material</strong><div class="muted" style="font-size:14px">Upload a file or photo, paste text, or drop a web or YouTube link.</div></div></div>
+      <div class="step"><div class="num">2</div><div><strong>Pick how you want to study</strong><div class="muted" style="font-size:14px">Notes, flashcards, quiz, test, games, audio, or AI video — your choice.</div></div></div>
+      <div class="step"><div class="num">3</div><div><strong>Learn and track progress</strong><div class="muted" style="font-size:14px">Quiz yourself and StudyForge resurfaces weak topics right when you need them.</div></div></div>
+    </div>
+  </section>
+  <section class="lp-section">
+    <h2>Simple pricing</h2>
+    <p class="lead">Start free. Upgrade when you want no ads and AI video lessons.</p>
+    <div class="lp-price">
+      <div class="lp-plan"><div class="pn">Free</div><div class="pp">$0</div><ul><li>Unlimited study kits</li><li>All study modes</li><li>Read-aloud audio</li><li>Supported by ads</li></ul></div>
+      <div class="lp-plan feat"><div class="lp-badge">Most popular</div><div class="pn">Basic</div><div class="pp">$9<span>/mo</span></div><ul><li>No ads</li><li>10 AI video lessons / month</li><li>Everything in Free</li></ul></div>
+      <div class="lp-plan"><div class="pn">Pro</div><div class="pp">$19<span>/mo</span></div><ul><li>No ads</li><li>40 AI video lessons / month</li><li>Everything in Free</li></ul></div>
+    </div>
+    <div style="text-align:center;margin-top:28px"><button class="btn" data-auth="signup" style="font-size:16px;padding:14px 26px">Get started free</button></div>
+  </section>
+  <footer class="lp-foot">
+    <div class="brand" style="font-size:18px">Study<span>Forge</span></div>
+    <div style="margin-top:10px"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <span>© StudyForge</span></div>
+  </footer>`;
+  el.querySelectorAll("[data-auth]").forEach(b=>b.onclick=()=>renderAuth(b.dataset.auth));
+}
+
 // ---------- Auth ----------
-function renderAuth(){
-  let mode="signup";
+function renderAuth(initial){
+  let mode=initial==="login"?"login":"signup";
   el.innerHTML=`<div class="center"><div class="wrap" style="max-width:420px">
+    <a class="link" id="lp-back" style="display:inline-block;margin-bottom:8px">← Back to home</a>
     <div style="text-align:center;margin-bottom:26px">
-      <div class="brand" style="font-size:30px">Study<span>Forge</span></div>
-      <p class="muted" style="margin-top:8px">Turn anything into a study kit.</p></div>
+      <div class="brand" style="font-size:32px">Study<span>Forge</span></div>
+      <p class="muted" style="margin-top:8px;font-size:15px">Turn any notes, PDF, or video into flashcards,<br>quizzes, tests, and more — in seconds.</p></div>
     <div class="card">
       <div class="tabs"><button class="tab active" id="t-signup">Sign up</button><button class="tab" id="t-login">Log in</button></div>
       <div class="field" style="margin-top:16px"><label>Email</label><input id="email" type="email" placeholder="you@example.com"/></div>
       <div class="field"><label>Password</label><input id="password" type="password" placeholder="At least 8 characters"/></div>
       <button class="btn" id="submit" style="width:100%">Create account</button>
       <div class="error" id="err"></div></div>
-    <p class="muted" style="text-align:center;font-size:13px;margin-top:16px">Runs locally on your computer. Your uploads stay on your machine.</p>
+    <p class="muted" style="text-align:center;font-size:13px;margin-top:16px">Free to start · No credit card required</p>
    </div></div>`;
   const setMode=m=>{mode=m;document.getElementById("t-signup").classList.toggle("active",m==="signup");document.getElementById("t-login").classList.toggle("active",m==="login");document.getElementById("submit").textContent=m==="signup"?"Create account":"Log in";document.getElementById("err").textContent="";};
   document.getElementById("t-signup").onclick=()=>setMode("signup");
   document.getElementById("t-login").onclick=()=>setMode("login");
+  document.getElementById("lp-back").onclick=renderLanding;
+  setMode(mode);
   document.getElementById("submit").onclick=async()=>{
     const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value,err=document.getElementById("err"),btn=document.getElementById("submit");
     err.textContent=""; if(!email||!password){err.textContent="Enter an email and password.";return;}
@@ -200,7 +343,7 @@ function shell(inner){
        <button class="btn ghost sm" id="logout">Log out</button>
      </div></div></header>
    <div class="wrap" id="body">${inner}</div>`;
-  document.getElementById("logout").onclick=()=>{setToken(null);state.current=null;renderAuth();};
+  document.getElementById("logout").onclick=()=>{setToken(null);state.current=null;renderLanding();};
   document.getElementById("home-link").onclick=renderHome;
   document.getElementById("progress-link").onclick=renderProgress;
 }
@@ -220,8 +363,49 @@ async function loadUsage(){
   try{ state.usage=await api("/me/usage"); }catch{ state.usage=null; return state.usage; }
   state.showAds=!!state.usage.show_ads;
   state.ads=state.usage.ads||{};
+  state.adPacing=(state.usage.ads&&state.usage.ads.pacing)||{every_actions:3,min_gap_seconds:150,skip_after_seconds:5};
   if(state.showAds && state.ads.provider==="adsense") loadAdsenseScript(state.ads.client_id);
   return state.usage;
+}
+
+// ---------- Paced ad breaks (free users only) ----------
+// A light, skippable full-screen ad shown between study actions — every Nth
+// action and never more often than the min gap. Paid users never see it.
+function _adCount(){ return parseInt(localStorage.getItem("sf_ad_actions")||"0",10)||0; }
+function _adLastShown(){ return parseInt(localStorage.getItem("sf_ad_last")||"0",10)||0; }
+// Decide whether this study action should trigger an ad break.
+function shouldShowAdBreak(){
+  if(!state.showAds) return false;
+  const p=state.adPacing||{every_actions:3,min_gap_seconds:150};
+  const n=_adCount()+1; localStorage.setItem("sf_ad_actions",String(n));
+  if(n % (p.every_actions||3) !== 0) return false;                 // not every action
+  if(Date.now()-_adLastShown() < (p.min_gap_seconds||150)*1000) return false; // too soon
+  return true;
+}
+// Show the ad break, then run `next()`. If no break is due, runs next() now.
+function adGate(next){
+  if(!shouldShowAdBreak()){ next(); return; }
+  localStorage.setItem("sf_ad_last",String(Date.now()));
+  const p=state.adPacing||{skip_after_seconds:5};
+  let left=Math.max(0,p.skip_after_seconds||5);
+  const ov=document.createElement("div"); ov.id="adgate";
+  ov.innerHTML=`<div class="sheet">
+     <div class="tag">Advertisement · quick break</div>
+     <div class="adslot" id="adgate-slot"></div>
+     <div class="gate-actions">
+       <button class="btn ghost sm" id="adgate-upgrade">Remove ads</button>
+       <button class="btn sm skip" id="adgate-skip" disabled>Continue in ${left}s</button>
+     </div></div>`;
+  document.body.appendChild(ov);
+  renderAd(document.getElementById("adgate-slot"),"break");
+  const skip=document.getElementById("adgate-skip");
+  const close=()=>{ ov.remove(); };
+  document.getElementById("adgate-upgrade").onclick=()=>{ close(); renderUpgrade(); };
+  const done=()=>{ skip.disabled=false; skip.textContent="Continue ✓"; };
+  if(left<=0){ done(); } else {
+    const t=setInterval(()=>{ left--; if(left<=0){ clearInterval(t); done(); } else { skip.textContent=`Continue in ${left}s`; } },1000);
+  }
+  skip.onclick=()=>{ if(!skip.disabled){ close(); next(); } };
 }
 // Renders an ad into container `el` for a given slot, or a value-add upsell
 // placeholder when no real ad network is configured yet. No-op for paid users.
@@ -454,6 +638,7 @@ const MODES=[
 async function openSet(id){
   shell(`<div class="center" style="min-height:40vh"><div class="spinner"></div></div>`);
   let s; try{s=await api("/study-sets/"+id);}catch(e){shell(`<p class="error">${esc(e.message)}</p>`);return;}
+  if(state.showAds===undefined) await loadUsage();
   state.current=s; renderChooser();
 }
 function renderChooser(){
@@ -497,7 +682,10 @@ function modeShell(title){
   return document.getElementById("view");
 }
 function openMode(m){
-  const s=state.current;
+  // Free users get a light, paced ad break before the study mode opens.
+  adGate(()=>_dispatchMode(m));
+}
+function _dispatchMode(m){
   if(m==="guide") return renderGuide();
   if(m==="audio") return renderAudio();
   if(m==="video") return renderVideo();
@@ -810,7 +998,7 @@ state.pendingShare=_params.get("s");
 const _checkout=_params.get("checkout");
 if(_checkout){ history.replaceState({},"",location.pathname);
   setTimeout(()=>toast(_checkout==="success"?"Payment complete — your account is updated ✓":"Checkout canceled",_checkout==="success"?"good":""),400); }
-if(state.token) renderHome(); else renderAuth();
+if(state.token) renderHome(); else if(state.pendingShare) renderAuth("signup"); else renderLanding();
 </script>
 </body>
 </html>
