@@ -103,3 +103,7 @@ if os.path.isdir(_WEB_DIR):
     @app.get("/terms", include_in_schema=False)
     def _terms():
         return FileResponse(os.path.join(_WEB_DIR, "terms.html"))
+
+    @app.get("/og.png", include_in_schema=False)
+    def _og():
+        return FileResponse(os.path.join(_WEB_DIR, "og.png"))
