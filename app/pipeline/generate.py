@@ -320,12 +320,13 @@ class ClaudeGenerator:
                 raise GenerationError(
                     f"The AI service returned an error: {e}"
                 ) from e
-        # Surface the underlying reason so problems are diagnosable in the UI.
+        # Log the underlying reason server-side; keep the user-facing message clean.
         detail = f"{type(last_error).__name__}: {str(last_error)[:250]}"
         head = last_raw[:200].replace("\n", " ")
+        print(f"[generate] malformed AI output after retry — {detail} | head: {head!r}")
         raise GenerationError(
-            f"The AI returned study material we couldn't use. [debug: {detail} | "
-            f"start of reply: {head!r}]"
+            "The AI had trouble with this material. Please try again — "
+            "it usually works on the second attempt."
         ) from last_error
 
 
