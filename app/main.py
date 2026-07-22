@@ -8,7 +8,7 @@ from sqlalchemy import inspect, text
 
 from .config import get_settings
 from .db import Base, engine
-from .routers import auth, billing, shares, study_sets, uploads
+from .routers import auth, billing, gamify, shares, study_sets, uploads
 
 # MVP: create tables on startup. Move to Alembic migrations before production.
 Base.metadata.create_all(bind=engine)
@@ -17,14 +17,16 @@ Base.metadata.create_all(bind=engine)
 def _ensure_columns() -> None:
     """Add columns introduced after a user's DB was first created.
 
-    SQLite's create_all() won't alter existing tables, so add any missing
-    columns by hand. Keeps a returning user's account and data intact when
-    new study formats (test, matching) are added.
+    create_all() won't alter existing tables (SQLite or Postgres), so add any
+    missing columns by hand. Only columns that are actually missing are added,
+    which keeps existing accounts and data intact when new features land.
     """
-    if not engine.url.get_backend_name().startswith("sqlite"):
-        return
     inspector = inspect(engine)
     tables = inspector.get_table_names()
+    # NOTE: types below are written to work on the backend where they can
+    # actually be missing. DATETIME columns predate the Postgres deploy, so on
+    # Postgres they always already exist and their SQLite-flavored types are
+    # never executed there.
     plan = {
         "study_sets": {
             "source_text": "TEXT",
@@ -42,6 +44,8 @@ def _ensure_columns() -> None:
             "videos_used": "INTEGER DEFAULT 0",
             "extra_video_credits": "INTEGER DEFAULT 0",
             "stripe_customer_id": "VARCHAR(64)",
+            "display_name": "VARCHAR(40)",
+            "game": "JSON",
         },
     }
     with engine.begin() as conn:
@@ -79,6 +83,7 @@ app.include_router(uploads.router)
 app.include_router(study_sets.router)
 app.include_router(billing.router)
 app.include_router(shares.router)
+app.include_router(gamify.router)
 
 
 @app.get("/health", tags=["meta"])

@@ -33,6 +33,11 @@ class User(Base):
         String(64), nullable=True, index=True
     )
 
+    # Gamification: public display name (anonymous, auto-generated) and the
+    # game-state blob (xp, streak, quests, badges, weekly score...).
+    display_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    game: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
     study_sets: Mapped[list["StudySet"]] = relationship(back_populates="user")
 
 

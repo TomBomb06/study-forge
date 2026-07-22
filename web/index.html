@@ -149,6 +149,52 @@
   .step .num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
   .skeleton{background:linear-gradient(90deg,var(--surface-2) 25%,#232733 37%,var(--surface-2) 63%);background-size:400% 100%;animation:sk 1.4s ease infinite;border-radius:10px}
   @keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+  /* ---------- game HUD & effects ---------- */
+  .hud{display:flex;align-items:center;gap:10px}
+  .hud .flame{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:99px;padding:6px 12px;cursor:default}
+  .hud .flame.lit{border-color:rgba(255,150,60,.45);background:rgba(255,140,50,.12);color:#ffb454}
+  .hud .lvl{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:99px;padding:5px 12px 5px 6px;cursor:pointer}
+  .hud .lvl:hover{border-color:var(--border-2)}
+  .hud .lvl .n{width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;box-shadow:0 0 10px rgba(139,108,255,.5)}
+  .hud .xpbar{width:64px;height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden}
+  .hud .xpbar>div{height:100%;background:var(--grad);transition:width .5s ease}
+  .xp-float{position:fixed;z-index:10001;font-weight:800;font-size:18px;color:#ffd166;text-shadow:0 2px 8px rgba(0,0,0,.6);pointer-events:none;animation:xpfloat 1.1s ease-out forwards}
+  .xp-float.big{font-size:24px;color:#8b6cff;color:var(--brand-ink)}
+  @keyframes xpfloat{0%{opacity:0;transform:translateY(8px) scale(.8)}15%{opacity:1;transform:translateY(0) scale(1.15)}30%{transform:scale(1)}100%{opacity:0;transform:translateY(-46px)}}
+  .combo-chip{position:fixed;right:18px;bottom:84px;z-index:10001;background:var(--grad);color:#fff;font-weight:800;border-radius:14px;padding:10px 16px;font-size:16px;box-shadow:0 10px 30px -8px rgba(139,108,255,.8);animation:combopop .25s ease;pointer-events:none}
+  @keyframes combopop{0%{transform:scale(.6)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+  #lvlup{position:fixed;inset:0;z-index:10002;background:rgba(8,9,13,.82);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;flex-direction:column;animation:fadein .25s ease}
+  #lvlup .ring{width:130px;height:130px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:800;color:#fff;box-shadow:0 0 80px rgba(139,108,255,.8);animation:lvlpop .5s cubic-bezier(.2,1.6,.4,1)}
+  #lvlup h2{font-size:34px;margin:22px 0 6px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  @keyframes lvlpop{0%{transform:scale(.2)}70%{transform:scale(1.12)}100%{transform:scale(1)}}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .confetti{position:fixed;z-index:10003;top:-12px;width:9px;height:14px;pointer-events:none;animation:confall linear forwards}
+  @keyframes confall{0%{transform:translateY(-10px) rotate(0)}100%{transform:translateY(105vh) rotate(720deg)}}
+  /* goal ring + quests */
+  .gamestrip{display:grid;grid-template-columns:auto 1fr;gap:14px;margin:16px 0;align-items:stretch}
+  .goalcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px 20px;display:flex;gap:14px;align-items:center;box-shadow:var(--shadow)}
+  .questcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 18px;box-shadow:var(--shadow)}
+  .quest{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:14px}
+  .quest .qbar{flex:1;height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden;min-width:60px}
+  .quest .qbar>div{height:100%;background:var(--grad)}
+  .quest.done{color:var(--good)} .quest.done .qbar>div{background:var(--good)}
+  .quest .qxp{font-size:12px;font-weight:700;color:var(--brand-ink);white-space:nowrap}
+  /* badges */
+  .badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+  .badge{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:14px 10px;text-align:center}
+  .badge .bi{font-size:26px}
+  .badge .bn{font-weight:700;font-size:13px;margin-top:6px}
+  .badge .bd{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .badge.locked{opacity:.32;filter:grayscale(1)}
+  .badge.earned{border-color:rgba(139,108,255,.4);box-shadow:0 0 14px -4px rgba(139,108,255,.45)}
+  /* leaderboard */
+  .lb-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;background:var(--surface)}
+  .lb-row.me{border-color:var(--brand);box-shadow:var(--glow)}
+  .lb-rank{width:34px;text-align:center;font-weight:800;font-size:15px;color:var(--muted)}
+  .lb-rank.top{font-size:20px}
+  .lb-name{flex:1;font-weight:600}
+  .lb-xp{font-weight:800;color:var(--brand-ink)}
+  @media (max-width:600px){ .gamestrip{grid-template-columns:1fr} .hud .xpbar{width:40px} }
   /* landing */
   .lp-nav{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;max-width:1080px;margin:0 auto;padding:18px 24px;background:rgba(10,11,16,.6);backdrop-filter:blur(12px)}
   .lp-hero{max-width:820px;margin:0 auto;text-align:center;padding:64px 24px 36px}
@@ -338,14 +384,149 @@ function shell(inner){
   stopSpeech();
   el.innerHTML=`<header class="top"><div class="wrap">
      <div class="brand" id="home-link" style="cursor:pointer">Study<span>Forge</span></div>
-     <div class="row" style="gap:8px">
-       <button class="btn ghost sm" id="progress-link">📊 Progress</button>
+     <div class="hud">
+       <span class="flame" id="hud-streak" title="Daily streak">🔥 0</span>
+       <span class="lvl" id="hud-lvl" title="Weekly leaderboard"><span class="n" id="hud-lvln">1</span><span class="xpbar"><div id="hud-xpfill" style="width:0%"></div></span></span>
+       <button class="btn ghost sm" id="progress-link">📊</button>
        <button class="btn ghost sm" id="logout">Log out</button>
      </div></div></header>
    <div class="wrap" id="body">${inner}</div>`;
-  document.getElementById("logout").onclick=()=>{setToken(null);state.current=null;renderLanding();};
+  document.getElementById("logout").onclick=()=>{setToken(null);state.current=null;state.game=null;renderLanding();};
   document.getElementById("home-link").onclick=renderHome;
   document.getElementById("progress-link").onclick=renderProgress;
+  document.getElementById("hud-lvl").onclick=renderLeaderboard;
+  updateHUD();
+  if(!state.game) loadGame().then(updateHUD);
+}
+
+// ---------- Gamification ----------
+const tzOff=()=>new Date().getTimezoneOffset();
+async function loadGame(){
+  try{
+    const r=await api("/me/game?tz_offset="+tzOff());
+    state.game=r.game; state.displayName=r.display_name; state.badgeCatalog=r.badge_catalog;
+  }catch{ /* game HUD is optional — never block studying */ }
+  return state.game;
+}
+function updateHUD(){
+  const g=state.game; if(!g) return;
+  const st=document.getElementById("hud-streak");
+  if(st){ st.textContent="🔥 "+g.streak; st.classList.toggle("lit",g.streak>0&&g.goal_met); st.title=g.goal_met?`${g.streak}-day streak — goal met today!`:`${g.streak}-day streak — earn ${Math.max(0,g.goal-g.daily_xp)} more XP today to keep it`; }
+  const ln=document.getElementById("hud-lvln"), xf=document.getElementById("hud-xpfill");
+  if(ln) ln.textContent=g.level;
+  if(xf) xf.style.width=Math.min(100,Math.round(100*g.level_xp/Math.max(1,g.level_span)))+"%";
+}
+// Fire-and-forget game event; brings back XP + celebrations.
+async function sendGame(type,data,anchor){
+  try{
+    const before=state.game?JSON.parse(JSON.stringify(state.game)):null;
+    const r=await api("/gamify/event",{method:"POST",body:{type,data:data||{},tz_offset:tzOff()}});
+    state.game=r.state; updateHUD();
+    if(r.gained_xp>0) floatXP("+"+r.gained_xp+" XP",anchor);
+    if(before&&r.state.quests){
+      r.state.quests.forEach(q=>{const old=(before.quests||[]).find(o=>o.id===q.id);
+        if(q.done&&old&&!old.done) setTimeout(()=>toast("🎯 Quest complete: "+q.name+" (+30 XP)","good"),600);});
+    }
+    if(r.streak_extended) setTimeout(()=>toast("🔥 Streak extended — day "+r.state.streak+"!","good"),1100);
+    (r.new_badges||[]).forEach((b,i)=>setTimeout(()=>toast(b.icon+" Badge earned: "+b.name+"!","good"),1600+i*1400));
+    if(r.leveled_up_to) setTimeout(()=>levelUp(r.leveled_up_to),300);
+    const strip=document.getElementById("gamestrip"); if(strip) paintGameStrip(strip);
+    return r;
+  }catch{ return null; }
+}
+function floatXP(text,anchor,big){
+  const f=document.createElement("div"); f.className="xp-float"+(big?" big":""); f.textContent=text;
+  let x=innerWidth/2, y=innerHeight*0.42;
+  if(anchor&&anchor.getBoundingClientRect){const b=anchor.getBoundingClientRect();x=b.left+b.width/2;y=b.top-6;}
+  f.style.left=(x-30+((Math.random()*36)-18))+"px"; f.style.top=y+"px";
+  document.body.appendChild(f); setTimeout(()=>f.remove(),1150);
+}
+let _combo=0,_comboT=null;
+function comboHit(anchor){
+  _combo++;
+  if(_combo>=2){
+    let c=document.getElementById("combo-chip");
+    if(!c){c=document.createElement("div");c.id="combo-chip";c.className="combo-chip";document.body.appendChild(c);}
+    c.textContent="🔥 COMBO x"+_combo; c.style.animation="none"; void c.offsetWidth; c.style.animation="";
+    clearTimeout(_comboT); _comboT=setTimeout(()=>{const e=document.getElementById("combo-chip");if(e)e.remove();},1600);
+  }
+  floatXP("+4",anchor);
+}
+function comboBreak(){ _combo=0; const c=document.getElementById("combo-chip"); if(c)c.remove(); }
+function confetti(n){
+  const colors=["#8b6cff","#5b8cff","#3ecf8e","#ffd166","#ff5c7c","#fff"];
+  for(let i=0;i<(n||70);i++){
+    const p=document.createElement("div"); p.className="confetti";
+    p.style.left=Math.random()*100+"vw";
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration=(1.6+Math.random()*1.6)+"s";
+    p.style.animationDelay=(Math.random()*0.5)+"s";
+    p.style.transform="rotate("+Math.random()*360+"deg)";
+    document.body.appendChild(p); setTimeout(()=>p.remove(),3800);
+  }
+}
+function levelUp(level){
+  confetti(90);
+  const ov=document.createElement("div"); ov.id="lvlup";
+  ov.innerHTML=`<div class="ring">${level}</div><h2>LEVEL UP!</h2>
+    <p class="muted" style="margin:0 0 24px">You reached level ${level}. Keep forging! ⚒️</p>
+    <button class="btn" id="lvl-ok">Let's go</button>`;
+  document.body.appendChild(ov);
+  document.getElementById("lvl-ok").onclick=()=>ov.remove();
+  setTimeout(()=>{if(document.getElementById("lvlup"))ov.remove();},6000);
+}
+// Home-screen strip: daily goal ring + today's quests.
+function paintGameStrip(host){
+  const g=state.game; if(!g||!host) return;
+  const pct=Math.min(1,g.daily_xp/Math.max(1,g.goal)), R=30, C=2*Math.PI*R;
+  host.innerHTML=`
+   <div class="goalcard">
+     <svg width="76" height="76" viewBox="0 0 76 76">
+       <circle cx="38" cy="38" r="${R}" fill="none" stroke="var(--surface-3)" stroke-width="8"/>
+       <circle cx="38" cy="38" r="${R}" fill="none" stroke="${g.goal_met?"var(--good)":"url(#gg)"}" stroke-width="8"
+         stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" transform="rotate(-90 38 38)"/>
+       <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b6cff"/><stop offset="1" stop-color="#5b8cff"/></linearGradient></defs>
+       <text x="38" y="36" text-anchor="middle" fill="var(--text)" font-size="13" font-weight="800">${g.daily_xp}</text>
+       <text x="38" y="50" text-anchor="middle" fill="var(--muted)" font-size="9">/ ${g.goal} XP</text>
+     </svg>
+     <div><div style="font-weight:700">${g.goal_met?"Daily goal crushed! ✅":"Today's goal"}</div>
+       <div class="muted" style="font-size:13px;margin-top:2px">${g.goal_met?"Streak safe — come back tomorrow!":`Earn ${Math.max(0,g.goal-g.daily_xp)} more XP to keep your streak`}</div>
+       <div style="font-size:13px;margin-top:6px">🔥 <b>${g.streak}</b> day streak · best ${g.best_streak}</div></div>
+   </div>
+   <div class="questcard"><div style="font-weight:700;font-size:14px;margin-bottom:4px">⚔️ Daily quests</div>
+     ${(g.quests||[]).map(q=>`<div class="quest ${q.done?"done":""}">
+        <span>${q.done?"✅":"▫️"}</span><span style="flex:2">${esc(q.name)}</span>
+        <span class="qbar"><div style="width:${Math.min(100,Math.round(100*q.progress/Math.max(1,q.target)))}%"></div></span>
+        <span class="qxp">${q.done?"+30 ✓":"+30 XP"}</span></div>`).join("")}
+   </div>`;
+}
+// Weekly leaderboard view.
+async function renderLeaderboard(){
+  shell(`<a class="link" id="back">← Back</a><h1 style="margin-top:12px">🏆 Weekly leaderboard</h1>
+    <p class="muted" style="margin-top:0">Most XP earned this week. Resets every Monday.</p>
+    <div id="lb"><div class="center" style="min-height:24vh"><div class="spinner"></div></div></div>`);
+  document.getElementById("back").onclick=renderHome;
+  const box=document.getElementById("lb");
+  let d; try{d=await api("/leaderboard?tz_offset="+tzOff());}catch(e){box.innerHTML=`<p class="error">${esc(e.message)}</p>`;return;}
+  const medal=i=>i===0?"🥇":i===1?"🥈":i===2?"🥉":(i+1);
+  box.innerHTML=`
+    <div class="card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div><div class="muted" style="font-size:13px">You're playing as</div>
+        <div class="row" style="gap:8px;margin-top:6px"><input id="dn" value="${esc(state.displayName||"")}" maxlength="24" style="max-width:220px"/>
+        <button class="btn sm" id="dn-save">Save</button></div></div>
+      <div style="text-align:right"><div class="muted" style="font-size:13px">Your rank</div>
+        <div class="big-score" style="font-size:34px">${d.my_rank?"#"+d.my_rank:"—"}</div>
+        <div class="muted" style="font-size:12px">${d.my_weekly_xp} XP this week</div></div></div></div>
+    ${d.top.length?d.top.map((e,i)=>`<div class="lb-row ${e.me?"me":""}">
+       <span class="lb-rank ${i<3?"top":""}">${medal(i)}</span>
+       <span class="lb-name">${esc(e.name)}${e.me?' <span class="pill" style="margin-left:6px">you</span>':""}</span>
+       <span class="pill">Lv ${e.level}</span><span class="lb-xp">${e.weekly_xp} XP</span></div>`).join("")
+     :`<div class="card muted">No scores yet this week — be the first on the board!</div>`}`;
+  document.getElementById("dn-save").onclick=async()=>{
+    try{const r=await api("/me/display-name",{method:"POST",body:{name:document.getElementById("dn").value}});
+      state.displayName=r.display_name; toast("Name updated ✓","good"); renderLeaderboard();
+    }catch(e){toast(e.message,"bad");}
+  };
 }
 
 const MASTERY_COLOR={Learning:"var(--muted)",Familiar:"var(--brand-2)",Strong:"var(--brand)",Mastered:"var(--good)"};
@@ -451,6 +632,7 @@ async function renderUpgrade(){
 async function renderHome(){
   shell(`<h1>Your study sets</h1>
     <p class="muted" style="margin-top:0">Turn a file, pasted text, or a web link into a study kit — then choose how you want to study it.</p>
+    <div class="gamestrip" id="gamestrip"></div>
     <div class="tabs" style="margin:18px 0 0;flex-wrap:wrap">
       <button class="tab active" data-src="file">File</button>
       <button class="tab" data-src="text">Paste text</button>
@@ -463,6 +645,8 @@ async function renderHome(){
   tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove("active"));t.classList.add("active");renderSource(t.dataset.src);});
   renderSource("file"); await loadSets();
   await loadUsage(); renderAd(document.getElementById("adbanner"),"home");
+  if(state.game) paintGameStrip(document.getElementById("gamestrip"));
+  else loadGame().then(()=>{updateHUD();paintGameStrip(document.getElementById("gamestrip"));});
   if(state.pendingShare) showImport(state.pendingShare);
 }
 function renderSource(src){
@@ -559,13 +743,30 @@ async function renderProgress(){
   let p; try{p=await api("/me/progress");}catch(e){box.innerHTML=`<p class="error">${esc(e.message)}</p>`;return;}
   const t=p.totals;
   const stat=(n,l)=>`<div class="card" style="text-align:center;flex:1"><div class="big-score" style="font-size:30px">${n}</div><div class="muted" style="font-size:13px">${l}</div></div>`;
+  if(!state.game) await loadGame();
+  const g=state.game;
+  const gstats=g?`
+    <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
+      ${stat("Lv "+g.level,"level · "+g.xp+" XP")}
+      ${stat("🔥 "+g.streak,"day streak (best "+g.best_streak+")")}
+      ${stat(g.weekly_xp,"XP this week")}
+      ${stat(g.badges.length+"/"+(state.badgeCatalog||[]).length,"badges earned")}
+    </div>`:"";
+  const badgeCase=g&&state.badgeCatalog?`
+    <div class="card" style="margin-bottom:16px"><div style="font-weight:700;margin-bottom:12px">🏅 Badge case</div>
+      <div class="badges">${state.badgeCatalog.map(b=>`
+        <div class="badge ${g.badges.includes(b.id)?"earned":"locked"}">
+          <div class="bi">${b.icon}</div><div class="bn">${esc(b.name)}</div><div class="bd">${esc(b.desc)}</div>
+        </div>`).join("")}</div></div>`:"";
   box.innerHTML=`
+    ${gstats}
     <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
       ${stat(t.sets,"study sets")}
       ${stat(t.quizzes_taken,"quizzes taken")}
       ${stat(t.avg_score!=null?t.avg_score+"%":"—","avg score")}
       ${stat(t.due_count,"due for review")}
     </div>
+    ${badgeCase}
     ${p.trend.length?`<div class="card" style="margin-bottom:16px"><div style="font-weight:700;margin-bottom:10px">Quiz scores over time</div>${trendChart(p.trend)}</div>`:""}
     <div class="card"><div style="font-weight:700;margin-bottom:10px">Mastery by set</div>
       ${p.sets.length?p.sets.map(masteryRow).join(""):`<div class="muted">Take a quiz to start tracking mastery.</div>`}</div>`;
@@ -614,7 +815,7 @@ async function startJob(createFn,label){
     const poll=setInterval(async()=>{
       pct=Math.min(pct+7,90); if(bar())bar().style.width=pct+"%";
       let j; try{j=await api("/jobs/"+created.id);}catch{return;}
-      if(j.status==="completed"){clearInterval(poll);if(bar())bar().style.width="100%";job.innerHTML="";await loadSets();openSet(j.study_set_id);}
+      if(j.status==="completed"){clearInterval(poll);if(bar())bar().style.width="100%";job.innerHTML="";sendGame("set_created",{});await loadSets();openSet(j.study_set_id);}
       else if(j.status==="failed"){clearInterval(poll);
         job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="font-weight:600;color:var(--bad)">Couldn’t create a study set</div>
           <div class="muted" style="margin-top:6px">${esc(j.error||"Unknown error")}</div>
@@ -663,6 +864,7 @@ function renderChooser(){
       document.getElementById("copy-link").onclick=()=>{
         const inp=document.getElementById("share-link"); inp.select();
         navigator.clipboard?.writeText(link).then(()=>toast("Link copied ✓","good"),()=>toast("Copied","good"));
+        if(!state._sharedOnce){state._sharedOnce=true;sendGame("share",{},document.getElementById("copy-link"));}
       };
     }catch(e){toast(e.message,"bad");}
   };
@@ -683,7 +885,15 @@ function modeShell(title){
 }
 function openMode(m){
   // Free users get a light, paced ad break before the study mode opens.
-  adGate(()=>_dispatchMode(m));
+  adGate(()=>{
+    _dispatchMode(m);
+    // Reading/listening modes count as a small study session (once per set+mode).
+    if(m==="guide"||m==="audio"||m==="video"){
+      state._studySent=state._studySent||{};
+      const k=state.current.id+":"+m;
+      if(!state._studySent[k]){ state._studySent[k]=1; sendGame("study",{mode:m}); }
+    }
+  });
 }
 function _dispatchMode(m){
   if(m==="guide") return renderGuide();
@@ -835,7 +1045,7 @@ function pollVideo(out){
 
 // ---------- Flashcards ----------
 function renderCards(){
-  const v=modeShell("Flashcards"),s=state.current; let i=0;
+  const v=modeShell("Flashcards"),s=state.current; let i=0,flips=0;
   const draw=()=>{const c=s.flashcards[i];
     v.innerHTML=`<div class="flash" id="fc"><div class="flash-inner">
         <div class="flash-face"><span class="flash-tag">Question</span>${esc(c.front)}</div>
@@ -844,7 +1054,9 @@ function renderCards(){
         <button class="btn ghost sm" id="prev">← Prev</button>
         <span class="muted">${i+1} / ${s.flashcards.length} · tap card to flip</span>
         <button class="btn ghost sm" id="next">Next →</button></div>`;
-    const fc=document.getElementById("fc"); fc.onclick=()=>fc.classList.toggle("flipped");
+    const fc=document.getElementById("fc");
+    fc.onclick=()=>{fc.classList.toggle("flipped");flips++;
+      if(flips%10===0) sendGame("cards",{count:10},fc);};
     document.getElementById("prev").onclick=()=>{i=(i-1+s.flashcards.length)%s.flashcards.length;draw();};
     document.getElementById("next").onclick=()=>{i=(i+1)%s.flashcards.length;draw();};
   }; draw();
@@ -864,17 +1076,26 @@ function renderQuiz(){
     v.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{
       if(answered)return; answered=true; const chosen=+b.dataset.i,correct=q.answer_index;
       v.querySelectorAll(".choice").forEach(x=>{x.disabled=true;if(+x.dataset.i===correct)x.classList.add("correct");else if(+x.dataset.i===chosen)x.classList.add("wrong");});
-      if(chosen===correct)score++; if(q.explanation)document.getElementById("expl").textContent=q.explanation;
+      if(chosen===correct){score++;comboHit(b);}else{comboBreak();}
+      if(q.explanation)document.getElementById("expl").textContent=q.explanation;
       document.getElementById("next").classList.remove("hidden");
     });
     document.getElementById("next").onclick=()=>{idx++;idx<s.quiz.length?draw():finish();};
   };
   const finish=async()=>{const pct=Math.round(score/s.quiz.length*100);
-    v.innerHTML=`<div class="card" style="text-align:center"><div class="muted" style="font-weight:600">You scored</div>
+    comboBreak();
+    const perfect=score===s.quiz.length&&s.quiz.length>=3;
+    if(perfect) confetti(80);
+    v.innerHTML=`<div class="card" style="text-align:center"><div class="muted" style="font-weight:600">${perfect?"PERFECT! 💎":"You scored"}</div>
       <div class="big-score">${score}/${s.quiz.length}</div><div class="pill" style="margin-top:8px">${pct}%</div>
+      <div id="quiz-xp" class="muted" style="margin-top:10px;font-size:14px"></div>
       <div style="margin-top:20px"><button class="btn" id="retry">Try again</button></div></div>
       <div id="quizad" style="margin-top:16px"></div>`;
     document.getElementById("retry").onclick=()=>{idx=0;score=0;draw();};
+    sendGame("quiz",{score,total:s.quiz.length},document.getElementById("quiz-xp")).then(r=>{
+      const x=document.getElementById("quiz-xp");
+      if(x&&r) x.innerHTML=`<span style="color:var(--brand-ink);font-weight:700">+${r.gained_xp} XP</span>${perfect?" · perfect bonus included!":""}`;
+    });
     if(state.showAds===undefined) await loadUsage();
     renderAd(document.getElementById("quizad"),"quiz");
     try{await api("/study-sets/"+s.id+"/quiz/attempts",{method:"POST",body:{score,total:s.quiz.length}});}catch{}
@@ -904,21 +1125,26 @@ function renderTimeAttack(){
         if(done)return;
         const ok=+b.dataset.i===q.answer_index;
         b.classList.add(ok?"correct":"wrong");
-        if(ok){score++; const sc=document.getElementById("ta-score"); if(sc)sc.textContent=score;}
+        if(ok){score++; const sc=document.getElementById("ta-score"); if(sc)sc.textContent=score; comboHit(b);}else{comboBreak();}
         v.querySelectorAll(".choice").forEach(x=>x.disabled=true);
         setTimeout(()=>{ if(!done){ i++; draw(); } },350);
       });
     };
     const finish=()=>{
-      if(done)return; done=true; clearInterval(tick);
-      const isBest=score>best; if(isBest)localStorage.setItem(key,String(score));
+      if(done)return; done=true; clearInterval(tick); comboBreak();
+      const isBest=score>best; if(isBest){localStorage.setItem(key,String(score)); confetti(60);}
       v.innerHTML=`<div class="card" style="text-align:center">
         <div class="muted" style="font-weight:600">Time!</div>
         <div class="big-score">${score}</div>
         ${isBest?`<div class="pill" style="color:var(--good);border-color:var(--good);margin-top:8px">🎉 New best!</div>`
                 :`<div class="muted" style="margin-top:8px">Best: ${best}</div>`}
+        <div id="ta-xp" class="muted" style="margin-top:10px;font-size:14px"></div>
         <div style="margin-top:20px"><button class="btn" id="again">Play again</button></div></div>`;
       document.getElementById("again").onclick=run;
+      sendGame("time_attack",{score,total:Math.max(score,i)||1},document.getElementById("ta-xp")).then(r=>{
+        const x=document.getElementById("ta-xp");
+        if(x&&r) x.innerHTML=`<span style="color:var(--brand-ink);font-weight:700">+${r.gained_xp} XP</span>`;
+      });
     };
     draw();
   }
@@ -936,10 +1162,20 @@ function renderTest(){
           : `<input class="ans" data-i="${i}" placeholder="Type your answer…"/>`}
        <button class="btn ghost sm reveal" data-i="${i}" style="margin-top:12px">Show answer</button>
        <div class="ansbox muted" id="ans-${i}" style="margin-top:10px"></div></div>`).join("")}</div>`;
-  v.querySelectorAll(".reveal").forEach(b=>b.onclick=()=>{const i=b.dataset.i;document.getElementById("ans-"+i).innerHTML=`<strong>Answer:</strong> ${esc(s.test[i].answer)}`;});
+  const seen=new Set(); let tfCorrect=0; const tfTotal=s.test.filter(q=>q.kind==="true_false").length; let testSent=false;
+  const maybeFinish=()=>{
+    if(testSent||seen.size<s.test.length) return;
+    testSent=true;
+    sendGame("test",{score:tfCorrect,total:Math.max(1,tfTotal)});
+    toast("📝 Practice test complete!","good");
+  };
+  v.querySelectorAll(".reveal").forEach(b=>b.onclick=()=>{const i=b.dataset.i;document.getElementById("ans-"+i).innerHTML=`<strong>Answer:</strong> ${esc(s.test[i].answer)}`;seen.add(i);maybeFinish();});
   v.querySelectorAll(".tf").forEach(b=>b.onclick=()=>{
     const i=b.dataset.i,ok=b.dataset.v===s.test[i].answer;
+    if(!seen.has(i)){ if(ok){tfCorrect++;comboHit(b);}else{comboBreak();} }
+    seen.add(i);
     document.getElementById("ans-"+i).innerHTML=(ok?'<span style="color:var(--good)">Correct!</span> ':'<span style="color:var(--bad)">Not quite.</span> ')+`Answer: ${esc(s.test[i].answer)}`;
+    maybeFinish();
   });
 }
 
@@ -963,7 +1199,16 @@ function renderMatch(){
     if(e.target.dataset.i===sel){
       const term=v.querySelector(`.term[data-i="${sel}"]`);
       term.classList.remove("sel");term.classList.add("done");e.target.classList.add("done");
-      sel=null;done++; if(done===pairs.length)status.innerHTML='<span style="color:var(--good);font-weight:600">All matched! 🎉</span>';
+      floatXP("✓",e.target);
+      sel=null;done++;
+      if(done===pairs.length){
+        status.innerHTML='<span style="color:var(--good);font-weight:600">All matched! 🎉</span> <span id="match-xp" class="muted"></span>';
+        confetti(50);
+        sendGame("match",{pairs:pairs.length},status).then(r=>{
+          const x=document.getElementById("match-xp");
+          if(x&&r) x.innerHTML=`<span style="color:var(--brand-ink);font-weight:700">+${r.gained_xp} XP</span>`;
+        });
+      }
     }else{
       const bad=e.target;bad.classList.add("bad");setTimeout(()=>bad.classList.remove("bad"),500);
       status.textContent="Not a match — try again.";
