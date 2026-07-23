@@ -55,6 +55,12 @@
   .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
   .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border);box-shadow:none}
   .btn.ghost:hover{border-color:var(--border-2);background:var(--surface-3)}
+  /* eye-catching top-bar upgrade button */
+  .btn.premium{background:linear-gradient(115deg,#ffcf5c,#ff8f4d 35%,#ff5ca8 65%,#8b6cff);background-size:220% 100%;color:#1a1024;font-weight:800;border:none;overflow:hidden;box-shadow:0 6px 20px -6px rgba(255,150,80,.75),inset 0 1px 0 rgba(255,255,255,.45);animation:premgrad 6s linear infinite}
+  @keyframes premgrad{to{background-position:220% 0}}
+  .btn.premium::after{content:"";position:absolute;top:0;left:-65%;width:45%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-18deg);animation:premshine 3.6s ease-in-out infinite}
+  @keyframes premshine{0%{left:-65%}55%{left:135%}100%{left:135%}}
+  .btn.premium:hover{transform:translateY(-1px);box-shadow:0 9px 26px -6px rgba(255,150,80,.9)}
   .btn.sm{padding:8px 14px;font-size:14px;border-radius:10px}
   input,textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:12px;font-size:15px;font-family:inherit;transition:border-color .15s,box-shadow .15s;}
   input::placeholder,textarea::placeholder{color:var(--faint)}
@@ -276,6 +282,9 @@
     .tab{font-size:13px;padding:9px 6px}
     .btn{padding:11px 16px}
     .set-item{flex-wrap:wrap;gap:8px}
+    .hud{gap:6px}
+    #go-premium{padding:8px 11px;font-size:13px}
+    .hud .lvl .xpbar{display:none}
   }
   @media (max-width:380px){ .grid{grid-template-columns:1fr} }
 </style>
@@ -421,6 +430,7 @@ function shell(inner){
   el.innerHTML=`<header class="top"><div class="wrap">
      <div class="brand" id="home-link" style="cursor:pointer">Study<span>Forge</span></div>
      <div class="hud">
+       <button class="btn premium sm" id="go-premium" title="Go Premium — no ads + AI video lessons">✨ Go Premium</button>
        <span class="flame" id="hud-streak" title="Daily streak">🔥 0</span>
        <span class="coins" id="hud-coins" title="Rewards shop">🪙 0</span>
        <span class="lvl" id="hud-lvl" title="Weekly leaderboard"><span class="n" id="hud-lvln">1</span><span class="xpbar"><div id="hud-xpfill" style="width:0%"></div></span></span>
@@ -433,8 +443,16 @@ function shell(inner){
   document.getElementById("progress-link").onclick=renderProgress;
   document.getElementById("hud-lvl").onclick=renderLeaderboard;
   document.getElementById("hud-coins").onclick=renderRewards;
-  updateHUD();
+  document.getElementById("go-premium").onclick=renderUpgrade;
+  updateHUD(); updatePremiumBtn();
   if(!state.game) loadGame().then(updateHUD);
+  if(state.usage===undefined) loadUsage().then(updatePremiumBtn);
+}
+// Hide the top-bar upgrade button once the user is actually on a paid plan.
+function updatePremiumBtn(){
+  const b=document.getElementById("go-premium"); if(!b) return;
+  const plan=state.usage&&state.usage.video&&state.usage.video.plan;
+  b.style.display=(plan&&plan!=="free")?"none":"";
 }
 
 // ---------- Personality: the app talks like a hype coach ----------
@@ -743,6 +761,7 @@ function loadAdsenseScript(clientId){
 async function loadUsage(){
   try{ state.usage=await api("/me/usage"); }catch{ state.usage=null; return state.usage; }
   state.showAds=!!state.usage.show_ads;
+  updatePremiumBtn();
   state.ads=state.usage.ads||{};
   state.adPacing=(state.usage.ads&&state.usage.ads.pacing)||{every_actions:3,min_gap_seconds:150,skip_after_seconds:5};
   if(state.showAds && state.ads.provider==="adsense") loadAdsenseScript(state.ads.client_id);
