@@ -61,6 +61,10 @@
   .btn.premium::after{content:"";position:absolute;top:0;left:-65%;width:45%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-18deg);animation:premshine 3.6s ease-in-out infinite}
   @keyframes premshine{0%{left:-65%}55%{left:135%}100%{left:135%}}
   .btn.premium:hover{transform:translateY(-1px);box-shadow:0 9px 26px -6px rgba(255,150,80,.9)}
+  /* already-subscribed state: calmer chip, no shimmer */
+  .btn.premium.owned{background:var(--surface-2);color:var(--brand-ink);border:1px solid rgba(139,108,255,.5);box-shadow:none;animation:none;font-weight:700}
+  .btn.premium.owned::after{display:none}
+  .btn.premium.owned:hover{transform:translateY(-1px);box-shadow:0 6px 16px -8px rgba(139,108,255,.6)}
   /* premium tutor */
   .btn.teach{background:linear-gradient(135deg,#8b6cff,#5b8cff);color:#fff;border:none;box-shadow:0 5px 16px -6px rgba(139,108,255,.7)}
   .btn.teach:hover{transform:translateY(-1px)}
@@ -456,11 +460,16 @@ function shell(inner){
   if(!state.game) loadGame().then(updateHUD);
   if(state.usage===undefined) loadUsage().then(updatePremiumBtn);
 }
-// Hide the top-bar upgrade button once the user is actually on a paid plan.
+// Top-bar plan button — ALWAYS visible. Free users get an upgrade CTA;
+// paying users get a calmer "Premium" chip that opens their plan to manage.
 function updatePremiumBtn(){
   const b=document.getElementById("go-premium"); if(!b) return;
   const plan=state.usage&&state.usage.video&&state.usage.video.plan;
-  b.style.display=(plan&&plan!=="free")?"none":"";
+  const paid=plan==="basic"||plan==="pro";
+  b.style.display="";
+  b.classList.toggle("owned",paid);
+  b.innerHTML=paid?"⭐ Premium":"✨ Go Premium";
+  b.title=paid?"You're Premium — tap to manage your plan":"Go Premium — no ads + AI video lessons";
 }
 // ---------- Premium AI tutor: deep explanations + personalized review ----------
 function isPaidPlan(){const p=state.usage&&state.usage.video&&state.usage.video.plan;return p==="basic"||p==="pro";}
