@@ -1,4 +1,5 @@
 # StudyForge — Backend (Phase 1 MVP)
+<!-- deploy: gamification -->
 
 FastAPI backend that turns an uploaded file into a generated study kit
 (summary + flashcards + multiple-choice quiz). This is the Phase 1 core of
