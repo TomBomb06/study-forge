@@ -95,20 +95,31 @@ def health():
 # Serve the web app. Any non-API path falls through to index.html so the
 # single-page app handles its own routing.
 _WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web")
+
+# The HTML must never be cached by the browser, or a fresh deploy won't show
+# up until users hard-refresh. no-cache = "always revalidate with the server";
+# the file is tiny so this costs nothing and guarantees everyone sees updates.
+_NO_CACHE = {"Cache-Control": "no-cache, must-revalidate", "Pragma": "no-cache"}
+
+
+def _html(name: str) -> FileResponse:
+    return FileResponse(os.path.join(_WEB_DIR, name), headers=_NO_CACHE)
+
+
 if os.path.isdir(_WEB_DIR):
     app.mount("/app", StaticFiles(directory=_WEB_DIR, html=True), name="web")
 
     @app.get("/", include_in_schema=False)
     def _root():
-        return FileResponse(os.path.join(_WEB_DIR, "index.html"))
+        return _html("index.html")
 
     @app.get("/privacy", include_in_schema=False)
     def _privacy():
-        return FileResponse(os.path.join(_WEB_DIR, "privacy.html"))
+        return _html("privacy.html")
 
     @app.get("/terms", include_in_schema=False)
     def _terms():
-        return FileResponse(os.path.join(_WEB_DIR, "terms.html"))
+        return _html("terms.html")
 
     @app.get("/og.png", include_in_schema=False)
     def _og():
