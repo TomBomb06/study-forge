@@ -8,7 +8,7 @@ from sqlalchemy import inspect, text
 
 from .config import get_settings
 from .db import Base, engine
-from .routers import auth, billing, gamify, shares, study_sets, uploads
+from .routers import auth, billing, gamify, shares, study_sets, tutor, uploads
 
 # MVP: create tables on startup. Move to Alembic migrations before production.
 Base.metadata.create_all(bind=engine)
@@ -84,6 +84,7 @@ app.include_router(study_sets.router)
 app.include_router(billing.router)
 app.include_router(shares.router)
 app.include_router(gamify.router)
+app.include_router(tutor.router)
 
 
 @app.get("/health", tags=["meta"])

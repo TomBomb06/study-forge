@@ -61,6 +61,14 @@
   .btn.premium::after{content:"";position:absolute;top:0;left:-65%;width:45%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-18deg);animation:premshine 3.6s ease-in-out infinite}
   @keyframes premshine{0%{left:-65%}55%{left:135%}100%{left:135%}}
   .btn.premium:hover{transform:translateY(-1px);box-shadow:0 9px 26px -6px rgba(255,150,80,.9)}
+  /* premium tutor */
+  .btn.teach{background:linear-gradient(135deg,#8b6cff,#5b8cff);color:#fff;border:none;box-shadow:0 5px 16px -6px rgba(139,108,255,.7)}
+  .btn.teach:hover{transform:translateY(-1px)}
+  .btn.teach.locked{background:var(--surface-2);color:var(--brand-ink);border:1px dashed rgba(139,108,255,.55);box-shadow:none}
+  .card.tutor{border-color:rgba(139,108,255,.4);line-height:1.6;animation:fadein .3s ease}
+  .card.tutor h1,.card.tutor h2,.card.tutor h3{margin:.7em 0 .35em;font-size:17px}
+  .card.tutor strong{color:var(--brand-ink)}
+  .tutor-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;color:var(--brand-ink);border:1px solid rgba(139,108,255,.5);border-radius:99px;padding:2px 9px;margin-bottom:8px}
   .btn.sm{padding:8px 14px;font-size:14px;border-radius:10px}
   input,textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:12px;font-size:15px;font-family:inherit;transition:border-color .15s,box-shadow .15s;}
   input::placeholder,textarea::placeholder{color:var(--faint)}
@@ -454,6 +462,30 @@ function updatePremiumBtn(){
   const plan=state.usage&&state.usage.video&&state.usage.video.plan;
   b.style.display=(plan&&plan!=="free")?"none":"";
 }
+// ---------- Premium AI tutor: deep explanations + personalized review ----------
+function isPaidPlan(){const p=state.usage&&state.usage.video&&state.usage.video.plan;return p==="basic"||p==="pro";}
+// A 'Teach me' button — styled locked (with 🔒) for free users to drive upgrades.
+function teachBtnHTML(id,label,locked){
+  return `<button class="btn teach sm${locked?" locked":""}" id="${id}">${locked?"🔒 "+label+" · Premium":"🎓 "+label}</button>`;
+}
+// Run a premium tutor request into mountEl; free users are sent to the upgrade screen.
+async function runTutor(mode,items,mountEl,btn){
+  if(state.usage===undefined) await loadUsage();
+  if(!isPaidPlan()){ toast("✨ Premium unlocks in-depth tutoring","good"); renderUpgrade(); return; }
+  const label=btn?btn.innerHTML:"";
+  if(btn){btn.disabled=true;btn.innerHTML="🎓 Thinking…";}
+  if(mountEl) mountEl.innerHTML=`<div class="center" style="min-height:70px"><div class="spinner"></div></div>`;
+  try{
+    const r=await api("/tutor/explain",{method:"POST",body:{set_id:state.current.id,mode,items:items||[]}});
+    if(mountEl) mountEl.innerHTML=`<div class="card tutor"><span class="tutor-badge">✨ PREMIUM TUTOR</span>${mdLite(r.explanation)}</div>`;
+    if(btn) btn.style.display="none";
+  }catch(e){
+    if(/Premium/i.test(e.message||"")){ renderUpgrade(); return; }
+    if(mountEl) mountEl.innerHTML="";
+    if(btn){btn.disabled=false;btn.innerHTML=label;}
+    toast(e.message||"The tutor had trouble — try again.","bad");
+  }
+}
 
 // ---------- Personality: the app talks like a hype coach ----------
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
@@ -826,8 +858,8 @@ function renderAd(host,kind){
 }
 
 async function renderUpgrade(){
-  shell(`<a class="link" id="back">← Back</a><h1 style="margin-top:12px">Go ad-free & unlock AI videos</h1>
-     <p class="muted" style="margin-top:0">Free is great — upgrade when you want no ads and AI video lessons.</p>
+  shell(`<a class="link" id="back">← Back</a><h1 style="margin-top:12px">Upgrade & learn deeper</h1>
+     <p class="muted" style="margin-top:0">Free gets you the answers. Premium gets you a personal AI tutor — in-depth step-by-step explanations and a personalized review of everything you get wrong, plus no ads and AI video lessons.</p>
      <div id="up"></div>`);
   document.getElementById("back").onclick=renderHome;
   const box=document.getElementById("up"); box.innerHTML=`<div class="center" style="min-height:24vh"><div class="spinner"></div></div>`;
@@ -836,7 +868,7 @@ async function renderUpgrade(){
   box.innerHTML=`<div class="grid">${plans.map(([k,p])=>`<div class="card">
        <div style="font-weight:700;font-size:18px">${esc(p.name)}</div>
        <div style="font-weight:800;font-size:22px;margin-top:4px">$${p.price_usd}<span class="muted" style="font-size:13px;font-weight:500">/mo</span></div>
-       <div class="muted" style="font-size:13px;margin-top:8px">✓ No ads<br>✓ ${p.monthly_videos} AI videos / month<br>✓ Everything in Free</div>
+       <div class="muted" style="font-size:13px;margin-top:8px">✓ <b>AI tutor</b>: in-depth explanations<br>✓ Personalized review of your mistakes<br>✓ No ads<br>✓ ${p.monthly_videos} AI videos / month<br>✓ Everything in Free</div>
        <button class="btn upg" data-p="${k}" style="margin-top:14px;width:100%">Choose ${esc(p.name)}</button></div>`).join("")}</div>
      ${u.billing_provider!=="stripe"?`<div class="muted" style="font-size:12px;margin-top:12px">Demo mode — upgrading here doesn’t charge real money yet. Real payments connect via Stripe.</div>`:""}`;
   box.querySelectorAll(".upg").forEach(b=>b.onclick=async()=>{
@@ -1134,7 +1166,10 @@ function _dispatchMode(m){
 // ---------- Study guide ----------
 function renderGuide(){
   const v=modeShell("Study guide");
-  v.innerHTML=`<div class="card notes">${mdLite(state.current.summary)}</div>`;
+  v.innerHTML=`<div class="card notes">${mdLite(state.current.summary)}</div>
+    <div style="text-align:center;margin-top:16px">${teachBtnHTML("notes-deeper","Go deeper on these notes",!isPaidPlan())}</div>
+    <div id="notes-deeper-out" style="margin-top:12px"></div>`;
+  document.getElementById("notes-deeper").onclick=ev=>runTutor("notes",[],document.getElementById("notes-deeper-out"),ev.currentTarget);
 }
 
 // ---------- Read aloud ----------
@@ -1278,18 +1313,21 @@ function renderCards(){
       <div class="row" style="justify-content:space-between">
         <button class="btn ghost sm" id="prev">← Prev</button>
         <span class="muted">${i+1} / ${s.flashcards.length} · tap card to flip</span>
-        <button class="btn ghost sm" id="next">Next →</button></div>`;
+        <button class="btn ghost sm" id="next">Next →</button></div>
+      <div style="text-align:center;margin-top:14px">${teachBtnHTML("fc-teach","Teach me this card",!isPaidPlan())}</div>
+      <div id="fc-teach-out" style="margin-top:12px"></div>`;
     const fc=document.getElementById("fc");
     fc.onclick=()=>{fc.classList.toggle("flipped");flips++;
       if(flips%10===0) sendGame("cards",{count:10},fc);};
     document.getElementById("prev").onclick=()=>{i=(i-1+s.flashcards.length)%s.flashcards.length;draw();};
     document.getElementById("next").onclick=()=>{i=(i+1)%s.flashcards.length;draw();};
+    document.getElementById("fc-teach").onclick=ev=>runTutor("card",[{front:c.front,back:c.back}],document.getElementById("fc-teach-out"),ev.currentTarget);
   }; draw();
 }
 
 // ---------- Quiz ----------
 function renderQuiz(){
-  const v=modeShell("Quiz"),s=state.current; let idx=0,score=0,answered=false;
+  const v=modeShell("Quiz"),s=state.current; let idx=0,score=0,answered=false; const missed=[];
   const draw=()=>{const q=s.quiz[idx];
     v.innerHTML=`<div class="progress"><div style="width:${idx/s.quiz.length*100}%"></div></div>
       <div class="card"><div class="muted" style="font-size:13px;font-weight:600">Question ${idx+1} of ${s.quiz.length}</div>
@@ -1297,6 +1335,7 @@ function renderQuiz(){
         <div id="choices">${q.choices.map((c,ci)=>`<button class="choice" data-i="${ci}">${esc(c)}</button>`).join("")}</div>
         <div id="cheer" class="cheer"></div>
         <div id="expl" class="muted" style="margin-top:6px"></div>
+        <div id="teach-wrap" style="margin-top:10px"></div>
         <button class="btn hidden" id="next" style="margin-top:16px">${idx+1<s.quiz.length?"Next question →":"See results"}</button></div>`;
     answered=false;
     v.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{
@@ -1305,8 +1344,13 @@ function renderQuiz(){
       const cheer=document.getElementById("cheer");
       if(chosen===correct){score++;comboHit(b);
         cheer.className="cheer good"; cheer.textContent=_combo>=3?pick(CHEER_COMBO):pick(CHEER_CORRECT);
-      }else{comboBreak(); cheer.className="cheer miss"; cheer.textContent=pick(CHEER_MISS);}
+      }else{comboBreak(); cheer.className="cheer miss"; cheer.textContent=pick(CHEER_MISS);
+        missed.push({question:q.question,choices:q.choices,correct:q.choices[correct],your_answer:q.choices[chosen]});}
       if(q.explanation)document.getElementById("expl").textContent=q.explanation;
+      // Premium "Teach me this" for a deep breakdown of this question.
+      const tw=document.getElementById("teach-wrap");
+      tw.innerHTML=teachBtnHTML("teach-q","Teach me this",!isPaidPlan())+`<div id="teach-out-q" style="margin-top:10px"></div>`;
+      document.getElementById("teach-q").onclick=ev=>runTutor("question",[{question:q.question,choices:q.choices,correct:q.choices[correct]}],document.getElementById("teach-out-q"),ev.currentTarget);
       document.getElementById("next").classList.remove("hidden");
     });
     document.getElementById("next").onclick=()=>{idx++;idx<s.quiz.length?draw():finish();};
@@ -1319,8 +1363,18 @@ function renderQuiz(){
       <div class="big-score">${score}/${s.quiz.length}</div><div class="pill" style="margin-top:8px">${pct}%</div>
       <div id="quiz-xp" class="muted" style="margin-top:10px;font-size:14px"></div>
       <div style="margin-top:20px"><button class="btn" id="retry">Try again</button></div></div>
+      <div id="review-wrap" style="margin-top:16px"></div>
       <div id="quizad" style="margin-top:16px"></div>`;
-    document.getElementById("retry").onclick=()=>{idx=0;score=0;draw();};
+    document.getElementById("retry").onclick=()=>{idx=0;score=0;missed.length=0;draw();};
+    if(missed.length){
+      const paid=isPaidPlan();
+      document.getElementById("review-wrap").innerHTML=`<div class="card" style="border-color:rgba(139,108,255,.4)">
+        <div style="font-weight:800;font-size:16px">📘 Personalized review</div>
+        <div class="muted" style="font-size:13px;margin:4px 0 12px">${paid?`Get a tutor breakdown of the ${missed.length} question${missed.length>1?"s":""} you missed — why you missed ${missed.length>1?"them":"it"}, and how to remember.`:"Premium turns your wrong answers into a personal tutor session — why you missed each one, and how to lock it in."}</div>
+        ${teachBtnHTML("do-review","Review what I missed",!paid)}
+        <div id="review-out" style="margin-top:12px"></div></div>`;
+      document.getElementById("do-review").onclick=ev=>runTutor("review",missed,document.getElementById("review-out"),ev.currentTarget);
+    }
     sendGame("quiz",{score,total:s.quiz.length},document.getElementById("quiz-xp")).then(r=>{
       const x=document.getElementById("quiz-xp");
       if(x&&r) x.innerHTML=`<span style="color:var(--brand-ink);font-weight:700">+${r.gained_xp} XP</span>${perfect?" · perfect bonus included!":""}`;
@@ -1390,21 +1444,47 @@ function renderTest(){
           ? `<div class="row" style="gap:8px"><button class="btn ghost sm tf" data-i="${i}" data-v="True">True</button><button class="btn ghost sm tf" data-i="${i}" data-v="False">False</button></div>`
           : `<input class="ans" data-i="${i}" placeholder="Type your answer…"/>`}
        <button class="btn ghost sm reveal" data-i="${i}" style="margin-top:12px">Show answer</button>
-       <div class="ansbox muted" id="ans-${i}" style="margin-top:10px"></div></div>`).join("")}</div>`;
-  const seen=new Set(); let tfCorrect=0; const tfTotal=s.test.filter(q=>q.kind==="true_false").length; let testSent=false;
+       <div class="ansbox muted" id="ans-${i}" style="margin-top:10px"></div>
+       <div id="tteach-${i}" style="margin-top:10px"></div></div>`).join("")}</div>
+     <div id="test-review" style="margin-top:16px"></div>`;
+  const seen=new Set(); let tfCorrect=0; const tfTotal=s.test.filter(q=>q.kind==="true_false").length; let testSent=false; const missed=[];
+  const injectTeach=(i)=>{
+    const host=document.getElementById("tteach-"+i); if(!host||host.dataset.done) return; host.dataset.done="1";
+    host.innerHTML=teachBtnHTML("tq-"+i,"Teach me this",!isPaidPlan())+`<div id="tout-${i}" style="margin-top:10px"></div>`;
+    document.getElementById("tq-"+i).onclick=ev=>runTutor("question",[{question:s.test[i].question,correct:s.test[i].answer}],document.getElementById("tout-"+i),ev.currentTarget);
+  };
   const maybeFinish=()=>{
     if(testSent||seen.size<s.test.length) return;
     testSent=true;
     sendGame("test",{score:tfCorrect,total:Math.max(1,tfTotal)});
     toast("📝 Practice test complete!","good");
+    if(missed.length){
+      const paid=isPaidPlan();
+      document.getElementById("test-review").innerHTML=`<div class="card" style="border-color:rgba(139,108,255,.4)">
+        <div style="font-weight:800;font-size:16px">📘 Personalized review</div>
+        <div class="muted" style="font-size:13px;margin:4px 0 12px">${paid?`Get a step-by-step tutor review of the ${missed.length} you missed.`:"Premium turns everything you missed into a personal tutor session — why, and how to get it right next time."}</div>
+        ${teachBtnHTML("test-do-review","Review what I missed",!paid)}
+        <div id="test-review-out" style="margin-top:12px"></div></div>`;
+      document.getElementById("test-do-review").onclick=ev=>runTutor("review",missed,document.getElementById("test-review-out"),ev.currentTarget);
+    }
   };
-  v.querySelectorAll(".reveal").forEach(b=>b.onclick=()=>{const i=b.dataset.i;document.getElementById("ans-"+i).innerHTML=`<strong>Answer:</strong> ${esc(s.test[i].answer)}`;seen.add(i);maybeFinish();});
+  v.querySelectorAll(".reveal").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;
+    document.getElementById("ans-"+i).innerHTML=`<strong>Answer:</strong> ${esc(s.test[i].answer)}`;
+    if(s.test[i].kind!=="true_false" && !seen.has(i)){
+      const inp=v.querySelector('.ans[data-i="'+i+'"]');
+      const val=((inp&&inp.value)||"").trim().toLowerCase(), ans=(s.test[i].answer||"").trim().toLowerCase();
+      if(!val || (val!==ans && ans.indexOf(val)===-1 && val.indexOf(ans)===-1))
+        missed.push({question:s.test[i].question,correct:s.test[i].answer,your_answer:(inp&&inp.value.trim())||"(left blank)"});
+    }
+    seen.add(i); injectTeach(i); maybeFinish();
+  });
   v.querySelectorAll(".tf").forEach(b=>b.onclick=()=>{
-    const i=b.dataset.i,ok=b.dataset.v===s.test[i].answer;
-    if(!seen.has(i)){ if(ok){tfCorrect++;comboHit(b);}else{comboBreak();} }
+    const i=+b.dataset.i,ok=b.dataset.v===s.test[i].answer;
+    if(!seen.has(i)){ if(ok){tfCorrect++;comboHit(b);}else{comboBreak();missed.push({question:s.test[i].question,correct:s.test[i].answer,your_answer:b.dataset.v});} }
     seen.add(i);
     document.getElementById("ans-"+i).innerHTML=(ok?'<span style="color:var(--good)">Correct!</span> ':'<span style="color:var(--bad)">Not quite.</span> ')+`Answer: ${esc(s.test[i].answer)}`;
-    maybeFinish();
+    injectTeach(i); maybeFinish();
   });
 }
 
