@@ -523,8 +523,10 @@ function paintRewards(box){
         <button class="btn sm buy" data-item="freeze" ${g.coins<(shop.freeze?shop.freeze.cost:100)||g.freezes>=3?"disabled":""}>${g.freezes>=3?"Max held":`Buy · 🪙 ${shop.freeze?shop.freeze.cost:100}`}</button></div>
       <div class="shop-item"><div class="si">${shop.adfree?shop.adfree.icon:"✨"}</div>
         <div class="sn">1-Hour Ad-Free</div>
-        <div class="sd">Study with zero ads for the next hour.${adInfo}</div>
-        <button class="btn sm buy" data-item="adfree" ${g.coins<(shop.adfree?shop.adfree.cost:60)?"disabled":""}>Buy · 🪙 ${shop.adfree?shop.adfree.cost:60}</button></div>
+        <div class="sd">A one-time free hour with zero ads.${adInfo}</div>
+        ${g.adfree_claimed
+          ? `<button class="btn ghost sm" disabled>Claimed ✓ · one-time</button>`
+          : `<button class="btn sm buy" data-item="adfree" ${g.coins<(shop.adfree?shop.adfree.cost:60)?"disabled":""}>Buy · 🪙 ${shop.adfree?shop.adfree.cost:60}</button>`}</div>
     </div>
     ${discount}
     <h2 style="margin:22px 0 10px;font-size:18px">Themes <span class="muted" style="font-weight:500;font-size:13px">· unlock by leveling up</span></h2>

@@ -30,8 +30,8 @@ STREAK_COIN_BONUS = 10
 SHOP = {
     "freeze": {"name": "Streak Freeze", "icon": "🧊", "cost": 100, "max": 3,
                "desc": "Saves your streak if you miss a single day."},
-    "adfree": {"name": "1-Hour Ad-Free", "icon": "✨", "cost": 60,
-               "desc": "Study with zero ads for the next hour."},
+    "adfree": {"name": "1-Hour Ad-Free", "icon": "✨", "cost": 60, "once": True,
+               "desc": "A one-time free hour with zero ads — a taste of premium."},
 }
 
 # Cosmetic accent themes, unlocked by reaching a level (no coins needed).
@@ -188,14 +188,15 @@ def fresh_state() -> dict:
                      "correct": 0, "matches": 0, "cards": 0, "shares": 0,
                      "sessions": 0, "ta_best": 0},
         # Rewards economy.
-        "coins": 0, "freezes": 0, "adfree_until": 0, "theme": "aurora",
+        "coins": 0, "freezes": 0, "adfree_until": 0, "adfree_claimed": False,
+        "theme": "aurora",
     }
 
 
 def _backfill(state: dict) -> None:
     """Add reward keys to game blobs created before the rewards feature."""
-    for k, default in (("coins", 0), ("freezes", 0),
-                       ("adfree_until", 0), ("theme", "aurora")):
+    for k, default in (("coins", 0), ("freezes", 0), ("adfree_until", 0),
+                       ("adfree_claimed", False), ("theme", "aurora")):
         state.setdefault(k, default)
 
 
@@ -507,6 +508,7 @@ def public_state(state: dict) -> dict:
         "freezes": state.get("freezes", 0),
         "adfree_until": state.get("adfree_until", 0),
         "adfree_active": state.get("adfree_until", 0) > time.time(),
+        "adfree_claimed": bool(state.get("adfree_claimed")),
         "theme": state.get("theme", "aurora"),
         "themes": themes,
         "discount_percent": discount_for(level),
@@ -527,8 +529,13 @@ def buy_reward(user, item: str, tz_offset_min: int = 0) -> dict:
             return {"ok": False, "error": f"You already hold the max ({info['max']}) freezes."}
         state["freezes"] = state.get("freezes", 0) + 1
     elif item == "adfree":
+        if state.get("adfree_claimed"):
+            return {"ok": False,
+                    "error": "You've already used your one free ad-free hour. "
+                             "Upgrade for unlimited ad-free studying!"}
         base = max(state.get("adfree_until", 0), time.time())
         state["adfree_until"] = base + 3600
+        state["adfree_claimed"] = True
     state["coins"] -= info["cost"]
     user.game = dict(state)
     _flag_game_dirty(user)
