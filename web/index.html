@@ -22,7 +22,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%237c5cff'/%3E%3Cpath d='M20 22h16a6 6 0 0 1 6 6v16H26a6 6 0 0 1-6-6V22z' fill='%23ffffff' opacity='.92'/%3E%3Crect x='20' y='19' width='19' height='4' rx='2' fill='%23ffffff'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
 <style>
   :root{
     --bg:#0a0b10; --surface:#13151d; --surface-2:#1a1d27; --surface-3:#21252f;
@@ -42,12 +42,16 @@
   body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     background:radial-gradient(900px 520px at 50% -12%,rgba(139,108,255,.16),transparent 62%),
       radial-gradient(760px 520px at 108% 0%,rgba(91,140,255,.10),transparent 56%)}
+  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")}
+  h1,h2,.brand,.lp-h1,.big-score,.mode .nm,.lp-plan .pp{font-family:Sora,Inter,sans-serif}
   #app{min-height:100%;display:flex;flex-direction:column;position:relative;z-index:1}
   .wrap{width:100%;max-width:900px;margin:0 auto;padding:26px 24px}
   button{font-family:inherit;cursor:pointer;border:none}
   .btn{position:relative;background:var(--grad);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:15px;letter-spacing:-.01em;box-shadow:0 6px 18px -6px rgba(139,108,255,.55),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .1s ease,box-shadow .2s ease,opacity .2s;}
   .btn:hover{transform:translateY(-1px);box-shadow:0 11px 26px -6px rgba(139,108,255,.7),inset 0 1px 0 rgba(255,255,255,.22)}
-  .btn:active{transform:translateY(0)}
+  .btn:active{transform:translateY(0) scale(.97)}
+  .mode:active,.set-item:active,.choice:active:not(:disabled),.match-item:active{transform:scale(.98)}
   .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
   .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border);box-shadow:none}
   .btn.ghost:hover{border-color:var(--border-2);background:var(--surface-3)}
@@ -83,7 +87,9 @@
   .mode::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:.16s;box-shadow:inset 0 0 0 1px rgba(139,108,255,.45)}
   .mode:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
   .mode:hover::after{opacity:1}
-  .mode .ic{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;font-size:22px;background:rgba(139,108,255,.14);border:1px solid rgba(139,108,255,.22)}
+  .mode .ic{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:13px 15px 12px 16px;font-size:22px;background:rgba(139,108,255,.14);border:1px solid rgba(139,108,255,.22);transform:rotate(-3deg);transition:transform .18s}
+  .mode:nth-child(even) .ic{transform:rotate(2.5deg)}
+  .mode:hover .ic{transform:rotate(0) scale(1.08)}
   .mode .nm{font-weight:700;margin-top:12px;font-size:16px;letter-spacing:-.01em}
   .mode .ds{color:var(--muted);font-size:13px;margin-top:3px;line-height:1.45}
   .mode .soon{display:inline-block;margin-top:10px;font-size:11px;color:var(--brand-ink);background:rgba(139,108,255,.1);border:1px solid rgba(139,108,255,.22);border-radius:99px;padding:2px 9px;font-weight:600}
@@ -152,7 +158,8 @@
   /* ---------- game HUD & effects ---------- */
   .hud{display:flex;align-items:center;gap:10px}
   .hud .flame{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:99px;padding:6px 12px;cursor:default}
-  .hud .flame.lit{border-color:rgba(255,150,60,.45);background:rgba(255,140,50,.12);color:#ffb454}
+  .hud .flame.lit{border-color:rgba(255,150,60,.45);background:rgba(255,140,50,.12);color:#ffb454;animation:flamepulse 2.4s ease-in-out infinite}
+  @keyframes flamepulse{0%,100%{box-shadow:0 0 0 0 rgba(255,150,60,0)}50%{box-shadow:0 0 14px 1px rgba(255,150,60,.35)}}
   .hud .lvl{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:99px;padding:5px 12px 5px 6px;cursor:pointer}
   .hud .lvl:hover{border-color:var(--border-2)}
   .hud .lvl .n{width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;box-shadow:0 0 10px rgba(139,108,255,.5)}
@@ -200,7 +207,10 @@
   .lp-hero{max-width:820px;margin:0 auto;text-align:center;padding:64px 24px 36px}
   .lp-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--brand-ink);background:rgba(139,108,255,.1);border:1px solid rgba(139,108,255,.25);border-radius:99px;padding:6px 14px;margin-bottom:22px}
   .lp-h1{font-size:56px;line-height:1.05;font-weight:800;letter-spacing:-.04em;margin:0;background:linear-gradient(180deg,#fff,#b8bccb);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .lp-h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lp-h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;position:relative;white-space:nowrap}
+  .lp-h1 em::after{content:"";position:absolute;left:2%;right:2%;bottom:-10px;height:12px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 Q 30 2 60 8 T 120 7 T 197 6' fill='none' stroke='%238b6cff' stroke-width='5' stroke-linecap='round' opacity='0.85'/%3E%3C/svg%3E") no-repeat center/100% 100%}
+  .cheer{min-height:20px;font-weight:700;font-size:14px;margin-top:10px;color:var(--brand-ink);transition:.15s}
+  .cheer.good{color:var(--good)} .cheer.miss{color:var(--muted)}
   .lp-sub{font-size:19px;color:var(--muted);max-width:600px;margin:20px auto 30px;line-height:1.6}
   .lp-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
   .lp-note{font-size:13px;color:var(--faint);margin-top:16px}
@@ -397,6 +407,42 @@ function shell(inner){
   document.getElementById("hud-lvl").onclick=renderLeaderboard;
   updateHUD();
   if(!state.game) loadGame().then(updateHUD);
+}
+
+// ---------- Personality: the app talks like a hype coach ----------
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+const CHEER_CORRECT=["Nailed it!","Clean.","Big brain energy 🧠","That's the one!","You're cooking 🔥","Textbook. Literally.","Sniped it 🎯","Too easy for you.","Didn't even hesitate."];
+const CHEER_COMBO=["COMBO — keep it rolling ⚡","You're genuinely unstoppable","Locked in 🔒","Heating UP 🔥","Someone's been studying…"];
+const CHEER_MISS=["Shake it off — next one's yours.","Close! It'll stick this time.","That one was sneaky.","Noted. Revenge next question 😤","Even champions miss one."];
+const GEN_MSGS=["Forging your study kit ⚒️","Reading every line of your material…","Pulling out what actually matters…","Writing your flashcards…","Sharpening the quiz questions…","Building your matching game…","Setting up the practice test…","Polishing everything up…"];
+function scoreLine(pct){
+  if(pct>=100)return "PERFECT RUN. Certified genius behavior 💎";
+  if(pct>=80)return "Strong run — you basically own this 💪";
+  if(pct>=60)return "Solid work. One more run and it sticks.";
+  if(pct>=40)return "Progress. The comeback starts now.";
+  return "Rough one — champions hit retry 😤";
+}
+function greetLine(){
+  const h=new Date().getHours();
+  if(h<5)return "Late-night grind";
+  if(h<12)return "Good morning";
+  if(h<17)return "Good afternoon";
+  if(h<21)return "Good evening";
+  return "Night owl mode";
+}
+function homeSubLine(){
+  const g=state.game; const pool=[];
+  if(g){
+    const left=Math.max(0,g.goal-g.daily_xp);
+    if(g.streak>=3&&!g.goal_met) pool.push(`🔥 ${g.streak}-day streak on the line — ${left} XP saves it.`);
+    if(g.goal_met) pool.push("Goal crushed. Everything else today is bonus XP.");
+    if(!g.goal_met&&left<=20) pool.push(`So close — just ${left} XP to lock today's streak.`);
+    const q=(g.quests||[]).filter(x=>!x.done).length;
+    if(q>0) pool.push(`${q} quest${q>1?"s":""} still up for grabs (+${q*30} XP).`);
+    if(g.streak===0) pool.push("Day 1 starts with one quiz. That's it.");
+  }
+  pool.push("What are we mastering today?","Small sessions beat cram sessions.","Future you says thanks.");
+  return pick(pool);
 }
 
 // ---------- Gamification ----------
@@ -630,8 +676,8 @@ async function renderUpgrade(){
 
 // ---------- Home / input ----------
 async function renderHome(){
-  shell(`<h1>Your study sets</h1>
-    <p class="muted" style="margin-top:0">Turn a file, pasted text, or a web link into a study kit — then choose how you want to study it.</p>
+  shell(`<h1 id="home-h1">Your study sets</h1>
+    <p class="muted" id="home-sub" style="margin-top:0">Turn a file, pasted text, or a web link into a study kit — then choose how you want to study it.</p>
     <div class="gamestrip" id="gamestrip"></div>
     <div class="tabs" style="margin:18px 0 0;flex-wrap:wrap">
       <button class="tab active" data-src="file">File</button>
@@ -645,8 +691,13 @@ async function renderHome(){
   tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove("active"));t.classList.add("active");renderSource(t.dataset.src);});
   renderSource("file"); await loadSets();
   await loadUsage(); renderAd(document.getElementById("adbanner"),"home");
-  if(state.game) paintGameStrip(document.getElementById("gamestrip"));
-  else loadGame().then(()=>{updateHUD();paintGameStrip(document.getElementById("gamestrip"));});
+  const greet=()=>{
+    const h1=document.getElementById("home-h1"),sub=document.getElementById("home-sub");
+    if(h1&&state.displayName) h1.textContent=`${greetLine()}, ${state.displayName}`;
+    if(sub) sub.textContent=homeSubLine();
+  };
+  if(state.game){ paintGameStrip(document.getElementById("gamestrip")); greet(); }
+  else loadGame().then(()=>{updateHUD();paintGameStrip(document.getElementById("gamestrip"));greet();});
   if(state.pendingShare) showImport(state.pendingShare);
 }
 function renderSource(src){
@@ -712,8 +763,8 @@ async function loadSets(){
       if(due)due.innerHTML="";
       list.innerHTML=`<div class="empty">
         <div class="big">🎒</div>
-        <h2>Welcome to StudyForge</h2>
-        <p class="muted">Add anything you're studying above — a PDF, your typed notes, or a web link — and we'll turn it into a full study kit you can learn from your way.</p>
+        <h2>Let's forge your first kit</h2>
+        <p class="muted">Drop anything you're studying above — a PDF, your typed notes, or a web link — and watch it become flashcards, quizzes, and games. Your first study set earns you XP. 🔥</p>
         <div class="steps">
           <div class="step"><div class="num">1</div><div><b>Add your material</b><div class="muted" style="font-size:13px">Upload a file, paste text, or drop a web link.</div></div></div>
           <div class="step"><div class="num">2</div><div><b>Pick how to study</b><div class="muted" style="font-size:13px">Notes, read-aloud, video, flashcards, quiz, test, or a matching game.</div></div></div>
@@ -807,21 +858,22 @@ function startFileUpload(f){const form=new FormData();form.append("file",f);star
 async function startJob(createFn,label){
   const job=document.getElementById("job");
   job.innerHTML=`<div class="card" style="text-align:center;margin-bottom:20px"><div class="spinner"></div>
-     <div style="font-weight:600;margin-top:14px">Processing “${esc(label)}”…</div>
-     <div class="muted" style="font-size:13px;margin-top:4px">Building your study kit. This can take 30s–2 min.</div>
+     <div style="font-weight:700;margin-top:14px" id="gen-msg">${pick(GEN_MSGS)}</div>
+     <div class="muted" style="font-size:13px;margin-top:4px">“${esc(label)}” · this can take 30s–2 min</div>
      <div class="progress"><div id="bar" style="width:8%"></div></div></div>`;
+  const gm=setInterval(()=>{const m=document.getElementById("gen-msg");if(m)m.textContent=pick(GEN_MSGS);else clearInterval(gm);},2600);
   try{
     const created=await createFn(); let pct=8; const bar=()=>document.getElementById("bar");
     const poll=setInterval(async()=>{
       pct=Math.min(pct+7,90); if(bar())bar().style.width=pct+"%";
       let j; try{j=await api("/jobs/"+created.id);}catch{return;}
-      if(j.status==="completed"){clearInterval(poll);if(bar())bar().style.width="100%";job.innerHTML="";sendGame("set_created",{});await loadSets();openSet(j.study_set_id);}
-      else if(j.status==="failed"){clearInterval(poll);
+      if(j.status==="completed"){clearInterval(poll);clearInterval(gm);if(bar())bar().style.width="100%";job.innerHTML="";sendGame("set_created",{});await loadSets();openSet(j.study_set_id);}
+      else if(j.status==="failed"){clearInterval(poll);clearInterval(gm);
         job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="font-weight:600;color:var(--bad)">Couldn’t create a study set</div>
           <div class="muted" style="margin-top:6px">${esc(j.error||"Unknown error")}</div>
           <button class="btn ghost sm" style="margin-top:14px" onclick="document.getElementById('job').innerHTML=''">Dismiss</button></div>`;}
     },1200);
-  }catch(e){job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="color:var(--bad);font-weight:600">Couldn’t start</div><div class="muted" style="margin-top:6px">${esc(e.message)}</div></div>`;}
+  }catch(e){clearInterval(gm);job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="color:var(--bad);font-weight:600">Couldn’t start</div><div class="muted" style="margin-top:6px">${esc(e.message)}</div></div>`;}
 }
 
 // ---------- Study set: the CHOOSER ----------
@@ -1070,13 +1122,17 @@ function renderQuiz(){
       <div class="card"><div class="muted" style="font-size:13px;font-weight:600">Question ${idx+1} of ${s.quiz.length}</div>
         <h2 style="margin:8px 0 16px">${esc(q.question)}</h2>
         <div id="choices">${q.choices.map((c,ci)=>`<button class="choice" data-i="${ci}">${esc(c)}</button>`).join("")}</div>
-        <div id="expl" class="muted" style="margin-top:14px"></div>
+        <div id="cheer" class="cheer"></div>
+        <div id="expl" class="muted" style="margin-top:6px"></div>
         <button class="btn hidden" id="next" style="margin-top:16px">${idx+1<s.quiz.length?"Next question →":"See results"}</button></div>`;
     answered=false;
     v.querySelectorAll(".choice").forEach(b=>b.onclick=()=>{
       if(answered)return; answered=true; const chosen=+b.dataset.i,correct=q.answer_index;
       v.querySelectorAll(".choice").forEach(x=>{x.disabled=true;if(+x.dataset.i===correct)x.classList.add("correct");else if(+x.dataset.i===chosen)x.classList.add("wrong");});
-      if(chosen===correct){score++;comboHit(b);}else{comboBreak();}
+      const cheer=document.getElementById("cheer");
+      if(chosen===correct){score++;comboHit(b);
+        cheer.className="cheer good"; cheer.textContent=_combo>=3?pick(CHEER_COMBO):pick(CHEER_CORRECT);
+      }else{comboBreak(); cheer.className="cheer miss"; cheer.textContent=pick(CHEER_MISS);}
       if(q.explanation)document.getElementById("expl").textContent=q.explanation;
       document.getElementById("next").classList.remove("hidden");
     });
@@ -1086,7 +1142,7 @@ function renderQuiz(){
     comboBreak();
     const perfect=score===s.quiz.length&&s.quiz.length>=3;
     if(perfect) confetti(80);
-    v.innerHTML=`<div class="card" style="text-align:center"><div class="muted" style="font-weight:600">${perfect?"PERFECT! 💎":"You scored"}</div>
+    v.innerHTML=`<div class="card" style="text-align:center"><div style="font-weight:700;font-size:15px">${scoreLine(pct)}</div>
       <div class="big-score">${score}/${s.quiz.length}</div><div class="pill" style="margin-top:8px">${pct}%</div>
       <div id="quiz-xp" class="muted" style="margin-top:10px;font-size:14px"></div>
       <div style="margin-top:20px"><button class="btn" id="retry">Try again</button></div></div>
@@ -1125,9 +1181,9 @@ function renderTimeAttack(){
         if(done)return;
         const ok=+b.dataset.i===q.answer_index;
         b.classList.add(ok?"correct":"wrong");
-        if(ok){score++; const sc=document.getElementById("ta-score"); if(sc)sc.textContent=score; comboHit(b);}else{comboBreak();}
+        if(ok){score++; const sc=document.getElementById("ta-score"); if(sc)sc.textContent=score; comboHit(b);}else{comboBreak(); floatXP("✗",b);}
         v.querySelectorAll(".choice").forEach(x=>x.disabled=true);
-        setTimeout(()=>{ if(!done){ i++; draw(); } },350);
+        setTimeout(()=>{ if(!done){ i++; draw(); } },300);
       });
     };
     const finish=()=>{
