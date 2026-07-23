@@ -13,12 +13,57 @@ minutes) so streaks roll over at the student's midnight, not UTC's.
 import copy
 import hashlib
 import random
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 DAILY_GOAL_XP = 50
 QUEST_REWARD_XP = 30
 BADGE_REWARD_XP = 25
+
+# Coins are the spendable currency (XP is permanent progress). You earn a few
+# coins on every XP-earning action plus a bonus when your streak grows.
+COIN_DIVISOR = 6          # coins earned ≈ xp gained / 6
+STREAK_COIN_BONUS = 10
+
+# Shop items you buy with coins.
+SHOP = {
+    "freeze": {"name": "Streak Freeze", "icon": "🧊", "cost": 100, "max": 3,
+               "desc": "Saves your streak if you miss a single day."},
+    "adfree": {"name": "1-Hour Ad-Free", "icon": "✨", "cost": 60,
+               "desc": "Study with zero ads for the next hour."},
+}
+
+# Cosmetic accent themes, unlocked by reaching a level (no coins needed).
+THEMES = [
+    {"id": "aurora", "name": "Aurora", "level": 1, "brand": "#8b6cff", "brand2": "#5b8cff", "ink": "#b9a9ff"},
+    {"id": "mint", "name": "Mint", "level": 3, "brand": "#2fd6a3", "brand2": "#38b6ff", "ink": "#8bf0d0"},
+    {"id": "sunset", "name": "Sunset", "level": 5, "brand": "#ff8a5b", "brand2": "#ff5c9d", "ink": "#ffc2a0"},
+    {"id": "ocean", "name": "Deep Ocean", "level": 8, "brand": "#3b82f6", "brand2": "#22d3ee", "ink": "#9cc9ff"},
+    {"id": "rose", "name": "Rosé", "level": 12, "brand": "#ff5c8a", "brand2": "#b06bff", "ink": "#ffb3cc"},
+    {"id": "graphite", "name": "Graphite", "level": 16, "brand": "#9aa4b2", "brand2": "#6b7787", "ink": "#c9d2de"},
+]
+_THEME_BY_ID = {t["id"]: t for t in THEMES}
+
+# Subscription discount tiers unlocked by level (percent), highest first.
+DISCOUNT_TIERS = [(20, 20), (10, 10)]
+
+
+def discount_for(level: int) -> int:
+    for lvl, pct in DISCOUNT_TIERS:
+        if level >= lvl:
+            return pct
+    return 0
+
+
+def unlocked_theme_ids(level: int) -> list:
+    return [t["id"] for t in THEMES if level >= t["level"]]
+
+
+def adfree_active(user) -> bool:
+    """True if the user currently holds an unexpired ad-free pass."""
+    g = user.game if isinstance(user.game, dict) else None
+    return bool(g and g.get("adfree_until", 0) > time.time())
 
 
 # ---------- time helpers ----------
@@ -142,7 +187,16 @@ def fresh_state() -> dict:
         "counters": {"sets": 0, "quizzes": 0, "tests": 0, "perfect": 0,
                      "correct": 0, "matches": 0, "cards": 0, "shares": 0,
                      "sessions": 0, "ta_best": 0},
+        # Rewards economy.
+        "coins": 0, "freezes": 0, "adfree_until": 0, "theme": "aurora",
     }
+
+
+def _backfill(state: dict) -> None:
+    """Add reward keys to game blobs created before the rewards feature."""
+    for k, default in (("coins", 0), ("freezes", 0),
+                       ("adfree_until", 0), ("theme", "aurora")):
+        state.setdefault(k, default)
 
 
 def _rollover(state: dict, now: datetime) -> None:
@@ -178,6 +232,7 @@ def ensure_state(user, tz_offset_min: int = 0) -> dict:
         state = copy.deepcopy(user.game)
     else:
         state = fresh_state()
+    _backfill(state)
     now = local_now(tz_offset_min)
     _rollover(state, now)
     if not user.display_name:
@@ -369,9 +424,19 @@ def apply_event(user, etype: str, data: Optional[dict], tz_offset_min: int = 0) 
 
     # --- streak: extends the day the daily goal is met ---
     streak_extended = False
+    streak_saved = False
     if state["daily"]["xp"] >= state["goal"] and state["last_goal_day"] != today:
         yesterday = day_key(now - timedelta(days=1))
-        state["streak"] = state["streak"] + 1 if state["last_goal_day"] == yesterday else 1
+        day_before = day_key(now - timedelta(days=2))
+        if state["last_goal_day"] == yesterday:
+            state["streak"] += 1
+        elif state.get("freezes", 0) > 0 and state["last_goal_day"] == day_before:
+            # Missed exactly one day — a Streak Freeze covers it.
+            state["freezes"] -= 1
+            state["streak"] += 1
+            streak_saved = True
+        else:
+            state["streak"] = 1
         state["best_streak"] = max(state["best_streak"], state["streak"])
         state["last_goal_day"] = today
         streak_extended = True
@@ -391,13 +456,21 @@ def apply_event(user, etype: str, data: Optional[dict], tz_offset_min: int = 0) 
 
     leveled_up_to = state["level"] if state["level"] > before_level else None
 
+    # --- coins (spendable) ---
+    coins_gained = max(1, gained // COIN_DIVISOR) if gained > 0 else 0
+    if streak_extended:
+        coins_gained += STREAK_COIN_BONUS
+    state["coins"] = state.get("coins", 0) + coins_gained
+
     user.game = dict(state)
     _flag_game_dirty(user)
     return {
         "ok": True,
         "gained_xp": gained,
+        "gained_coins": coins_gained,
         "leveled_up_to": leveled_up_to,
         "streak_extended": streak_extended,
+        "streak_saved": streak_saved,
         "new_badges": new_badges,
         "state": public_state(state),
     }
@@ -408,6 +481,13 @@ def public_state(state: dict) -> dict:
     level = state["level"]
     cur = xp_needed_for(level)
     nxt = xp_needed_for(level + 1)
+    unlocked = set(unlocked_theme_ids(level))
+    themes = [
+        {"id": t["id"], "name": t["name"], "level": t["level"],
+         "brand": t["brand"], "brand2": t["brand2"], "ink": t["ink"],
+         "locked": t["id"] not in unlocked}
+        for t in THEMES
+    ]
     return {
         "xp": state["xp"],
         "level": level,
@@ -422,4 +502,47 @@ def public_state(state: dict) -> dict:
         "quests": state["quests"]["items"],
         "badges": state["badges"],
         "counters": state["counters"],
+        # Rewards
+        "coins": state.get("coins", 0),
+        "freezes": state.get("freezes", 0),
+        "adfree_until": state.get("adfree_until", 0),
+        "adfree_active": state.get("adfree_until", 0) > time.time(),
+        "theme": state.get("theme", "aurora"),
+        "themes": themes,
+        "discount_percent": discount_for(level),
+        "shop": SHOP,
     }
+
+
+def buy_reward(user, item: str, tz_offset_min: int = 0) -> dict:
+    """Spend coins on a shop item. Returns a result summary."""
+    state = ensure_state(user, tz_offset_min)
+    info = SHOP.get(item)
+    if info is None:
+        return {"ok": False, "error": "Unknown reward."}
+    if state.get("coins", 0) < info["cost"]:
+        return {"ok": False, "error": "Not enough coins yet — keep studying!"}
+    if item == "freeze":
+        if state.get("freezes", 0) >= info["max"]:
+            return {"ok": False, "error": f"You already hold the max ({info['max']}) freezes."}
+        state["freezes"] = state.get("freezes", 0) + 1
+    elif item == "adfree":
+        base = max(state.get("adfree_until", 0), time.time())
+        state["adfree_until"] = base + 3600
+    state["coins"] -= info["cost"]
+    user.game = dict(state)
+    _flag_game_dirty(user)
+    return {"ok": True, "item": item, "state": public_state(state)}
+
+
+def set_theme(user, theme_id: str, tz_offset_min: int = 0) -> dict:
+    state = ensure_state(user, tz_offset_min)
+    theme = _THEME_BY_ID.get(theme_id)
+    if theme is None:
+        return {"ok": False, "error": "Unknown theme."}
+    if state["level"] < theme["level"]:
+        return {"ok": False, "error": f"Reach level {theme['level']} to unlock {theme['name']}."}
+    state["theme"] = theme_id
+    user.game = dict(state)
+    _flag_game_dirty(user)
+    return {"ok": True, "theme": theme_id, "state": public_state(state)}

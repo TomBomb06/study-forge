@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     stripe_price_pack_small: str = ""
     stripe_price_pack_medium: str = ""
     stripe_price_pack_large: str = ""
+    # Loyalty discount coupons (Stripe coupon IDs) applied automatically at
+    # checkout when a user has reached the unlock level. Optional.
+    stripe_coupon_10: str = ""  # 10% off — unlocked at level 10
+    stripe_coupon_20: str = ""  # 20% off — unlocked at level 20
 
     # Ads for free users (paid plans never see ads). "none" = placeholder only
     # (no real ads, works offline). "adsense" = real Google AdSense.

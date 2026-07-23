@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import billing, payments, srs
+from .. import billing, gamify, payments, srs
 from ..auth import get_current_user
 from ..config import get_settings
 from ..db import get_db
@@ -87,8 +87,9 @@ def get_usage(user: User = Depends(get_current_user), db: Session = Depends(get_
         "plans": billing.PLANS,
         "credit_packs": billing.CREDIT_PACKS,
         "billing_provider": settings.billing_provider,
-        # Ads: free users see them, paying users never do.
-        "show_ads": plan == "free",
+        # Ads: free users see them — unless they're holding an ad-free pass
+        # they bought with coins. Paying users never see ads.
+        "show_ads": plan == "free" and not gamify.adfree_active(user),
         "ads": {
             "provider": settings.ads_provider,
             "client_id": settings.adsense_client_id,

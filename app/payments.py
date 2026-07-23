@@ -55,7 +55,7 @@ def create_plan_checkout(user: User, plan: str) -> str:
     if not price:
         raise PaymentsError(f"No Stripe price configured for the {plan} plan.")
     stripe = _stripe()
-    session = stripe.checkout.Session.create(
+    kwargs = dict(
         mode="subscription",
         line_items=[{"price": price, "quantity": 1}],
         client_reference_id=user.id,
@@ -65,6 +65,17 @@ def create_plan_checkout(user: User, plan: str) -> str:
         metadata={"user_id": user.id, "kind": "plan", "plan": plan},
         subscription_data={"metadata": {"user_id": user.id, "plan": plan}},
     )
+    # Loyalty discount: auto-apply a coupon if the user's level unlocked one
+    # and that coupon is configured in Stripe.
+    level = (user.game or {}).get("level", 1) if isinstance(user.game, dict) else 1
+    coupon = ""
+    if level >= 20 and settings.stripe_coupon_20:
+        coupon = settings.stripe_coupon_20
+    elif level >= 10 and settings.stripe_coupon_10:
+        coupon = settings.stripe_coupon_10
+    if coupon:
+        kwargs["discounts"] = [{"coupon": coupon}]
+    session = stripe.checkout.Session.create(**kwargs)
     return session.url
 
 

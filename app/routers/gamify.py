@@ -26,6 +26,16 @@ class NameChange(BaseModel):
     name: str = Field(min_length=3, max_length=24)
 
 
+class RewardBuy(BaseModel):
+    item: str = Field(min_length=1, max_length=20)
+    tz_offset: int = 0
+
+
+class ThemeChange(BaseModel):
+    theme: str = Field(min_length=1, max_length=20)
+    tz_offset: int = 0
+
+
 @router.get("/me/game")
 def get_game(
     tz_offset: int = 0,
@@ -91,6 +101,32 @@ def leaderboard(
         "my_weekly_xp": me["week"]["xp"],
         "total_players": len(entries),
     }
+
+
+@router.post("/rewards/buy")
+def buy_reward(
+    body: RewardBuy,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result = gamify.buy_reward(user, body.item, body.tz_offset)
+    db.commit()
+    if not result.get("ok"):
+        raise HTTPException(status_code=422, detail=result.get("error", "Can't buy that."))
+    return result
+
+
+@router.post("/me/theme")
+def set_theme(
+    body: ThemeChange,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result = gamify.set_theme(user, body.theme, body.tz_offset)
+    db.commit()
+    if not result.get("ok"):
+        raise HTTPException(status_code=422, detail=result.get("error", "Can't set that theme."))
+    return result
 
 
 @router.post("/me/display-name")

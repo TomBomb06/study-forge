@@ -201,7 +201,22 @@
   .lb-rank.top{font-size:20px}
   .lb-name{flex:1;font-weight:600}
   .lb-xp{font-weight:800;color:var(--brand-ink)}
-  @media (max-width:600px){ .gamestrip{grid-template-columns:1fr} .hud .xpbar{width:40px} }
+  .hud .coins{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:14px;background:var(--surface-2);border:1px solid var(--border);border-radius:99px;padding:6px 11px;cursor:pointer}
+  .hud .coins:hover{border-color:var(--border-2)}
+  /* rewards */
+  .shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .shop-item{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow);text-align:center}
+  .shop-item .si{font-size:30px}
+  .shop-item .sn{font-weight:700;margin-top:8px}
+  .shop-item .sd{color:var(--muted);font-size:13px;margin-top:3px;min-height:34px}
+  .themebtn{border:1px solid var(--border);border-radius:14px;padding:14px;background:var(--surface);cursor:pointer;text-align:center;transition:.15s;position:relative}
+  .themebtn:hover:not(.locked){border-color:var(--border-2);transform:translateY(-2px)}
+  .themebtn.active{border-color:var(--brand);box-shadow:var(--glow)}
+  .themebtn.locked{opacity:.5;cursor:not-allowed}
+  .themebtn .sw{width:100%;height:34px;border-radius:9px;margin-bottom:8px}
+  .themebtn .tn{font-weight:700;font-size:13px}
+  .themebtn .tl{font-size:11px;color:var(--muted);margin-top:2px}
+  @media (max-width:600px){ .gamestrip{grid-template-columns:1fr} .hud .xpbar{width:40px} .shop-grid{grid-template-columns:1fr} }
   /* landing */
   .lp-nav{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;max-width:1080px;margin:0 auto;padding:18px 24px;background:rgba(10,11,16,.6);backdrop-filter:blur(12px)}
   .lp-hero{max-width:820px;margin:0 auto;text-align:center;padding:64px 24px 36px}
@@ -396,6 +411,7 @@ function shell(inner){
      <div class="brand" id="home-link" style="cursor:pointer">Study<span>Forge</span></div>
      <div class="hud">
        <span class="flame" id="hud-streak" title="Daily streak">🔥 0</span>
+       <span class="coins" id="hud-coins" title="Rewards shop">🪙 0</span>
        <span class="lvl" id="hud-lvl" title="Weekly leaderboard"><span class="n" id="hud-lvln">1</span><span class="xpbar"><div id="hud-xpfill" style="width:0%"></div></span></span>
        <button class="btn ghost sm" id="progress-link">📊</button>
        <button class="btn ghost sm" id="logout">Log out</button>
@@ -405,6 +421,7 @@ function shell(inner){
   document.getElementById("home-link").onclick=renderHome;
   document.getElementById("progress-link").onclick=renderProgress;
   document.getElementById("hud-lvl").onclick=renderLeaderboard;
+  document.getElementById("hud-coins").onclick=renderRewards;
   updateHUD();
   if(!state.game) loadGame().then(updateHUD);
 }
@@ -447,10 +464,23 @@ function homeSubLine(){
 
 // ---------- Gamification ----------
 const tzOff=()=>new Date().getTimezoneOffset();
+const THEME_COLORS={aurora:["#8b6cff","#5b8cff","#b9a9ff"],mint:["#2fd6a3","#38b6ff","#8bf0d0"],sunset:["#ff8a5b","#ff5c9d","#ffc2a0"],ocean:["#3b82f6","#22d3ee","#9cc9ff"],rose:["#ff5c8a","#b06bff","#ffb3cc"],graphite:["#9aa4b2","#6b7787","#c9d2de"]};
+function applyThemeEarly(id){const c=THEME_COLORS[id];if(!c)return;const r=document.documentElement.style;r.setProperty("--brand",c[0]);r.setProperty("--brand-2",c[1]);r.setProperty("--brand-ink",c[2]);r.setProperty("--grad",`linear-gradient(135deg,${c[0]},${c[1]})`);}
+// Apply a cosmetic theme by overriding the brand CSS variables.
+function applyTheme(t){
+  if(!t) return;
+  const r=document.documentElement.style;
+  r.setProperty("--brand",t.brand); r.setProperty("--brand-2",t.brand2); r.setProperty("--brand-ink",t.ink);
+  r.setProperty("--grad",`linear-gradient(135deg,${t.brand},${t.brand2})`);
+}
+function applyThemeById(id){
+  const t=(state.game&&state.game.themes||[]).find(x=>x.id===id); if(t)applyTheme(t);
+}
 async function loadGame(){
   try{
     const r=await api("/me/game?tz_offset="+tzOff());
     state.game=r.game; state.displayName=r.display_name; state.badgeCatalog=r.badge_catalog;
+    applyThemeById(r.game.theme); try{localStorage.setItem("sf_theme_id",r.game.theme);}catch{}
   }catch{ /* game HUD is optional — never block studying */ }
   return state.game;
 }
@@ -458,9 +488,66 @@ function updateHUD(){
   const g=state.game; if(!g) return;
   const st=document.getElementById("hud-streak");
   if(st){ st.textContent="🔥 "+g.streak; st.classList.toggle("lit",g.streak>0&&g.goal_met); st.title=g.goal_met?`${g.streak}-day streak — goal met today!`:`${g.streak}-day streak — earn ${Math.max(0,g.goal-g.daily_xp)} more XP today to keep it`; }
+  const co=document.getElementById("hud-coins"); if(co) co.textContent="🪙 "+g.coins;
   const ln=document.getElementById("hud-lvln"), xf=document.getElementById("hud-xpfill");
   if(ln) ln.textContent=g.level;
   if(xf) xf.style.width=Math.min(100,Math.round(100*g.level_xp/Math.max(1,g.level_span)))+"%";
+}
+// ---------- Rewards shop ----------
+async function renderRewards(){
+  shell(`<a class="link" id="back">← Back</a>
+    <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:12px">
+      <h1 style="margin:0">🎁 Rewards</h1>
+      <span class="pill" style="font-size:15px;font-weight:800;color:var(--brand-ink)">🪙 <span id="rw-coins">${state.game?state.game.coins:0}</span> coins</span></div>
+    <p class="muted" style="margin-top:6px">Earn coins every time you study. Spend them here.</p>
+    <div id="rw"></div>`);
+  document.getElementById("back").onclick=renderHome;
+  const box=document.getElementById("rw");
+  if(!state.game){ box.innerHTML=`<div class="center" style="min-height:24vh"><div class="spinner"></div></div>`; await loadGame(); }
+  paintRewards(box);
+}
+function paintRewards(box){
+  const g=state.game; if(!g){box.innerHTML="";return;}
+  const c=document.getElementById("rw-coins"); if(c)c.textContent=g.coins;
+  const shop=g.shop||{};
+  const adInfo=g.adfree_active?`<div class="pill" style="color:var(--good);border-color:var(--good);margin-top:8px">✨ Ad-free active now</div>`:"";
+  const discount=g.discount_percent>0
+    ? `<div class="card" style="margin-top:16px;border-color:rgba(139,108,255,.4)"><div style="font-weight:700">🏷️ ${g.discount_percent}% off unlocked</div><div class="muted" style="font-size:13px;margin-top:4px">Your level earns you ${g.discount_percent}% off a subscription — applied automatically at checkout.</div></div>`
+    : `<div class="card muted" style="margin-top:16px;font-size:14px">🏷️ Reach <b>level 10</b> to unlock 10% off a subscription (20% off at level 20).</div>`;
+  box.innerHTML=`
+    <h2 style="margin:18px 0 10px;font-size:18px">Shop</h2>
+    <div class="shop-grid">
+      <div class="shop-item"><div class="si">${shop.freeze?shop.freeze.icon:"🧊"}</div>
+        <div class="sn">Streak Freeze</div>
+        <div class="sd">Saves your streak if you miss a single day. You hold <b>${g.freezes}</b>/3.</div>
+        <button class="btn sm buy" data-item="freeze" ${g.coins<(shop.freeze?shop.freeze.cost:100)||g.freezes>=3?"disabled":""}>${g.freezes>=3?"Max held":`Buy · 🪙 ${shop.freeze?shop.freeze.cost:100}`}</button></div>
+      <div class="shop-item"><div class="si">${shop.adfree?shop.adfree.icon:"✨"}</div>
+        <div class="sn">1-Hour Ad-Free</div>
+        <div class="sd">Study with zero ads for the next hour.${adInfo}</div>
+        <button class="btn sm buy" data-item="adfree" ${g.coins<(shop.adfree?shop.adfree.cost:60)?"disabled":""}>Buy · 🪙 ${shop.adfree?shop.adfree.cost:60}</button></div>
+    </div>
+    ${discount}
+    <h2 style="margin:22px 0 10px;font-size:18px">Themes <span class="muted" style="font-weight:500;font-size:13px">· unlock by leveling up</span></h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr))">
+      ${(g.themes||[]).map(t=>`<div class="themebtn ${t.locked?"locked":""} ${t.id===g.theme?"active":""}" data-theme="${t.id}">
+         <div class="sw" style="background:linear-gradient(135deg,${t.brand},${t.brand2})"></div>
+         <div class="tn">${esc(t.name)}</div>
+         <div class="tl">${t.locked?`🔒 Level ${t.level}`:(t.id===g.theme?"Active ✓":"Tap to use")}</div></div>`).join("")}
+    </div>`;
+  box.querySelectorAll(".buy").forEach(b=>b.onclick=async()=>{
+    b.disabled=true;
+    try{ const r=await api("/rewards/buy",{method:"POST",body:{item:b.dataset.item,tz_offset:tzOff()}});
+      state.game=r.state; updateHUD(); paintRewards(box);
+      toast(b.dataset.item==="freeze"?"🧊 Streak Freeze bought!":"✨ Ad-free for 1 hour — enjoy!","good");
+      if(b.dataset.item==="adfree") loadUsage();
+    }catch(e){ toast(e.message,"bad"); paintRewards(box); }
+  });
+  box.querySelectorAll(".themebtn:not(.locked)").forEach(t=>t.onclick=async()=>{
+    const id=t.dataset.theme; applyThemeById(id);
+    try{ const r=await api("/me/theme",{method:"POST",body:{theme:id,tz_offset:tzOff()}});
+      state.game=r.state; try{localStorage.setItem("sf_theme_id",id);}catch{} paintRewards(box);
+    }catch(e){ toast(e.message,"bad"); }
+  });
 }
 // Fire-and-forget game event; brings back XP + celebrations.
 async function sendGame(type,data,anchor){
@@ -469,11 +556,13 @@ async function sendGame(type,data,anchor){
     const r=await api("/gamify/event",{method:"POST",body:{type,data:data||{},tz_offset:tzOff()}});
     state.game=r.state; updateHUD();
     if(r.gained_xp>0) floatXP("+"+r.gained_xp+" XP",anchor);
+    if(r.gained_coins>0) setTimeout(()=>floatXP("🪙 +"+r.gained_coins,anchor),260);
     if(before&&r.state.quests){
       r.state.quests.forEach(q=>{const old=(before.quests||[]).find(o=>o.id===q.id);
         if(q.done&&old&&!old.done) setTimeout(()=>toast("🎯 Quest complete: "+q.name+" (+30 XP)","good"),600);});
     }
-    if(r.streak_extended) setTimeout(()=>toast("🔥 Streak extended — day "+r.state.streak+"!","good"),1100);
+    if(r.streak_saved) setTimeout(()=>toast("🧊 A Streak Freeze saved your streak!","good"),1000);
+    else if(r.streak_extended) setTimeout(()=>toast("🔥 Streak extended — day "+r.state.streak+"!","good"),1100);
     (r.new_badges||[]).forEach((b,i)=>setTimeout(()=>toast(b.icon+" Badge earned: "+b.name+"!","good"),1600+i*1400));
     if(r.leveled_up_to) setTimeout(()=>levelUp(r.leveled_up_to),300);
     const strip=document.getElementById("gamestrip"); if(strip) paintGameStrip(strip);
@@ -539,12 +628,15 @@ function paintGameStrip(host){
        <div class="muted" style="font-size:13px;margin-top:2px">${g.goal_met?"Streak safe — come back tomorrow!":`Earn ${Math.max(0,g.goal-g.daily_xp)} more XP to keep your streak`}</div>
        <div style="font-size:13px;margin-top:6px">🔥 <b>${g.streak}</b> day streak · best ${g.best_streak}</div></div>
    </div>
-   <div class="questcard"><div style="font-weight:700;font-size:14px;margin-bottom:4px">⚔️ Daily quests</div>
+   <div class="questcard"><div class="row" style="justify-content:space-between;margin-bottom:4px">
+        <div style="font-weight:700;font-size:14px">⚔️ Daily quests</div>
+        <a class="link" id="gs-rewards" style="font-size:12px">🎁 Rewards · 🪙 ${g.coins}</a></div>
      ${(g.quests||[]).map(q=>`<div class="quest ${q.done?"done":""}">
         <span>${q.done?"✅":"▫️"}</span><span style="flex:2">${esc(q.name)}</span>
         <span class="qbar"><div style="width:${Math.min(100,Math.round(100*q.progress/Math.max(1,q.target)))}%"></div></span>
         <span class="qxp">${q.done?"+30 ✓":"+30 XP"}</span></div>`).join("")}
    </div>`;
+  const rw=document.getElementById("gs-rewards"); if(rw)rw.onclick=renderRewards;
 }
 // Weekly leaderboard view.
 async function renderLeaderboard(){
@@ -1294,6 +1386,7 @@ async function showImport(token){
 }
 
 // ---------- boot ----------
+try{applyThemeEarly(localStorage.getItem("sf_theme_id"));}catch{}
 const _params=new URLSearchParams(location.search);
 state.pendingShare=_params.get("s");
 const _checkout=_params.get("checkout");
