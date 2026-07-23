@@ -36,6 +36,10 @@ class ThemeChange(BaseModel):
     tz_offset: int = 0
 
 
+class SpinReq(BaseModel):
+    tz_offset: int = 0
+
+
 @router.get("/me/game")
 def get_game(
     tz_offset: int = 0,
@@ -113,6 +117,19 @@ def buy_reward(
     db.commit()
     if not result.get("ok"):
         raise HTTPException(status_code=422, detail=result.get("error", "Can't buy that."))
+    return result
+
+
+@router.post("/gamify/spin")
+def spin_wheel(
+    body: SpinReq,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    result = gamify.spin_wheel(user, body.tz_offset)
+    db.commit()
+    if not result.get("ok"):
+        raise HTTPException(status_code=422, detail=result.get("error", "Can't spin."))
     return result
 
 

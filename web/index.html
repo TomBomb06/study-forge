@@ -177,6 +177,17 @@
   @keyframes fadein{from{opacity:0}to{opacity:1}}
   .confetti{position:fixed;z-index:10003;top:-12px;width:9px;height:14px;pointer-events:none;animation:confall linear forwards}
   @keyframes confall{0%{transform:translateY(-10px) rotate(0)}100%{transform:translateY(105vh) rotate(720deg)}}
+  /* welcome wheel */
+  #wheelov{position:fixed;inset:0;z-index:10002;background:rgba(8,9,13,.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;flex-direction:column;animation:fadein .25s ease;padding:20px;text-align:center}
+  #wheelov h2{font-size:28px;margin:4px 0;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #wheelov .wsub{color:var(--muted);margin:2px 0 18px;max-width:360px;line-height:1.5}
+  .wheel-wrap{position:relative;width:304px;height:304px;max-width:80vw;max-height:80vw}
+  .wheel-wrap .ptr{position:absolute;top:-10px;left:50%;transform:translateX(-50%);z-index:3;color:#fff;font-size:26px;line-height:1;filter:drop-shadow(0 3px 4px rgba(0,0,0,.55))}
+  .wheel{position:absolute;inset:0;border-radius:50%;border:6px solid rgba(255,255,255,.92);box-shadow:0 0 0 5px rgba(139,108,255,.5),0 22px 55px -12px rgba(0,0,0,.75);transition:transform 4.6s cubic-bezier(.13,.86,.22,1)}
+  .wheel .seg-label{position:absolute;inset:0;display:flex;justify-content:center;padding-top:16px;font-weight:800;font-size:12.5px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+  .wheel .seg-label span{max-width:84px;text-align:center;line-height:1.15}
+  .wheel-hub{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:var(--grad);border:4px solid #fff;z-index:2;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 14px rgba(0,0,0,.55)}
+  #wheelov .btn{margin-top:26px}
   /* goal ring + quests */
   .gamestrip{display:grid;grid-template-columns:auto 1fr;gap:14px;margin:16px 0;align-items:stretch}
   .goalcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px 20px;display:flex;gap:14px;align-items:center;box-shadow:var(--shadow)}
@@ -511,8 +522,9 @@ function paintRewards(box){
   const c=document.getElementById("rw-coins"); if(c)c.textContent=g.coins;
   const shop=g.shop||{};
   const adInfo=g.adfree_active?`<div class="pill" style="color:var(--good);border-color:var(--good);margin-top:8px">✨ Ad-free active now</div>`:"";
+  const discSrc=(g.spin_discount>0&&g.spin_discount>=g.discount_percent)?"You won this on the welcome wheel":"Your level earns you this";
   const discount=g.discount_percent>0
-    ? `<div class="card" style="margin-top:16px;border-color:rgba(139,108,255,.4)"><div style="font-weight:700">🏷️ ${g.discount_percent}% off unlocked</div><div class="muted" style="font-size:13px;margin-top:4px">Your level earns you ${g.discount_percent}% off a subscription — applied automatically at checkout.</div></div>`
+    ? `<div class="card" style="margin-top:16px;border-color:rgba(139,108,255,.4)"><div style="font-weight:700">🏷️ ${g.discount_percent}% off unlocked</div><div class="muted" style="font-size:13px;margin-top:4px">${discSrc} — ${g.discount_percent}% off a subscription, applied automatically at checkout.</div></div>`
     : `<div class="card muted" style="margin-top:16px;font-size:14px">🏷️ Reach <b>level 10</b> to unlock 10% off a subscription (20% off at level 20).</div>`;
   box.innerHTML=`
     <h2 style="margin:18px 0 10px;font-size:18px">Shop</h2>
@@ -522,8 +534,8 @@ function paintRewards(box){
         <div class="sd">Saves your streak if you miss a single day. You hold <b>${g.freezes}</b>/3.</div>
         <button class="btn sm buy" data-item="freeze" ${g.coins<(shop.freeze?shop.freeze.cost:100)||g.freezes>=3?"disabled":""}>${g.freezes>=3?"Max held":`Buy · 🪙 ${shop.freeze?shop.freeze.cost:100}`}</button></div>
       <div class="shop-item"><div class="si">${shop.adfree?shop.adfree.icon:"✨"}</div>
-        <div class="sn">1-Hour Ad-Free</div>
-        <div class="sd">A one-time free hour with zero ads.${adInfo}</div>
+        <div class="sn">30-Min Ad-Free</div>
+        <div class="sd">A one-time 30 minutes with zero ads.${adInfo}</div>
         ${g.adfree_claimed
           ? `<button class="btn ghost sm" disabled>Claimed ✓ · one-time</button>`
           : `<button class="btn sm buy" data-item="adfree" ${g.coins<(shop.adfree?shop.adfree.cost:60)?"disabled":""}>Buy · 🪙 ${shop.adfree?shop.adfree.cost:60}</button>`}</div>
@@ -540,7 +552,7 @@ function paintRewards(box){
     b.disabled=true;
     try{ const r=await api("/rewards/buy",{method:"POST",body:{item:b.dataset.item,tz_offset:tzOff()}});
       state.game=r.state; updateHUD(); paintRewards(box);
-      toast(b.dataset.item==="freeze"?"🧊 Streak Freeze bought!":"✨ Ad-free for 1 hour — enjoy!","good");
+      toast(b.dataset.item==="freeze"?"🧊 Streak Freeze bought!":"✨ Ad-free for 30 minutes — enjoy!","good");
       if(b.dataset.item==="adfree") loadUsage();
     }catch(e){ toast(e.message,"bad"); paintRewards(box); }
   });
@@ -611,6 +623,54 @@ function levelUp(level){
   document.body.appendChild(ov);
   document.getElementById("lvl-ok").onclick=()=>ov.remove();
   setTimeout(()=>{if(document.getElementById("lvlup"))ov.remove();},6000);
+}
+// ---------- welcome wheel (one free spin per account) ----------
+let _wheelShown=false;
+function winBlurb(p){
+  if(p.kind==="discount") return `${p.amount}% off a subscription — applied automatically at checkout. 🎉`;
+  if(p.kind==="xp") return `Straight into your XP bar — you're already on your way!`;
+  if(p.kind==="coins") return `Coins added to your balance — spend them in Rewards.`;
+  if(p.kind==="freeze") return `A Streak Freeze is in your bag — it saves you if you miss a day.`;
+  return "Added to your account.";
+}
+function maybeSpinWelcome(){
+  const g=state.game;
+  if(!g||g.spun||_wheelShown) return;
+  const prizes=g.spin_prizes||[]; if(!prizes.length) return;
+  _wheelShown=true;
+  const N=prizes.length, seg=360/N, cols=["#7c5cff","#5b8cff"];
+  const stops=prizes.map((p,i)=>`${cols[i%2]} ${i*seg}deg ${(i+1)*seg}deg`).join(",");
+  const grad=`conic-gradient(from 0deg,${stops})`;
+  const labels=prizes.map((p,i)=>`<div class="seg-label" style="transform:rotate(${i*seg+seg/2}deg)"><span>${p.icon}<br>${esc(p.label)}</span></div>`).join("");
+  const ov=document.createElement("div"); ov.id="wheelov";
+  ov.innerHTML=`<h2>🎉 Welcome spin!</h2>
+    <p class="wsub">One free spin, on the house — win XP, coins, a streak freeze, or a discount off premium. Whatever you land on is yours to keep.</p>
+    <div class="wheel-wrap"><div class="ptr">▼</div>
+      <div class="wheel" id="wheel" style="background:${grad}">${labels}</div>
+      <div class="wheel-hub">⭐</div></div>
+    <button class="btn" id="spin-btn">Spin the wheel</button>`;
+  document.body.appendChild(ov);
+  const wheel=document.getElementById("wheel"), btn=document.getElementById("spin-btn");
+  let done=false;
+  btn.onclick=async()=>{
+    if(done){ ov.remove(); return; }
+    btn.disabled=true; btn.textContent="Spinning…";
+    let r;
+    try{ r=await api("/gamify/spin",{method:"POST",body:{tz_offset:tzOff()}}); }
+    catch(e){ if(state.game)state.game.spun=true; toast(e.message||"Couldn't spin right now","bad"); ov.remove(); return; }
+    const target=360*6-(r.index*seg+seg/2);
+    wheel.style.transform=`rotate(${target}deg)`;
+    done=true;
+    setTimeout(()=>{
+      state.game=r.state; updateHUD();
+      const p=r.prize; confetti(100);
+      const sub=ov.querySelector(".wsub");
+      if(sub) sub.innerHTML=`<b style="color:var(--brand-ink);font-size:19px">${p.icon} You won ${esc(p.label)}!</b><br>${winBlurb(p)}`;
+      btn.disabled=false; btn.textContent="Awesome — let's study!";
+      toast(`${p.icon} You won ${p.label}!`,"good");
+      if(r.leveled_up_to) setTimeout(()=>levelUp(r.leveled_up_to),800);
+    },4750);
+  };
 }
 // Home-screen strip: daily goal ring + today's quests.
 function paintGameStrip(host){
@@ -790,8 +850,8 @@ async function renderHome(){
     if(h1&&state.displayName) h1.textContent=`${greetLine()}, ${state.displayName}`;
     if(sub) sub.textContent=homeSubLine();
   };
-  if(state.game){ paintGameStrip(document.getElementById("gamestrip")); greet(); }
-  else loadGame().then(()=>{updateHUD();paintGameStrip(document.getElementById("gamestrip"));greet();});
+  if(state.game){ paintGameStrip(document.getElementById("gamestrip")); greet(); maybeSpinWelcome(); }
+  else loadGame().then(()=>{updateHUD();paintGameStrip(document.getElementById("gamestrip"));greet();maybeSpinWelcome();});
   if(state.pendingShare) showImport(state.pendingShare);
 }
 function renderSource(src){

@@ -30,8 +30,8 @@ STREAK_COIN_BONUS = 10
 SHOP = {
     "freeze": {"name": "Streak Freeze", "icon": "🧊", "cost": 100, "max": 3,
                "desc": "Saves your streak if you miss a single day."},
-    "adfree": {"name": "1-Hour Ad-Free", "icon": "✨", "cost": 60, "once": True,
-               "desc": "A one-time free hour with zero ads — a taste of premium."},
+    "adfree": {"name": "30-Min Ad-Free", "icon": "✨", "cost": 60, "once": True,
+               "desc": "A one-time 30 minutes with zero ads — a taste of premium."},
 }
 
 # Cosmetic accent themes, unlocked by reaching a level (no coins needed).
@@ -48,12 +48,32 @@ _THEME_BY_ID = {t["id"]: t for t in THEMES}
 # Subscription discount tiers unlocked by level (percent), highest first.
 DISCOUNT_TIERS = [(20, 20), (10, 10)]
 
+# Welcome wheel: every account gets ONE spin, ever. Server picks the prize
+# (weighted) so it can't be re-rolled or forged from the client. Everyone
+# wins something; the subscription discounts are the rare, exciting slices.
+SPIN_PRIZES = [
+    {"id": "xp_50",     "label": "+50 XP",        "icon": "⚡", "kind": "xp",       "amount": 50,  "weight": 18},
+    {"id": "coins_100", "label": "+100 Coins",    "icon": "🪙", "kind": "coins",    "amount": 100, "weight": 16},
+    {"id": "freeze_1",  "label": "Streak Freeze", "icon": "🧊", "kind": "freeze",   "amount": 1,   "weight": 14},
+    {"id": "disc_10",   "label": "10% OFF",       "icon": "🎟️", "kind": "discount", "amount": 10,  "weight": 8},
+    {"id": "xp_150",    "label": "+150 XP",       "icon": "🌟", "kind": "xp",       "amount": 150, "weight": 12},
+    {"id": "coins_50",  "label": "+50 Coins",     "icon": "🪙", "kind": "coins",    "amount": 50,  "weight": 16},
+    {"id": "xp_300",    "label": "+300 XP",       "icon": "🚀", "kind": "xp",       "amount": 300, "weight": 6},
+    {"id": "disc_20",   "label": "20% OFF",       "icon": "💎", "kind": "discount", "amount": 20,  "weight": 2},
+]
+
 
 def discount_for(level: int) -> int:
     for lvl, pct in DISCOUNT_TIERS:
         if level >= lvl:
             return pct
     return 0
+
+
+def effective_discount(state: dict) -> int:
+    """Best subscription discount the user holds: level-earned or wheel-won."""
+    lvl = discount_for(state.get("level", 1))
+    return max(lvl, int(state.get("spin_discount", 0) or 0))
 
 
 def unlocked_theme_ids(level: int) -> list:
@@ -190,13 +210,16 @@ def fresh_state() -> dict:
         # Rewards economy.
         "coins": 0, "freezes": 0, "adfree_until": 0, "adfree_claimed": False,
         "theme": "aurora",
+        # Welcome wheel: one spin per account.
+        "spun": False, "spin_discount": 0,
     }
 
 
 def _backfill(state: dict) -> None:
     """Add reward keys to game blobs created before the rewards feature."""
     for k, default in (("coins", 0), ("freezes", 0), ("adfree_until", 0),
-                       ("adfree_claimed", False), ("theme", "aurora")):
+                       ("adfree_claimed", False), ("theme", "aurora"),
+                       ("spun", False), ("spin_discount", 0)):
         state.setdefault(k, default)
 
 
@@ -511,8 +534,15 @@ def public_state(state: dict) -> dict:
         "adfree_claimed": bool(state.get("adfree_claimed")),
         "theme": state.get("theme", "aurora"),
         "themes": themes,
-        "discount_percent": discount_for(level),
+        "discount_percent": effective_discount(state),
+        "spin_discount": int(state.get("spin_discount", 0) or 0),
         "shop": SHOP,
+        # Welcome wheel: the client shows the wheel only when spun is False.
+        "spun": bool(state.get("spun")),
+        "spin_prizes": [
+            {"id": p["id"], "label": p["label"], "icon": p["icon"]}
+            for p in SPIN_PRIZES
+        ],
     }
 
 
@@ -531,15 +561,58 @@ def buy_reward(user, item: str, tz_offset_min: int = 0) -> dict:
     elif item == "adfree":
         if state.get("adfree_claimed"):
             return {"ok": False,
-                    "error": "You've already used your one free ad-free hour. "
+                    "error": "You've already used your one free ad-free pass. "
                              "Upgrade for unlimited ad-free studying!"}
         base = max(state.get("adfree_until", 0), time.time())
-        state["adfree_until"] = base + 3600
+        state["adfree_until"] = base + 1800  # 30 minutes
         state["adfree_claimed"] = True
     state["coins"] -= info["cost"]
     user.game = dict(state)
     _flag_game_dirty(user)
     return {"ok": True, "item": item, "state": public_state(state)}
+
+
+def spin_wheel(user, tz_offset_min: int = 0) -> dict:
+    """Spend the account's single welcome spin. Server picks the prize (weighted)
+    and applies it immediately. Returns the prize plus the segment index so the
+    client can animate the wheel to land on it."""
+    state = ensure_state(user, tz_offset_min)
+    if state.get("spun"):
+        return {"ok": False, "error": "You've already spun your welcome wheel!"}
+
+    weights = [p["weight"] for p in SPIN_PRIZES]
+    idx = random.choices(range(len(SPIN_PRIZES)), weights=weights, k=1)[0]
+    prize = SPIN_PRIZES[idx]
+
+    leveled_up_to = None
+    kind, amount = prize["kind"], prize["amount"]
+    if kind == "xp":
+        before = state["level"]
+        state["xp"] += amount
+        state["week"]["xp"] += amount
+        state["daily"]["xp"] += amount
+        state["level"] = level_for_xp(state["xp"])
+        if state["level"] > before:
+            leveled_up_to = state["level"]
+    elif kind == "coins":
+        state["coins"] = state.get("coins", 0) + amount
+    elif kind == "freeze":
+        cap = SHOP["freeze"]["max"]
+        state["freezes"] = min(cap, state.get("freezes", 0) + amount)
+    elif kind == "discount":
+        state["spin_discount"] = max(int(state.get("spin_discount", 0) or 0), amount)
+
+    state["spun"] = True
+    user.game = dict(state)
+    _flag_game_dirty(user)
+    return {
+        "ok": True,
+        "index": idx,
+        "prize": {"id": prize["id"], "label": prize["label"],
+                  "icon": prize["icon"], "kind": kind, "amount": amount},
+        "leveled_up_to": leveled_up_to,
+        "state": public_state(state),
+    }
 
 
 def set_theme(user, theme_id: str, tz_offset_min: int = 0) -> dict:

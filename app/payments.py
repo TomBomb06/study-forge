@@ -13,7 +13,7 @@ Checkout session and update their plan or add video credits.
 
 from sqlalchemy import select
 
-from . import billing
+from . import billing, gamify
 from .config import get_settings
 from .models import User
 
@@ -65,13 +65,15 @@ def create_plan_checkout(user: User, plan: str) -> str:
         metadata={"user_id": user.id, "kind": "plan", "plan": plan},
         subscription_data={"metadata": {"user_id": user.id, "plan": plan}},
     )
-    # Loyalty discount: auto-apply a coupon if the user's level unlocked one
-    # and that coupon is configured in Stripe.
-    level = (user.game or {}).get("level", 1) if isinstance(user.game, dict) else 1
+    # Loyalty + welcome-wheel discount: auto-apply the best coupon the user
+    # holds (whichever is higher — level-earned or won on the welcome wheel).
+    game = user.game if isinstance(user.game, dict) else {}
+    level = game.get("level", 1)
+    pct = max(gamify.discount_for(level), int(game.get("spin_discount", 0) or 0))
     coupon = ""
-    if level >= 20 and settings.stripe_coupon_20:
+    if pct >= 20 and settings.stripe_coupon_20:
         coupon = settings.stripe_coupon_20
-    elif level >= 10 and settings.stripe_coupon_10:
+    elif pct >= 10 and settings.stripe_coupon_10:
         coupon = settings.stripe_coupon_10
     if coupon:
         kwargs["discounts"] = [{"coupon": coupon}]
