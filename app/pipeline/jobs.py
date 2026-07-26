@@ -58,6 +58,11 @@ def run_video_job(study_set_id: str) -> None:
         db.close()
 
 
+# A pasted input shorter than this is treated as a TOPIC to research and build
+# from (e.g. "The American Revolution"), rather than as source material.
+TOPIC_MAX_CHARS = 240
+
+
 def _resolve_text(
     *,
     file_path: Optional[str],
@@ -66,26 +71,28 @@ def _resolve_text(
     url: Optional[str],
     youtube_url: Optional[str] = None,
     media_path: Optional[str] = None,
-) -> tuple[str, Optional[str]]:
-    """Return (text, discovered_title). Raises ExtractionError on bad input."""
+) -> tuple[str, Optional[str], bool]:
+    """Return (text, discovered_title, is_topic). Raises ExtractionError on bad input."""
     if media_path is not None:
-        return transcribe(media_path), None
+        return transcribe(media_path), None, False
     if youtube_url is not None:
         title, text = fetch_youtube_transcript(youtube_url)
-        return text, title
+        return text, title, False
     if file_path is not None and ext is not None:
-        return extract_text(file_path, ext), None
+        return extract_text(file_path, ext), None, False
     if url is not None:
         title, text = fetch_url_text(url)
-        return text, title
+        return text, title, False
     if raw_text is not None:
         text = raw_text.strip()
-        if len(text) < MIN_USABLE_CHARS:
+        if len(text) < 2:
             raise ExtractionError(
-                "Please paste a bit more text — there isn't enough here to build "
-                "a study set from."
+                "Please enter a topic to study, or paste some notes to build from."
             )
-        return text, None
+        # Short input = a topic the student wants us to research and build from.
+        if len(text) < TOPIC_MAX_CHARS:
+            return text, text[:80], True
+        return text, None, False
     raise ExtractionError("No source material was provided.")
 
 
@@ -173,11 +180,11 @@ def run_processing_job(
         db.commit()
 
         try:
-            text, discovered_title = _resolve_text(
+            text, discovered_title, is_topic = _resolve_text(
                 file_path=file_path, ext=ext, raw_text=raw_text, url=url,
                 youtube_url=youtube_url, media_path=media_path,
             )
-            content = generate_study_set(text, job.source_filename)
+            content = generate_study_set(text, job.source_filename, topic=is_topic)
         except (ExtractionError, GenerationError) as e:
             job.status = "failed"
             job.error = str(e)

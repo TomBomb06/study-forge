@@ -53,7 +53,9 @@ class MockGenerator:
     development and tests. Not pedagogically smart; that's Claude's job.
     """
 
-    def generate(self, text: str, filename: str) -> StudySetContent:
+    def generate(self, text: str, filename: str, topic: bool = False) -> StudySetContent:
+        if topic:
+            return self._topic_set(text)
         sents = _sentences(text)
         if len(sents) < 5:
             # Pad by splitting long sentences on commas as a fallback.
@@ -159,6 +161,34 @@ class MockGenerator:
             quiz=quiz, test=test, matching=matching,
         )
 
+    def _topic_set(self, topic: str) -> StudySetContent:
+        """A schema-valid placeholder set built from a bare topic. The mock
+        can't research, so this is intentionally generic — with a real
+        ANTHROPIC key (GENERATOR=claude) the Claude path does the real work."""
+        t = (topic or "").strip() or "Your topic"
+        t = t[:120]
+        return StudySetContent(
+            title=t[:255],
+            summary=(f"# {t}\n\nStudy notes about **{t}**.\n\n"
+                     "Connect an AI key to auto-research full notes for any topic you type."),
+            flashcards=[
+                {"front": f"What is {t}?", "back": f"The key idea behind {t}."},
+                {"front": f"Why does {t} matter?", "back": f"The significance of {t}."},
+                {"front": f"Name a key fact about {t}.", "back": "An important detail to remember."},
+            ],
+            quiz=[{
+                "question": f"Which best describes {t}?",
+                "choices": [f"The subject you're studying: {t}", "An unrelated idea",
+                            "A random distractor", "None of these"],
+                "answer_index": 0,
+                "explanation": f"You chose to study {t}.",
+            }],
+            test=[{"kind": "short_answer", "question": f"In a sentence, summarize {t}.",
+                   "answer": f"A brief overview of {t}."}],
+            matching=[{"term": t, "definition": "The topic of this study set."},
+                      {"term": "Review", "definition": "Going back over the material to remember it."}],
+        )
+
 
 # ---------------------------------------------------------------- claude
 
@@ -187,6 +217,37 @@ STRICT RULES:
 
 SOURCE TEXT:
 {text}"""
+
+
+# --- topic mode: the student typed a TOPIC, not source material ---
+
+_TOPIC_SYSTEM = (
+    "You are an expert tutor and subject-matter expert. The student gives you a "
+    "TOPIC to study — not source material. Using your own accurate, well-established "
+    "knowledge, you build a comprehensive, correct study kit that teaches the topic. "
+    "You never fabricate facts, fake quotes, or invent specifics you are unsure of; "
+    "when a detail is uncertain you stay general but accurate. You always respond "
+    "with a single valid JSON object and nothing else."
+)
+
+_TOPIC_PROMPT = """The student wants to study this TOPIC:
+
+"{text}"
+
+They did NOT provide source material — draw on your own reliable knowledge to teach it. Produce a study kit as a JSON object with exactly these keys:
+
+- "title": a short, specific title for the topic (max ~60 chars).
+- "summary": well-organized study notes teaching the topic — key facts, concepts, definitions, important people/dates/terms, causes and effects, and why it matters. Use markdown (headings, bullet points, bold terms). Thorough but focused: enough to genuinely learn the topic from.
+- "flashcards": 10-14 objects, each {{"front": a question or term, "back": a clear, self-contained answer}}. Cover the most important, commonly-taught points. Vary between definitions, cause/effect, and "why/how" cards.
+- "quiz": 6-8 objects, each {{"question": str, "choices": [exactly 4 distinct strings], "answer_index": integer 0-3 pointing to the correct choice, "explanation": one sentence on why it's correct}}. Plausible distractors; test understanding.
+- "test": 5-6 objects, each {{"kind": one of "true_false" | "fill_blank" | "short_answer", "question": str, "answer": the correct answer as a string}}. Mix the kinds. For "true_false" the answer is "True" or "False"; for "fill_blank" put _____ in the question and the answer is the missing word/phrase.
+- "matching": 5-6 objects, each {{"term": a key term, "definition": its matching definition}}. Keep terms and definitions short and unambiguous.
+
+STRICT RULES:
+- Respond with ONLY the JSON object. Start your reply with {{ and end with }}. No code fences, no commentary before or after.
+- Keep the JSON complete and valid — close every bracket.
+- Only include accurate, widely-accepted information. If the topic is broad, cover the most important, commonly-taught aspects. Do NOT invent facts or fabricate specifics.
+- Each quiz question should have 4 choices and exactly one correct answer."""
 
 # Match the first balanced {...} block, tolerating prose or fences around it.
 _JSON_BLOCK = re.compile(r"\{.*\}", re.DOTALL)
@@ -291,7 +352,9 @@ class ClaudeGenerator:
         except Exception as e:  # bad key format, etc.
             raise GenerationError(f"Could not initialize the Claude client: {e}")
 
-    def generate(self, text: str, filename: str) -> StudySetContent:
+    def generate(self, text: str, filename: str, topic: bool = False) -> StudySetContent:
+        system = _TOPIC_SYSTEM if topic else _SYSTEM
+        prompt = (_TOPIC_PROMPT if topic else _PROMPT).format(text=text)
         last_error: Optional[Exception] = None
         last_raw: str = ""
         for _attempt in range(2):  # retry malformed output once, then fail
@@ -299,9 +362,9 @@ class ClaudeGenerator:
                 response = self._client.messages.create(
                     model=self._model,
                     max_tokens=16000,
-                    system=_SYSTEM,
+                    system=system,
                     messages=[
-                        {"role": "user", "content": _PROMPT.format(text=text)}
+                        {"role": "user", "content": prompt}
                     ],
                 )
                 # Read every text block (some models return multiple blocks).
@@ -339,9 +402,9 @@ def get_generator():
     return MockGenerator()
 
 
-def generate_study_set(text: str, filename: str) -> StudySetContent:
+def generate_study_set(text: str, filename: str, topic: bool = False) -> StudySetContent:
     if len(text) > MAX_INPUT_CHARS:
         text = text[:MAX_INPUT_CHARS]
-    content = get_generator().generate(text, filename)
+    content = get_generator().generate(text, filename, topic=topic)
     # Belt-and-braces: whatever the provider, re-validate before returning.
     return StudySetContent.model_validate(content.model_dump())

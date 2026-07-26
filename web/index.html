@@ -502,6 +502,7 @@ const CHEER_CORRECT=["Nailed it!","Clean.","Big brain energy 🧠","That's the o
 const CHEER_COMBO=["COMBO — keep it rolling ⚡","You're genuinely unstoppable","Locked in 🔒","Heating UP 🔥","Someone's been studying…"];
 const CHEER_MISS=["Shake it off — next one's yours.","Close! It'll stick this time.","That one was sneaky.","Noted. Revenge next question 😤","Even champions miss one."];
 const GEN_MSGS=["Forging your study kit ⚒️","Reading every line of your material…","Pulling out what actually matters…","Writing your flashcards…","Sharpening the quiz questions…","Building your matching game…","Setting up the practice test…","Polishing everything up…"];
+const TOPIC_MSGS=["Researching your topic 🔎","Gathering the key facts…","Writing your study notes…","Pulling out what actually matters…","Writing your flashcards…","Sharpening the quiz questions…","Building your matching game…","Setting up the practice test…","Polishing everything up…"];
 function scoreLine(pct){
   if(pct>=100)return "PERFECT RUN. Certified genius behavior 💎";
   if(pct>=80)return "Strong run — you basically own this 💪";
@@ -929,12 +930,14 @@ function renderSource(src){
   }else if(src==="text"){
     box.innerHTML=`<div class="card">
       <div class="field"><label>Title (optional)</label><input id="t-title" placeholder="e.g. Chapter 4 notes"/></div>
-      <div class="field"><label>Your notes or text</label><textarea id="t-content" rows="8" placeholder="Paste or type anything you want to study…"></textarea></div>
-      <button class="btn" id="t-go">Add material</button></div>`;
+      <div class="field"><label>Your notes — or just a topic</label><textarea id="t-content" rows="8" placeholder="Paste your notes… or just type a topic like “The American Revolution” and we’ll research it and build the whole study set for you."></textarea></div>
+      <div class="muted" style="font-size:13px;margin:-4px 0 12px">💡 No notes? Just type any topic — StudyForge writes the material for you.</div>
+      <button class="btn" id="t-go">Create study set</button></div>`;
     document.getElementById("t-go").onclick=()=>{
       const content=document.getElementById("t-content").value.trim(),title=document.getElementById("t-title").value.trim();
-      if(content.length<40){flashError("Please paste a bit more text (at least a few sentences).");return;}
-      startJob(()=>api("/uploads/text",{method:"POST",body:{content,title:title||null}}),title||"your text");
+      if(content.length<2){flashError("Type a topic to study, or paste some notes.");return;}
+      const isTopic=content.length<240;
+      startJob(()=>api("/uploads/text",{method:"POST",body:{content,title:title||null}}),title||(isTopic?content:"your text"),isTopic);
     };
   }else if(src==="link"){
     box.innerHTML=`<div class="card">
@@ -1069,13 +1072,14 @@ function handleFiles(fileList){
   startJob(()=>api("/uploads/multi",{method:"POST",form}), `${fs.length} files combined`);
 }
 function startFileUpload(f){const form=new FormData();form.append("file",f);startJob(()=>api("/uploads",{method:"POST",form}),f.name);}
-async function startJob(createFn,label){
+async function startJob(createFn,label,isTopic){
   const job=document.getElementById("job");
+  const msgs=isTopic?TOPIC_MSGS:GEN_MSGS;
   job.innerHTML=`<div class="card" style="text-align:center;margin-bottom:20px"><div class="spinner"></div>
-     <div style="font-weight:700;margin-top:14px" id="gen-msg">${pick(GEN_MSGS)}</div>
-     <div class="muted" style="font-size:13px;margin-top:4px">“${esc(label)}” · this can take 30s–2 min</div>
+     <div style="font-weight:700;margin-top:14px" id="gen-msg">${pick(msgs)}</div>
+     <div class="muted" style="font-size:13px;margin-top:4px">${isTopic?"Researching ":""}“${esc(label)}” · this can take 30s–2 min</div>
      <div class="progress"><div id="bar" style="width:8%"></div></div></div>`;
-  const gm=setInterval(()=>{const m=document.getElementById("gen-msg");if(m)m.textContent=pick(GEN_MSGS);else clearInterval(gm);},2600);
+  const gm=setInterval(()=>{const m=document.getElementById("gen-msg");if(m)m.textContent=pick(msgs);else clearInterval(gm);},2600);
   try{
     const created=await createFn(); let pct=8; const bar=()=>document.getElementById("bar");
     const poll=setInterval(async()=>{
