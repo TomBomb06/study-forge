@@ -38,6 +38,13 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     whisper_model: str = "whisper-1"
 
+    # Natural read-aloud voice. "none" = browser/device voices only (free).
+    # "openai" = studio-quality AI voices (reuses OPENAI_API_KEY; costs money).
+    tts_provider: str = "none"  # "none" | "openai"
+    tts_model: str = "tts-1"
+    # Whether AI voice is a paid-plan perk (device voices stay free for all).
+    tts_premium_only: bool = True
+
     # Payments. "dev" = the instant test buttons (no real money). "stripe" =
     # real Stripe Checkout + webhooks (needs a Stripe account + keys).
     billing_provider: str = "dev"  # "dev" | "stripe"

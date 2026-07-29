@@ -29,6 +29,9 @@ class User(Base):
     usage_period: Mapped[str] = mapped_column(String(7), default="")  # "YYYY-MM"
     videos_used: Mapped[int] = mapped_column(Integer, default=0)
     extra_video_credits: Mapped[int] = mapped_column(Integer, default=0)
+    # AI read-aloud (TTS) monthly character metering.
+    tts_chars_used: Mapped[int] = mapped_column(Integer, default=0)
+    tts_period: Mapped[str] = mapped_column(String(7), default="")  # "YYYY-MM"
     stripe_customer_id: Mapped[Optional[str]] = mapped_column(
         String(64), nullable=True, index=True
     )
@@ -37,6 +40,10 @@ class User(Base):
     # game-state blob (xp, streak, quests, badges, weekly score...).
     display_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     game: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
+    # Preferred read-aloud voice (an AI voice id like "nova", or a device
+    # voice name). Empty = not chosen yet.
+    voice: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
 
     study_sets: Mapped[list["StudySet"]] = relationship(back_populates="user")
 

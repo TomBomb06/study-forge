@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>StudyForge — Turn anything into a study kit</title>
 <meta name="description" content="StudyForge turns any notes, PDF, or web link into flashcards, quizzes, tests, matching games, read-aloud audio, and AI video lessons — in seconds. Free to start." />
 <link rel="canonical" href="https://forge.study/" />
@@ -37,7 +37,10 @@
     --grad:linear-gradient(135deg,var(--brand),var(--brand-2));
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  html,body{margin:0;height:100%;max-width:100%;overflow-x:hidden}
+  img,video,canvas,svg,pre,textarea{max-width:100%}
+  .card,.notes,.mode,p,h1,h2,li{overflow-wrap:anywhere}
   body{font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.55;letter-spacing:-.006em;position:relative}
   body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     background:radial-gradient(900px 520px at 50% -12%,rgba(139,108,255,.16),transparent 62%),
@@ -72,6 +75,13 @@
   .card.tutor{border-color:rgba(139,108,255,.4);line-height:1.6;animation:fadein .3s ease}
   .card.tutor h1,.card.tutor h2,.card.tutor h3{margin:.7em 0 .35em;font-size:17px}
   .card.tutor strong{color:var(--brand-ink)}
+  /* voice picker */
+  .vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:6px}
+  .voicecard{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:12px 12px 10px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+  .voicecard:hover{border-color:var(--border-2)}
+  .voicecard.active{border-color:var(--brand);box-shadow:var(--glow)}
+  .voicecard .vn{font-weight:700;font-size:15px}
+  .voicecard .vd{font-size:12px;color:var(--muted);margin:2px 0 8px;line-height:1.3}
   .tutor-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;color:var(--brand-ink);border:1px solid rgba(139,108,255,.5);border-radius:99px;padding:2px 9px;margin-bottom:8px}
   .btn.sm{padding:8px 14px;font-size:14px;border-radius:10px}
   input,textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:12px;font-size:15px;font-family:inherit;transition:border-color .15s,box-shadow .15s;}
@@ -294,11 +304,16 @@
     .tab{font-size:13px;padding:9px 6px}
     .btn{padding:11px 16px}
     .set-item{flex-wrap:wrap;gap:8px}
-    .hud{gap:6px}
+    /* header wraps onto two rows so the toolbar never overflows the screen */
+    .top .wrap{flex-wrap:wrap;gap:8px}
+    .hud{gap:6px;flex-wrap:wrap;justify-content:flex-end;width:100%}
     #go-premium{padding:8px 11px;font-size:13px}
+    #logout{padding:8px 11px}
     .hud .lvl .xpbar{display:none}
+    .gamestrip{grid-template-columns:1fr}
+    .vgrid{grid-template-columns:1fr 1fr}
   }
-  @media (max-width:380px){ .grid{grid-template-columns:1fr} }
+  @media (max-width:380px){ .grid{grid-template-columns:1fr} .hud .flame,.hud .coins{font-size:13px} }
 </style>
 </head>
 <body>
@@ -336,6 +351,106 @@ function toast(msg,kind=""){
 function setToken(t){state.token=t; if(t)localStorage.setItem("sf_token",t); else localStorage.removeItem("sf_token");}
 function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function stopSpeech(){ try{window.speechSynthesis.cancel();}catch{} }
+
+// ---------- Voice (read-aloud) ----------
+async function loadVoiceOptions(){
+  if(state.voiceOpts!==undefined) return state.voiceOpts;
+  try{ state.voiceOpts=await api("/voice/options"); }catch{ state.voiceOpts=null; }
+  return state.voiceOpts;
+}
+// Device (browser) voices — populated async on some browsers.
+function deviceVoices(){
+  let list=[]; try{ list=window.speechSynthesis?window.speechSynthesis.getVoices():[]; }catch{ list=[]; }
+  // Prefer English, natural-sounding ones; push obviously-robotic ones down.
+  const good=/(natural|neural|siri|google|samantha|aaron|allison|ava|zoe|serena|daniel|karen|moira|premium|enhanced)/i;
+  return list.filter(v=>/^en(-|_|$)/i.test(v.lang)||/english/i.test(v.name))
+             .sort((a,b)=>(good.test(b.name)?1:0)-(good.test(a.name)?1:0));
+}
+function bestDeviceVoice(){ const d=deviceVoices(); return d[0]||null; }
+function savedVoice(){ try{return localStorage.getItem("sf_voice")||"";}catch{return "";} }
+async function saveVoice(id){
+  try{localStorage.setItem("sf_voice",id);}catch{}
+  state.voicePref=id;
+  try{ await api("/me/voice",{method:"POST",body:{voice:id}}); }catch{}
+}
+// Fetch AI speech for a chunk of text; returns an object URL for an <audio>.
+async function ttsFetch(text,voice,speed){
+  const res=await fetch(API+"/tts/speak",{method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+state.token},
+    body:JSON.stringify({text,voice,speed:speed||1})});
+  if(res.status===402){ const e=await res.json().catch(()=>({})); const err=new Error(e.detail||"Premium"); err.code=402; throw err; }
+  if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.detail||("Voice error "+res.status)); }
+  const blob=await res.blob(); return URL.createObjectURL(blob);
+}
+// Split long notes into speakable chunks at sentence boundaries.
+function speechChunks(text,max){
+  max=max||3500; const parts=[]; let buf="";
+  text.split(/(?<=[.!?])\s+/).forEach(s=>{
+    if((buf+" "+s).length>max){ if(buf)parts.push(buf.trim()); buf=s; }
+    else buf+=(buf?" ":"")+s;
+  });
+  if(buf.trim())parts.push(buf.trim());
+  return parts.length?parts:[text.slice(0,max)];
+}
+function currentVoiceLabel(){
+  const o=state.voiceOpts, id=state.voicePref||savedVoice();
+  if(o&&o.ai_available){ const v=(o.voices||[]).find(x=>x.id===id)||(o.voices||[]).find(x=>x.id===o.default); return v?v.name:"Nova"; }
+  if(id) return id.replace(/\s*\(.*\)/,"");
+  const b=bestDeviceVoice(); return b?b.name:"Default";
+}
+// ---------- Settings ----------
+async function renderSettings(){
+  shell(`<a class="link" id="back">← Back</a><h1 style="margin-top:12px">⚙️ Settings</h1>
+    <div id="set-body"><div class="center" style="min-height:24vh"><div class="spinner"></div></div></div>`);
+  document.getElementById("back").onclick=renderHome;
+  await loadVoiceOptions();
+  // make sure device voices are ready
+  if(window.speechSynthesis && !deviceVoices().length){ await new Promise(r=>{window.speechSynthesis.onvoiceschanged=r; setTimeout(r,600);}); }
+  paintSettings();
+}
+function paintSettings(){
+  const box=document.getElementById("set-body"); if(!box) return;
+  const o=state.voiceOpts||{}; const pref=state.voicePref||savedVoice();
+  let html=`<div class="card"><div style="font-weight:800;font-size:17px">🔊 Read-aloud voice</div>`;
+  if(o.ai_available){
+    const rem=o.chars_remaining||0, quota=o.monthly_chars||0;
+    const remNote=quota?`<div class="muted" style="font-size:12px;margin-top:10px">${rem>0?`~${Math.max(1,Math.round(rem/1000))}k characters of free AI voice left this month`:`You've used this month's free AI voice`}${o.plan==="free"?` · <a class="link" id="set-up2">Upgrade for lots more</a>`:""}.</div>`:"";
+    html+=`<div class="muted" style="font-size:13px;margin:4px 0 12px">Natural, studio-quality voices — free to use each month. Tap one to preview; it's saved automatically.</div>
+      <div class="vgrid">${(o.voices||[]).map(v=>`
+        <div class="voicecard ${((pref||o.default)===v.id)?'active':''}" data-v="${v.id}">
+          <div class="vn">${esc(v.name)}</div><div class="vd">${esc(v.desc)}</div>
+          <button class="btn ghost sm vprev" data-v="${v.id}">▶ Preview</button></div>`).join("")}</div>${remNote}`;
+  }else{
+    const dv=deviceVoices();
+    html+=`<div class="muted" style="font-size:13px;margin:4px 0 12px">Choose a voice your device provides. (Studio AI voices turn on once an AI voice key is added on the server.)</div>`;
+    if(!dv.length){ html+=`<div class="muted">No device voices found — your browser may not support read-aloud.</div>`; }
+    else html+=`<div class="vgrid">${dv.slice(0,10).map(v=>`
+        <div class="voicecard ${pref===v.name?'active':''}" data-v="${esc(v.name)}" data-dev="1">
+          <div class="vn">${esc(v.name.replace(/\s*\(.*\)/,''))}</div><div class="vd">${esc(v.lang)}</div>
+          <button class="btn ghost sm vprev" data-v="${esc(v.name)}" data-dev="1">▶ Preview</button></div>`).join("")}</div>`;
+  }
+  html+=`</div>`;
+  box.innerHTML=html;
+  const up2=document.getElementById("set-up2"); if(up2)up2.onclick=(e)=>{e.preventDefault();renderUpgrade();};
+  const SAMPLE="Hi! This is how I'll read your study notes to you.";
+  box.querySelectorAll(".voicecard").forEach(c=>c.onclick=async(ev)=>{
+    if(ev.target.classList.contains("vprev"))return;
+    const id=c.dataset.v; await saveVoice(id);
+    box.querySelectorAll(".voicecard").forEach(x=>x.classList.remove("active")); c.classList.add("active");
+    toast("🔊 Voice saved","good");
+  });
+  box.querySelectorAll(".vprev").forEach(b=>b.onclick=async(ev)=>{
+    ev.stopPropagation(); const id=b.dataset.v;
+    if(b.dataset.dev){ // device voice preview
+      stopSpeech(); const u=new SpeechSynthesisUtterance(SAMPLE);
+      const vv=deviceVoices().find(x=>x.name===id); if(vv)u.voice=vv; window.speechSynthesis.speak(u); return;
+    }
+    const old=b.textContent; b.disabled=true; b.textContent="…";
+    try{ const url=await ttsFetch(SAMPLE,id,1); const a=new Audio(url); a.play(); }
+    catch(e){ if(e.code===402){renderUpgrade();return;} toast(e.message||"Preview failed","bad"); }
+    finally{ b.disabled=false; b.textContent=old; }
+  });
+}
 
 // tiny markdown -> html (escaped first)
 function mdLite(s){
@@ -393,9 +508,9 @@ function renderLanding(){
     <h2>Simple pricing</h2>
     <p class="lead">Start free. Upgrade when you want no ads and AI video lessons.</p>
     <div class="lp-price">
-      <div class="lp-plan"><div class="pn">Free</div><div class="pp">$0</div><ul><li>Unlimited study kits</li><li>All study modes</li><li>Read-aloud audio</li><li>Supported by ads</li></ul></div>
-      <div class="lp-plan feat"><div class="lp-badge">Most popular</div><div class="pn">Basic</div><div class="pp">$9<span>/mo</span></div><ul><li>No ads</li><li>10 AI video lessons / month</li><li>Everything in Free</li></ul></div>
-      <div class="lp-plan"><div class="pn">Pro</div><div class="pp">$19<span>/mo</span></div><ul><li>No ads</li><li>40 AI video lessons / month</li><li>Everything in Free</li></ul></div>
+      <div class="lp-plan"><div class="pn">Free</div><div class="pp">$0</div><ul><li>Unlimited study kits</li><li>All study modes</li><li>Natural AI voice (limited)</li><li>Supported by ads</li></ul></div>
+      <div class="lp-plan feat"><div class="lp-badge">Most popular</div><div class="pn">Basic</div><div class="pp">$9<span>/mo</span></div><ul><li>AI tutor & mistake reviews</li><li>Lots more natural AI voice</li><li>No ads</li><li>10 AI video lessons / month</li><li>Everything in Free</li></ul></div>
+      <div class="lp-plan"><div class="pn">Pro</div><div class="pp">$19<span>/mo</span></div><ul><li>AI tutor & mistake reviews</li><li>Most natural AI voice</li><li>No ads</li><li>40 AI video lessons / month</li><li>Everything in Free</li></ul></div>
     </div>
     <div style="text-align:center;margin-top:28px"><button class="btn" data-auth="signup" style="font-size:16px;padding:14px 26px">Get started free</button></div>
   </section>
@@ -439,6 +554,7 @@ function renderAuth(initial){
 
 function shell(inner){
   stopSpeech();
+  if(state._stopAudio){ try{state._stopAudio();}catch{} state._stopAudio=null; }
   el.innerHTML=`<header class="top"><div class="wrap">
      <div class="brand" id="home-link" style="cursor:pointer">Study<span>Forge</span></div>
      <div class="hud">
@@ -446,13 +562,15 @@ function shell(inner){
        <span class="flame" id="hud-streak" title="Daily streak">🔥 0</span>
        <span class="coins" id="hud-coins" title="Rewards shop">🪙 0</span>
        <span class="lvl" id="hud-lvl" title="Weekly leaderboard"><span class="n" id="hud-lvln">1</span><span class="xpbar"><div id="hud-xpfill" style="width:0%"></div></span></span>
-       <button class="btn ghost sm" id="progress-link">📊</button>
+       <button class="btn ghost sm" id="progress-link" title="Your progress">📊</button>
+       <button class="btn ghost sm" id="settings-link" title="Settings">⚙️</button>
        <button class="btn ghost sm" id="logout">Log out</button>
      </div></div></header>
    <div class="wrap" id="body">${inner}</div>`;
   document.getElementById("logout").onclick=()=>{setToken(null);state.current=null;state.game=null;renderLanding();};
   document.getElementById("home-link").onclick=renderHome;
   document.getElementById("progress-link").onclick=renderProgress;
+  document.getElementById("settings-link").onclick=renderSettings;
   document.getElementById("hud-lvl").onclick=renderLeaderboard;
   document.getElementById("hud-coins").onclick=renderRewards;
   document.getElementById("go-premium").onclick=renderUpgrade;
@@ -869,7 +987,7 @@ function renderAd(host,kind){
 
 async function renderUpgrade(){
   shell(`<a class="link" id="back">← Back</a><h1 style="margin-top:12px">Upgrade & learn deeper</h1>
-     <p class="muted" style="margin-top:0">Free gets you the answers. Premium gets you a personal AI tutor — in-depth step-by-step explanations and a personalized review of everything you get wrong, plus no ads and AI video lessons.</p>
+     <p class="muted" style="margin-top:0">Free gets you the answers. Premium gets you a personal AI tutor — in-depth explanations, a personalized review of everything you get wrong, lots more natural AI read-aloud voice, no ads, and AI video lessons.</p>
      <div id="up"></div>`);
   document.getElementById("back").onclick=renderHome;
   const box=document.getElementById("up"); box.innerHTML=`<div class="center" style="min-height:24vh"><div class="spinner"></div></div>`;
@@ -878,7 +996,7 @@ async function renderUpgrade(){
   box.innerHTML=`<div class="grid">${plans.map(([k,p])=>`<div class="card">
        <div style="font-weight:700;font-size:18px">${esc(p.name)}</div>
        <div style="font-weight:800;font-size:22px;margin-top:4px">$${p.price_usd}<span class="muted" style="font-size:13px;font-weight:500">/mo</span></div>
-       <div class="muted" style="font-size:13px;margin-top:8px">✓ <b>AI tutor</b>: in-depth explanations<br>✓ Personalized review of your mistakes<br>✓ No ads<br>✓ ${p.monthly_videos} AI videos / month<br>✓ Everything in Free</div>
+       <div class="muted" style="font-size:13px;margin-top:8px">✓ <b>AI tutor</b>: in-depth explanations<br>✓ Personalized review of your mistakes<br>✓ <b>Natural AI read-aloud voice</b>${p.monthly_tts_chars?` (~${Math.round(p.monthly_tts_chars/1000)}k chars/mo)`:""}<br>✓ No ads<br>✓ ${p.monthly_videos} AI videos / month<br>✓ Everything in Free</div>
        <button class="btn upg" data-p="${k}" style="margin-top:14px;width:100%">Choose ${esc(p.name)}</button></div>`).join("")}</div>
      ${u.billing_provider!=="stripe"?`<div class="muted" style="font-size:12px;margin-top:12px">Demo mode — upgrading here doesn’t charge real money yet. Real payments connect via Stripe.</div>`:""}`;
   box.querySelectorAll(".upg").forEach(b=>b.onclick=async()=>{
@@ -1186,32 +1304,79 @@ function renderGuide(){
 }
 
 // ---------- Read aloud ----------
-function renderAudio(){
+async function renderAudio(){
   const v=modeShell("Read aloud");
-  const text=state.current.summary.replace(/[#*_`>]/g," ");
+  await loadVoiceOptions();
+  if(window.speechSynthesis && !deviceVoices().length){ try{await new Promise(r=>{window.speechSynthesis.onvoiceschanged=r;setTimeout(r,500);});}catch{} }
+  const text=state.current.summary.replace(/[#*_`>]/g," ").replace(/\s+/g," ").trim();
+  const o=state.voiceOpts||{}; const ai=!!o.ai_available;
   v.innerHTML=`<div class="card">
-     <div class="row" style="gap:10px;flex-wrap:wrap">
+     <div class="row" style="gap:10px;flex-wrap:wrap;align-items:center">
        <button class="btn" id="play">▶ Play</button>
        <button class="btn ghost" id="pause">⏸ Pause</button>
        <button class="btn ghost" id="stop">⏹ Stop</button>
-       <span class="muted" style="margin-left:auto">Speed</span>
-       <input type="range" id="rate" min="0.6" max="1.6" step="0.1" value="1" style="width:120px"/>
+       <button class="btn ghost sm" id="voice-btn" style="margin-left:auto">🔊 <span id="voice-name">${esc(currentVoiceLabel())}</span> ▾</button>
      </div>
-     <div id="status" class="muted" style="margin-top:14px;font-size:14px">Ready to read your notes aloud.</div>
-     <div class="notes" style="margin-top:16px;max-height:340px;overflow:auto">${mdLite(state.current.summary)}</div>
+     <div class="row" style="gap:10px;align-items:center;margin-top:10px">
+       <span class="muted" style="font-size:13px">Speed</span>
+       <input type="range" id="rate" min="0.7" max="1.5" step="0.1" value="1" style="flex:1;max-width:220px"/>
+     </div>
+     <div id="status" class="muted" style="margin-top:14px;font-size:14px">${ai?"Natural AI voice ready.":"Ready to read your notes aloud."}</div>
+     <div class="notes" style="margin-top:16px;max-height:320px;overflow:auto">${mdLite(state.current.summary)}</div>
    </div>`;
-  let rate=1; const status=document.getElementById("status");
+  const status=document.getElementById("status");
+  document.getElementById("voice-btn").onclick=renderSettings;
+  let rate=1;
+
+  if(ai){
+    // ----- Studio AI voice: fetch MP3 chunks and play them back to back -----
+    const voice=state.voicePref||savedVoice()||o.default;
+    const chunks=speechChunks(text); const audio=new Audio(); audio.playbackRate=rate;
+    let idx=0, urls={}, playing=false, stopped=false;
+    const prefetch=async(i)=>{ if(i<chunks.length && !urls[i]){ try{urls[i]=await ttsFetch(chunks[i],voice,1);}catch(e){urls[i]=null; if(e.code===402){stopped=true;toast("You've used this month's free AI voice — upgrade for lots more","good");renderUpgrade();}} } };
+    const playChunk=async(i)=>{
+      if(i>=chunks.length){status.textContent="Finished.";playing=false;return;}
+      status.textContent=`Reading… (${i+1}/${chunks.length})`;
+      if(!urls[i]) await prefetch(i);
+      if(stopped||!urls[i]){ if(!urls[i])status.textContent="Couldn’t load the voice — try again."; return; }
+      audio.src=urls[i]; audio.playbackRate=rate; await audio.play().catch(()=>{});
+      prefetch(i+1);
+    };
+    audio.onended=()=>{ if(stopped)return; idx++; playChunk(idx); };
+    document.getElementById("play").onclick=async()=>{
+      if(audio.paused && audio.src && !audio.ended){ audio.play(); status.textContent="Reading…"; return; }
+      if(playing && !audio.paused) return;
+      stopped=false; playing=true; if(!audio.src){ idx=0; } playChunk(idx);
+    };
+    document.getElementById("pause").onclick=()=>{ audio.pause(); status.textContent="Paused."; };
+    document.getElementById("stop").onclick=()=>{ stopped=true; playing=false; audio.pause(); audio.currentTime=0; idx=0; status.textContent="Stopped."; };
+    document.getElementById("rate").oninput=e=>{ rate=parseFloat(e.target.value); audio.playbackRate=rate; };
+    state._stopAudio=()=>{ stopped=true; try{audio.pause();}catch{} };
+    return;
+  }
+
+  // ----- Free device voice -----
   if(!("speechSynthesis" in window)){status.textContent="Your browser doesn’t support read-aloud. Try Safari or Chrome.";return;}
+  const pickDeviceVoice=()=>{ const id=state.voicePref||savedVoice(); return deviceVoices().find(x=>x.name===id)||bestDeviceVoice(); };
   document.getElementById("rate").oninput=e=>{rate=parseFloat(e.target.value);};
   document.getElementById("play").onclick=()=>{
     if(window.speechSynthesis.paused){window.speechSynthesis.resume();status.textContent="Reading…";return;}
     stopSpeech();
     const u=new SpeechSynthesisUtterance(text); u.rate=rate;
+    const vv=pickDeviceVoice(); if(vv)u.voice=vv;
     u.onend=()=>{status.textContent="Finished.";}; u.onstart=()=>{status.textContent="Reading…";};
     window.speechSynthesis.speak(u);
   };
   document.getElementById("pause").onclick=()=>{window.speechSynthesis.pause();status.textContent="Paused.";};
   document.getElementById("stop").onclick=()=>{stopSpeech();status.textContent="Stopped.";};
+
+  // First-time nudge to pick a voice.
+  try{
+    if(!localStorage.getItem("sf_voice_prompted")){
+      localStorage.setItem("sf_voice_prompted","1");
+      setTimeout(()=>toast("🔊 Tip: tap the voice button to pick how your notes sound","good"),700);
+    }
+  }catch{}
 }
 
 // ---------- Video (narrated slideshow) ----------

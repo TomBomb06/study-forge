@@ -12,10 +12,13 @@ from datetime import date
 
 # Plan catalog. Prices are placeholders for now — tune once you've tested
 # willingness to pay. `monthly_videos` is the allowance included each month.
+# `monthly_tts_chars` is the free/paid allowance of AI read-aloud characters
+# per month (OpenAI TTS bills per character). Free users get a taste; when they
+# run out, /tts/speak returns 402 and the app sends them to upgrade.
 PLANS: dict[str, dict] = {
-    "free":  {"name": "Free",  "monthly_videos": 0,  "price_usd": 0},
-    "basic": {"name": "Basic", "monthly_videos": 10, "price_usd": 9},
-    "pro":   {"name": "Pro",   "monthly_videos": 40, "price_usd": 19},
+    "free":  {"name": "Free",  "monthly_videos": 0,  "price_usd": 0,  "monthly_tts_chars": 6000},
+    "basic": {"name": "Basic", "monthly_videos": 10, "price_usd": 9,  "monthly_tts_chars": 150000},
+    "pro":   {"name": "Pro",   "monthly_videos": 40, "price_usd": 19, "monthly_tts_chars": 600000},
 }
 
 DEFAULT_PLAN = "free"
@@ -62,6 +65,40 @@ def video_status(user) -> dict:
         "total_remaining": plan_remaining + extra,
         "can_generate_video": (plan_remaining + extra) > 0,
     }
+
+
+# ---------------- AI voice (read-aloud) metering ----------------
+
+def ensure_tts_period(user) -> None:
+    """Reset the monthly voice-character counter when a new month starts."""
+    cur = _current_period()
+    if getattr(user, "tts_period", None) != cur:
+        user.tts_period = cur
+        user.tts_chars_used = 0
+
+
+def voice_status(user) -> dict:
+    """The user's AI-voice character balance for this month."""
+    ensure_tts_period(user)
+    plan = plan_of(user)
+    quota = plan.get("monthly_tts_chars", 0)
+    used = user.tts_chars_used or 0
+    remaining = max(0, quota - used)
+    return {
+        "plan": user.plan or DEFAULT_PLAN,
+        "plan_name": plan["name"],
+        "monthly_chars": quota,
+        "chars_used": used,
+        "remaining": remaining,
+        "can_use": remaining > 0,
+    }
+
+
+def consume_tts_chars(user, n: int) -> dict:
+    """Deduct `n` characters from the user's monthly voice allowance."""
+    ensure_tts_period(user)
+    user.tts_chars_used = (user.tts_chars_used or 0) + max(0, int(n))
+    return voice_status(user)
 
 
 class QuotaExceeded(Exception):

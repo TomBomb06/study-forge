@@ -8,7 +8,7 @@ from sqlalchemy import inspect, text
 
 from .config import get_settings
 from .db import Base, engine
-from .routers import auth, billing, gamify, shares, study_sets, tutor, uploads
+from .routers import auth, billing, gamify, shares, study_sets, tutor, uploads, voice
 
 # MVP: create tables on startup. Move to Alembic migrations before production.
 Base.metadata.create_all(bind=engine)
@@ -43,9 +43,12 @@ def _ensure_columns() -> None:
             "usage_period": "VARCHAR(7) DEFAULT ''",
             "videos_used": "INTEGER DEFAULT 0",
             "extra_video_credits": "INTEGER DEFAULT 0",
+            "tts_chars_used": "INTEGER DEFAULT 0",
+            "tts_period": "VARCHAR(7) DEFAULT ''",
             "stripe_customer_id": "VARCHAR(64)",
             "display_name": "VARCHAR(40)",
             "game": "JSON",
+            "voice": "VARCHAR(64)",
         },
     }
     with engine.begin() as conn:
@@ -85,6 +88,7 @@ app.include_router(billing.router)
 app.include_router(shares.router)
 app.include_router(gamify.router)
 app.include_router(tutor.router)
+app.include_router(voice.router)
 
 
 @app.get("/health", tags=["meta"])
