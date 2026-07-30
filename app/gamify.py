@@ -281,7 +281,9 @@ def _base_xp(etype: str, data: dict) -> int:
         score = _int("score", 0, 0, 200)
         total = _int("total", 1, 1, 200)
         score = min(score, total)
-        xp = 10 + 4 * score
+        # Reward correct answers only — no XP for wrong answers or just playing.
+        # (0 correct => 0 XP => 0 coins.)
+        xp = 6 * score
         if total >= 3 and score == total:
             xp += 20  # perfect bonus
         return xp
@@ -304,22 +306,28 @@ def _quest_progress(items: list, etype: str, data: dict, daily_xp: int) -> int:
     """Advance quests; returns bonus XP for quests completed just now."""
     bonus = 0
     pct = 0
-    if etype in ("quiz", "test", "time_attack"):
+    graded = etype in ("quiz", "test", "time_attack")
+    correct = 0
+    if graded:
         try:
             total = max(1, int(data.get("total", 1)))
-            pct = round(100 * min(int(data.get("score", 0)), total) / total)
+            correct = min(int(data.get("score", 0)), total)
+            pct = round(100 * correct / total)
         except (TypeError, ValueError):
-            pct = 0
+            correct, pct = 0, 0
+    # A graded activity only counts toward "play"-style quests if the student
+    # actually got something right — no quest credit for bombing on purpose.
+    learned = (not graded) or correct > 0
     session_events = {"quiz", "test", "time_attack", "match", "cards", "study"}
     for q in items:
         if q["done"]:
             continue
         qid = q["id"]
-        if qid == "q_quiz2" and etype == "quiz":
+        if qid == "q_quiz2" and etype == "quiz" and learned:
             q["progress"] += 1
         elif qid == "q_score80" and etype == "quiz" and pct >= 80:
             q["progress"] += 1
-        elif qid == "q_sessions3" and etype in session_events:
+        elif qid == "q_sessions3" and etype in session_events and learned:
             q["progress"] += 1
         elif qid == "q_cards20" and etype == "cards":
             try:
@@ -328,7 +336,7 @@ def _quest_progress(items: list, etype: str, data: dict, daily_xp: int) -> int:
                 pass
         elif qid == "q_match1" and etype == "match":
             q["progress"] += 1
-        elif qid == "q_test1" and etype == "test":
+        elif qid == "q_test1" and etype == "test" and learned:
             q["progress"] += 1
         elif qid == "q_xp100":
             q["progress"] = daily_xp
