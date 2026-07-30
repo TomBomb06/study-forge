@@ -226,6 +226,9 @@
   .mb-field.shake{animation:mbShake .3s}
   @keyframes mbShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}60%{transform:translateX(7px)}80%{transform:translateX(-4px)}}
   @media (max-width:600px){ .mb-field{height:260px} .mb-choice{font-size:13px;padding:12px 8px} }
+  /* Streak Ladder timer */
+  .sl-timer{height:8px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-bottom:8px}
+  .sl-timer>div{height:100%;width:100%;background:var(--grad)}
   /* welcome wheel */
   #wheelov{position:fixed;inset:0;z-index:10002;background:rgba(8,9,13,.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;flex-direction:column;animation:fadein .25s ease;padding:20px;text-align:center}
   #wheelov h2{font-size:28px;margin:4px 0;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -1256,15 +1259,16 @@ async function startJob(createFn,label,isTopic){
 
 // ---------- Study set: the CHOOSER ----------
 const MODES=[
-  {id:"guide", ic:"📖", nm:"Study guide", ds:"Read the condensed notes"},
-  {id:"audio", ic:"🎧", nm:"Read aloud",  ds:"Have the notes read to you"},
-  {id:"video", ic:"🎬", nm:"Video",       ds:"Narrated slideshow"},
-  {id:"cards", ic:"🃏", nm:"Flashcards",  ds:"Flip through key ideas"},
-  {id:"quiz",  ic:"❓", nm:"Quiz",         ds:"Multiple-choice questions"},
-  {id:"time",  ic:"🏁", nm:"Time Attack",  ds:"Beat the clock & your best"},
-  {id:"meteor",ic:"☄️", nm:"Meteor Blitz", ds:"Arcade: blast questions for a high score"},
-  {id:"test",  ic:"📝", nm:"Practice test", ds:"Mixed question types"},
-  {id:"match", ic:"🧩", nm:"Matching game", ds:"Match terms to definitions"},
+  {id:"guide", cat:"study", ic:"📖", nm:"Study guide", ds:"Read the condensed notes"},
+  {id:"audio", cat:"study", ic:"🎧", nm:"Read aloud",  ds:"Have the notes read to you"},
+  {id:"video", cat:"study", ic:"🎬", nm:"Video",       ds:"Narrated slideshow"},
+  {id:"cards", cat:"study", ic:"🃏", nm:"Flashcards",  ds:"Flip through key ideas"},
+  {id:"quiz",  cat:"study", ic:"❓", nm:"Quiz",         ds:"Multiple-choice questions"},
+  {id:"test",  cat:"study", ic:"📝", nm:"Practice test", ds:"Mixed question types"},
+  {id:"time",  cat:"game",  ic:"🏁", nm:"Time Attack",  ds:"Beat the clock & your best"},
+  {id:"meteor",cat:"game",  ic:"☄️", nm:"Meteor Blitz", ds:"Blast questions for a high score"},
+  {id:"ladder",cat:"game",  ic:"🪜", nm:"Streak Ladder", ds:"One life — climb as high as you can"},
+  {id:"match", cat:"game",  ic:"🧩", nm:"Matching game", ds:"Match terms to definitions"},
 ];
 
 async function openSet(id){
@@ -1281,7 +1285,10 @@ function renderChooser(){
       <button class="btn ghost sm" id="share-btn">🔗 Share</button></div>
     <p class="muted" style="margin-top:6px">How do you want to study this?</p>
     <div id="share-box"></div>
-    <div class="grid" id="grid"></div>`);
+    <div class="tabs" id="mode-tabs" style="margin-top:4px">
+      <button class="tab active" data-cat="study">📚 Study</button>
+      <button class="tab" data-cat="game">🎮 Games</button></div>
+    <div class="grid" id="grid" style="margin-top:14px"></div>`);
   document.getElementById("back").onclick=renderHome;
   document.getElementById("share-btn").onclick=async()=>{
     const box=document.getElementById("share-box");
@@ -1300,11 +1307,24 @@ function renderChooser(){
     }catch(e){toast(e.message,"bad");}
   };
   const g=document.getElementById("grid");
-  g.innerHTML=MODES.map(m=>`<div class="mode" data-m="${m.id}"><div class="ic">${m.ic}</div>
-     <div class="nm">${m.nm}</div><div class="ds">${m.ds}</div>
-     ${m.id==="video"?'<span class="soon">narrated slideshow · HD AI video later</span>':''}
-     ${m.id==="audio"?'<span class="soon">your Mac’s voice</span>':''}</div>`).join("");
-  g.querySelectorAll(".mode").forEach(n=>n.onclick=()=>openMode(n.dataset.m));
+  const paint=(cat)=>{
+    g.innerHTML=MODES.filter(m=>m.cat===cat).map(m=>`<div class="mode" data-m="${m.id}"><div class="ic">${m.ic}</div>
+       <div class="nm">${m.nm}</div><div class="ds">${m.ds}</div>
+       ${m.id==="video"?'<span class="soon">narrated slideshow · HD AI video later</span>':''}
+       ${m.cat==="game"?'<span class="soon" id="hs-'+m.id+'" style="display:none"></span>':''}</div>`).join("");
+    g.querySelectorAll(".mode").forEach(n=>n.onclick=()=>openMode(n.dataset.m));
+    // Show saved high scores on the game tiles.
+    if(cat==="game"){
+      const hs=(id)=>parseInt(localStorage.getItem(id)||"0",10);
+      const set=(mid,val,label)=>{const e=document.getElementById("hs-"+mid); if(e&&val>0){e.textContent=label+val;e.style.display="inline-block";}};
+      set("time", hs("sf_ta_"+s.id), "🏆 best ");
+      set("meteor", hs("sf_mb_"+s.id), "🏆 best ");
+      set("ladder", hs("sf_sl_"+s.id), "🏆 best ");
+    }
+  };
+  const mtabs=el.querySelectorAll("#mode-tabs .tab");
+  mtabs.forEach(t=>t.onclick=()=>{mtabs.forEach(x=>x.classList.remove("active"));t.classList.add("active");paint(t.dataset.cat);});
+  paint("study");
 }
 function modeShell(title){
   shell(`<a class="link" id="back">← Study options</a>
@@ -1334,6 +1354,7 @@ function _dispatchMode(m){
   if(m==="quiz")  return renderQuiz();
   if(m==="time")  return renderTimeAttack();
   if(m==="meteor") return renderMeteor();
+  if(m==="ladder") return renderLadder();
   if(m==="test")  return renderTest();
   if(m==="match") return renderMatch();
 }
@@ -1744,6 +1765,62 @@ function renderMeteor(){
     <div class="muted" style="margin-top:12px">Best: <b>${best}</b></div>
     <button class="btn" id="mb-start" style="margin-top:16px">Start</button></div>`;
   document.getElementById("mb-start").onclick=start;
+}
+
+// ---------- Streak Ladder (one life, climb as high as you can) ----------
+function renderLadder(){
+  const v=modeShell("Streak Ladder"), s=state.current;
+  if(!s.quiz||!s.quiz.length){ v.innerHTML=`<div class="card">This set has no quiz questions to play with yet.</div>`; return; }
+  const key="sf_sl_"+s.id; let best=parseInt(localStorage.getItem(key)||"0",10);
+  const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+  function start(){
+    let score=0, order=shuffle([...s.quiz.keys()]), oi=0, raf=null, over=false;
+    const secs=()=>Math.max(2.2, 5 - Math.floor(score/5)*0.35);  // less time as you climb
+    function draw(){
+      if(oi>=order.length){ order=shuffle([...s.quiz.keys()]); oi=0; }
+      const q=s.quiz[order[oi++]];
+      v.innerHTML=`<div class="sl-timer"><div id="sl-bar"></div></div>
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <span class="pill">🪜 Rung <b>${score}</b></span>
+          <span class="muted" style="font-size:13px">Best: ${best}</span></div>
+        <div class="card" style="margin-top:12px"><h2 style="margin:0 0 14px">${esc(q.question)}</h2>
+          <div class="mb-choices">${q.choices.map((c,i)=>`<button class="mb-choice" data-i="${i}">${esc(c)}</button>`).join("")}</div></div>`;
+      const dur=secs()*1000, tEnd=performance.now()+dur, bar=document.getElementById("sl-bar");
+      const tick=()=>{ const left=Math.max(0,(tEnd-performance.now())/dur); if(bar)bar.style.width=(left*100)+"%";
+        if(left<=0){ return end(); } raf=requestAnimationFrame(tick); };
+      raf=requestAnimationFrame(tick);
+      let done=false;
+      v.querySelectorAll(".mb-choice").forEach(b=>b.onclick=()=>{
+        if(done)return; done=true; cancelAnimationFrame(raf);
+        if(+b.dataset.i===q.answer_index){ score++; floatXP("⬆️ +1",b); draw(); }
+        else{ b.style.borderColor="var(--bad)"; b.style.background="rgba(255,92,124,.14)"; setTimeout(end,260); }
+      });
+    }
+    function end(){
+      if(over)return; over=true; cancelAnimationFrame(raf);
+      const isBest=score>best; if(isBest){ best=score; try{localStorage.setItem(key,String(best));}catch{} confetti(70); }
+      v.innerHTML=`<div class="card" style="text-align:center">
+        <div class="muted" style="font-weight:700">🪜 You reached rung</div>
+        <div class="big-score">${score}</div>
+        ${isBest?`<div class="pill" style="color:var(--good);border-color:var(--good);margin-top:8px">🎉 New high score!</div>`:`<div class="muted" style="margin-top:8px">Best: ${best}</div>`}
+        <div id="sl-xp" class="muted" style="margin-top:10px;font-size:14px"></div>
+        <div style="margin-top:20px"><button class="btn" id="sl-again">Play again</button></div></div>`;
+      document.getElementById("sl-again").onclick=start;
+      sendGame("time_attack",{score:score,total:Math.max(1,score)},document.getElementById("sl-xp")).then(r=>{
+        const x=document.getElementById("sl-xp"); if(x&&r) x.innerHTML=`<span style="color:var(--brand-ink);font-weight:700">+${r.gained_xp} XP</span>`;
+      });
+    }
+    draw();
+  }
+
+  v.innerHTML=`<div class="card" style="text-align:center">
+    <div style="font-size:36px">🪜</div>
+    <div style="font-weight:800;font-size:19px;margin-top:4px">Streak Ladder</div>
+    <div class="muted" style="margin:8px auto 0;max-width:340px;font-size:14px">Answer to climb the ladder — each rung gives you <b>less time</b> than the last. One wrong answer, or the clock running out, ends your run. How high can you climb?</div>
+    <div class="muted" style="margin-top:12px">Best: <b>${best}</b></div>
+    <button class="btn" id="sl-start" style="margin-top:16px">Start climbing</button></div>`;
+  document.getElementById("sl-start").onclick=start;
 }
 
 // ---------- Practice test ----------
