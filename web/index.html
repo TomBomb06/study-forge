@@ -205,6 +205,27 @@
   @keyframes fadein{from{opacity:0}to{opacity:1}}
   .confetti{position:fixed;z-index:10003;top:-12px;width:9px;height:14px;pointer-events:none;animation:confall linear forwards}
   @keyframes confall{0%{transform:translateY(-10px) rotate(0)}100%{transform:translateY(105vh) rotate(720deg)}}
+  /* Meteor Blitz arcade game */
+  .mb-hud{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;font-weight:800;font-size:16px}
+  .mb-hud .lives{letter-spacing:2px;font-size:15px}
+  .mb-combo{color:var(--brand-ink);font-weight:800;font-size:14px}
+  .mb-field{position:relative;height:300px;overflow:hidden;border-radius:16px;border:1px solid var(--border);
+    background:radial-gradient(120% 90% at 50% -10%,rgba(139,108,255,.18),transparent 60%),var(--surface-2)}
+  .meteor{position:absolute;left:50%;top:-80px;transform:translateX(-50%);max-width:86%;text-align:center;
+    background:linear-gradient(135deg,#ff8a5b,#ff5c9d);color:#fff;font-weight:700;font-size:14px;line-height:1.25;
+    padding:11px 15px;border-radius:14px;box-shadow:0 10px 26px -6px rgba(255,100,120,.75),0 0 0 4px rgba(255,140,90,.15);will-change:top}
+  .meteor::after{content:"";position:absolute;top:-16px;left:50%;transform:translateX(-50%);width:8px;height:18px;
+    background:linear-gradient(#ffd166,transparent);border-radius:50%;filter:blur(2px);opacity:.9}
+  .mb-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .mb-choice{background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:12px;
+    padding:13px 12px;font-weight:600;font-size:14px;transition:transform .08s,border-color .15s;min-height:48px}
+  .mb-choice:hover{border-color:var(--brand)}
+  .mb-choice:active{transform:scale(.96)}
+  .mb-boom{position:absolute;width:9px;height:9px;border-radius:50%;pointer-events:none;z-index:2;animation:mbBoom .5s ease-out forwards}
+  @keyframes mbBoom{from{opacity:1;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+  .mb-field.shake{animation:mbShake .3s}
+  @keyframes mbShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}60%{transform:translateX(7px)}80%{transform:translateX(-4px)}}
+  @media (max-width:600px){ .mb-field{height:260px} .mb-choice{font-size:13px;padding:12px 8px} }
   /* welcome wheel */
   #wheelov{position:fixed;inset:0;z-index:10002;background:rgba(8,9,13,.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;flex-direction:column;animation:fadein .25s ease;padding:20px;text-align:center}
   #wheelov h2{font-size:28px;margin:4px 0;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -508,9 +529,9 @@ function renderLanding(){
     <h2>Simple pricing</h2>
     <p class="lead">Start free. Upgrade when you want no ads and AI video lessons.</p>
     <div class="lp-price">
-      <div class="lp-plan"><div class="pn">Free</div><div class="pp">$0</div><ul><li>Unlimited study kits</li><li>All study modes</li><li>Natural AI voice (limited)</li><li>Supported by ads</li></ul></div>
-      <div class="lp-plan feat"><div class="lp-badge">Most popular</div><div class="pn">Basic</div><div class="pp">$9<span>/mo</span></div><ul><li>AI tutor & mistake reviews</li><li>Lots more natural AI voice</li><li>No ads</li><li>10 AI video lessons / month</li><li>Everything in Free</li></ul></div>
-      <div class="lp-plan"><div class="pn">Pro</div><div class="pp">$19<span>/mo</span></div><ul><li>AI tutor & mistake reviews</li><li>Most natural AI voice</li><li>No ads</li><li>40 AI video lessons / month</li><li>Everything in Free</li></ul></div>
+      <div class="lp-plan"><div class="pn">Free</div><div class="pp">$0</div><ul><li>20 study sets / month</li><li>All study modes + games</li><li>Natural AI voice (limited)</li><li>Supported by ads</li></ul></div>
+      <div class="lp-plan feat"><div class="lp-badge">Most popular</div><div class="pn">Basic</div><div class="pp">$9<span>/mo</span></div><ul><li>Unlimited study sets</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Lots more natural AI voice</li><li>No ads · 10 AI videos/mo</li></ul></div>
+      <div class="lp-plan"><div class="pn">Pro</div><div class="pp">$19<span>/mo</span></div><ul><li>Unlimited study sets</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Most natural AI voice</li><li>No ads · 40 AI videos/mo</li></ul></div>
     </div>
     <div style="text-align:center;margin-top:28px"><button class="btn" data-auth="signup" style="font-size:16px;padding:14px 26px">Get started free</button></div>
   </section>
@@ -588,6 +609,15 @@ function updatePremiumBtn(){
   b.classList.toggle("owned",paid);
   b.innerHTML=paid?"⭐ Premium":"✨ Go Premium";
   b.title=paid?"You're Premium — tap to manage your plan":"Go Premium — no ads + AI video lessons";
+}
+// Free users: show how many study sets they have left this month.
+function updateSetsNote(){
+  const n=document.getElementById("sets-note"); if(!n) return;
+  const s=state.usage&&state.usage.sets;
+  if(!s||s.unlimited){ n.innerHTML=""; return; }
+  const left=Math.max(0,s.remaining);
+  n.innerHTML=`<div class="muted" style="font-size:13px">📚 <b style="color:var(--brand-ink)">${left}</b> free study set${left===1?"":"s"} left this month · <a class="link" id="sets-up">Upgrade for unlimited</a></div>`;
+  const u=document.getElementById("sets-up"); if(u)u.onclick=(e)=>{e.preventDefault();renderUpgrade();};
 }
 // ---------- Premium AI tutor: deep explanations + personalized review ----------
 function isPaidPlan(){const p=state.usage&&state.usage.video&&state.usage.video.plan;return p==="basic"||p==="pro";}
@@ -996,7 +1026,7 @@ async function renderUpgrade(){
   box.innerHTML=`<div class="grid">${plans.map(([k,p])=>`<div class="card">
        <div style="font-weight:700;font-size:18px">${esc(p.name)}</div>
        <div style="font-weight:800;font-size:22px;margin-top:4px">$${p.price_usd}<span class="muted" style="font-size:13px;font-weight:500">/mo</span></div>
-       <div class="muted" style="font-size:13px;margin-top:8px">✓ <b>AI tutor</b>: in-depth explanations<br>✓ Personalized review of your mistakes<br>✓ <b>Natural AI read-aloud voice</b>${p.monthly_tts_chars?` (~${Math.round(p.monthly_tts_chars/1000)}k chars/mo)`:""}<br>✓ No ads<br>✓ ${p.monthly_videos} AI videos / month<br>✓ Everything in Free</div>
+       <div class="muted" style="font-size:13px;margin-top:8px">✓ <b>Unlimited study sets</b><br>✓ <b>Sharper AI model</b> (better sets)<br>✓ AI tutor + personalized mistake reviews<br>✓ Lecture audio/video transcription<br>✓ Natural AI voice${p.monthly_tts_chars?` (~${Math.round(p.monthly_tts_chars/1000)}k chars/mo)`:""}<br>✓ No ads · ${p.monthly_videos} AI videos / month</div>
        <button class="btn upg" data-p="${k}" style="margin-top:14px;width:100%">Choose ${esc(p.name)}</button></div>`).join("")}</div>
      ${u.billing_provider!=="stripe"?`<div class="muted" style="font-size:12px;margin-top:12px">Demo mode — upgrading here doesn’t charge real money yet. Real payments connect via Stripe.</div>`:""}`;
   box.querySelectorAll(".upg").forEach(b=>b.onclick=async()=>{
@@ -1017,13 +1047,14 @@ async function renderHome(){
       <button class="tab" data-src="text">Paste text</button>
       <button class="tab" data-src="link">Web / YouTube</button>
       <button class="tab" data-src="media">Audio/Video</button></div>
+    <div id="sets-note" style="margin:10px 0 0"></div>
     <div id="source" style="margin:16px 0"></div>
     <div id="job"></div><div id="due"></div><div id="list" class="stack"></div>
     <div id="adbanner" style="margin-top:18px"></div>`);
   const tabs=el.querySelectorAll(".tab");
   tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove("active"));t.classList.add("active");renderSource(t.dataset.src);});
   renderSource("file"); await loadSets();
-  await loadUsage(); renderAd(document.getElementById("adbanner"),"home");
+  await loadUsage(); renderAd(document.getElementById("adbanner"),"home"); updateSetsNote();
   const greet=()=>{
     const h1=document.getElementById("home-h1"),sub=document.getElementById("home-sub");
     if(h1&&state.displayName) h1.textContent=`${greetLine()}, ${state.displayName}`;
@@ -1069,10 +1100,19 @@ function renderSource(src){
       startJob(()=>api(isYT?"/uploads/youtube":"/uploads/link",{method:"POST",body:{url}}),url);
     };
   }else{
+    const canT=state.usage&&state.usage.can_transcribe;
+    if(!canT){
+      box.innerHTML=`<div class="card" style="text-align:center;border-color:rgba(139,108,255,.4)">
+        <div style="font-size:30px">🎙️</div>
+        <div style="font-weight:800;font-size:17px;margin-top:6px">Turn lectures into study sets</div>
+        <div class="muted" style="font-size:13px;margin:6px 0 14px">Upload a class recording and we'll transcribe it into a full study kit. This is a <b>Premium</b> feature. Free users can still use notes, PDFs, photos, and YouTube links.</div>
+        <button class="btn premium sm" id="media-up">✨ Upgrade to transcribe</button></div>`;
+      const b=document.getElementById("media-up"); if(b)b.onclick=renderUpgrade;
+      return;
+    }
     box.innerHTML=`<div class="dropzone" id="mdrop"><input id="mfile" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.mp4,.mov,.webm" class="hidden"/>
         <div style="font-size:30px">🎙️</div><div style="font-weight:600;margin-top:6px">Upload a lecture recording</div>
-        <div class="muted" style="font-size:13px;margin-top:4px">MP3 · WAV · M4A · MP4 · MOV · WEBM — we’ll transcribe it</div></div>
-      <div class="muted" style="font-size:12px;margin-top:10px">Transcription is a premium add-on — if it isn’t switched on yet, you’ll get a friendly note instead of a charge.</div>`;
+        <div class="muted" style="font-size:13px;margin-top:4px">MP3 · WAV · M4A · MP4 · MOV · WEBM — we’ll transcribe it</div></div>`;
     const md=document.getElementById("mdrop"),mf=document.getElementById("mfile");
     md.onclick=()=>mf.click();
     mf.onchange=()=>{ if(mf.files[0]){const form=new FormData();form.append("file",mf.files[0]);startJob(()=>api("/uploads/media",{method:"POST",form}),mf.files[0].name);} };
@@ -1209,7 +1249,9 @@ async function startJob(createFn,label,isTopic){
           <div class="muted" style="margin-top:6px">${esc(j.error||"Unknown error")}</div>
           <button class="btn ghost sm" style="margin-top:14px" onclick="document.getElementById('job').innerHTML=''">Dismiss</button></div>`;}
     },1200);
-  }catch(e){clearInterval(gm);job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="color:var(--bad);font-weight:600">Couldn’t start</div><div class="muted" style="margin-top:6px">${esc(e.message)}</div></div>`;}
+  }catch(e){clearInterval(gm);
+    if(/upgrade|premium|free study sets/i.test(e.message||"")){ job.innerHTML=""; toast(e.message,"good"); renderUpgrade(); return; }
+    job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="color:var(--bad);font-weight:600">Couldn’t start</div><div class="muted" style="margin-top:6px">${esc(e.message)}</div></div>`;}
 }
 
 // ---------- Study set: the CHOOSER ----------
@@ -1220,6 +1262,7 @@ const MODES=[
   {id:"cards", ic:"🃏", nm:"Flashcards",  ds:"Flip through key ideas"},
   {id:"quiz",  ic:"❓", nm:"Quiz",         ds:"Multiple-choice questions"},
   {id:"time",  ic:"🏁", nm:"Time Attack",  ds:"Beat the clock & your best"},
+  {id:"meteor",ic:"☄️", nm:"Meteor Blitz", ds:"Arcade: blast questions for a high score"},
   {id:"test",  ic:"📝", nm:"Practice test", ds:"Mixed question types"},
   {id:"match", ic:"🧩", nm:"Matching game", ds:"Match terms to definitions"},
 ];
@@ -1290,6 +1333,7 @@ function _dispatchMode(m){
   if(m==="cards") return renderCards();
   if(m==="quiz")  return renderQuiz();
   if(m==="time")  return renderTimeAttack();
+  if(m==="meteor") return renderMeteor();
   if(m==="test")  return renderTest();
   if(m==="match") return renderMatch();
 }
@@ -1609,6 +1653,97 @@ function renderTimeAttack(){
     };
     draw();
   }
+}
+
+// ---------- Meteor Blitz (falling-question arcade, high score) ----------
+function renderMeteor(){
+  const v=modeShell("Meteor Blitz"), s=state.current;
+  if(!s.quiz||!s.quiz.length){ v.innerHTML=`<div class="card">This set has no quiz questions to play with yet.</div>`; return; }
+  const key="sf_mb_"+s.id; let best=parseInt(localStorage.getItem(key)||"0",10);
+  const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+  function start(){
+    let score=0, lives=3, combo=0, answered=0, correct=0, order=[], oi=0, missTimer=null, gameOn=true;
+    v.innerHTML=`<div class="mb-hud">
+        <span>⭐ <span id="mb-score">0</span></span>
+        <span class="mb-combo" id="mb-combo"></span>
+        <span class="lives" id="mb-lives">❤️❤️❤️</span></div>
+      <div class="mb-field" id="mb-field"></div>
+      <div class="mb-choices" id="mb-choices"></div>
+      <div class="muted" style="text-align:center;margin-top:8px;font-size:12px">Tap the answer before the meteor lands · Best ${best}</div>`;
+    const field=()=>document.getElementById("mb-field");
+    const fallSecs=()=>Math.max(2.2, 5.5 - Math.floor(score/60)*0.4);  // ramps up with score
+
+    function spawn(){
+      if(!gameOn) return;
+      if(oi>=order.length){ order=shuffle([...s.quiz.keys()]); oi=0; }
+      const q=s.quiz[order[oi++]], f=field(); if(!f) return;
+      const m=document.createElement("div"); m.className="meteor"; m.textContent=q.question; f.appendChild(m);
+      const dur=fallSecs();
+      requestAnimationFrame(()=>{ m.style.transition=`top ${dur}s linear`; m.style.top=(f.clientHeight-12)+"px"; });
+      const cbox=document.getElementById("mb-choices");
+      cbox.innerHTML=q.choices.map((c,i)=>`<button class="mb-choice" data-i="${i}">${esc(c)}</button>`).join("");
+      let done=false;
+      const resolve=(ok,btn)=>{
+        if(done) return; done=true; clearTimeout(missTimer);
+        const r=m.getBoundingClientRect(), fr=f.getBoundingClientRect();
+        const bx=r.left-fr.left+r.width/2, by=Math.min(f.clientHeight-8, r.top-fr.top+r.height/2);
+        m.remove();
+        if(ok){
+          combo++; correct++;
+          const mult=Math.min(5, 1+Math.floor(combo/2));
+          const pts=10*mult; score+=pts;
+          boom(bx,by);
+          const sc=document.getElementById("mb-score"); if(sc)sc.textContent=score;
+          const cc=document.getElementById("mb-combo"); if(cc)cc.textContent=combo>1?("🔥 x"+mult):"";
+          if(btn) floatXP("+"+pts,btn);
+        }else{
+          combo=0; lives--; shake();
+          const lv=document.getElementById("mb-lives"); if(lv)lv.textContent="❤️".repeat(Math.max(0,lives))+"🖤".repeat(3-Math.max(0,lives));
+          const cc=document.getElementById("mb-combo"); if(cc)cc.textContent="";
+        }
+        answered++;
+        if(lives<=0){ return over(); }
+        spawn();
+      };
+      cbox.querySelectorAll(".mb-choice").forEach(b=>b.onclick=()=>resolve(+b.dataset.i===q.answer_index,b));
+      missTimer=setTimeout(()=>resolve(false,null), dur*1000+60);
+    }
+    function boom(x,y){
+      const f=field(); if(!f) return;
+      const colors=["#ff8a5b","#ffd166","#ff5c9d","#8b6cff","#fff"];
+      for(let i=0;i<14;i++){ const p=document.createElement("div"); p.className="mb-boom";
+        p.style.left=x+"px"; p.style.top=y+"px"; p.style.background=colors[i%colors.length];
+        const a=Math.random()*6.283, d=28+Math.random()*46;
+        p.style.setProperty("--dx",(Math.cos(a)*d)+"px"); p.style.setProperty("--dy",(Math.sin(a)*d)+"px");
+        f.appendChild(p); setTimeout(()=>p.remove(),520);
+      }
+    }
+    function shake(){ const f=field(); if(f){ f.classList.remove("shake"); void f.offsetWidth; f.classList.add("shake"); } }
+    function over(){
+      gameOn=false; clearTimeout(missTimer);
+      const isBest=score>best; if(isBest){ best=score; try{localStorage.setItem(key,String(best));}catch{} confetti(70); }
+      v.innerHTML=`<div class="card" style="text-align:center">
+        <div class="muted" style="font-weight:700">☄️ Game over</div>
+        <div class="big-score">${score}</div>
+        ${isBest?`<div class="pill" style="color:var(--good);border-color:var(--good);margin-top:8px">🎉 New high score!</div>`:`<div class="muted" style="margin-top:8px">Best: ${best}</div>`}
+        <div id="mb-xp" class="muted" style="margin-top:10px;font-size:14px"></div>
+        <div style="margin-top:20px"><button class="btn" id="mb-again">Play again</button></div></div>`;
+      document.getElementById("mb-again").onclick=start;
+      sendGame("time_attack",{score:correct,total:Math.max(correct,answered)||1},document.getElementById("mb-xp")).then(r=>{
+        const x=document.getElementById("mb-xp"); if(x&&r) x.innerHTML=`<span style="color:var(--brand-ink);font-weight:700">+${r.gained_xp} XP</span>`;
+      });
+    }
+    spawn();
+  }
+
+  v.innerHTML=`<div class="card" style="text-align:center">
+    <div style="font-size:36px">☄️</div>
+    <div style="font-weight:800;font-size:19px;margin-top:4px">Meteor Blitz</div>
+    <div class="muted" style="margin:8px auto 0;max-width:340px;font-size:14px">Questions rain down as meteors. Tap the right answer before each one lands. Chain correct answers for <b>combo multipliers</b> — the faster you go, the faster they fall. 3 lives. How high can you score?</div>
+    <div class="muted" style="margin-top:12px">Best: <b>${best}</b></div>
+    <button class="btn" id="mb-start" style="margin-top:16px">Start</button></div>`;
+  document.getElementById("mb-start").onclick=start;
 }
 
 // ---------- Practice test ----------

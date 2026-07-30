@@ -17,7 +17,8 @@ class Settings(BaseSettings):
 
     generator: str = "mock"  # "mock" | "claude"
     anthropic_api_key: str = ""
-    claude_model: str = "claude-sonnet-5"
+    claude_model: str = "claude-sonnet-5"          # paid plans: best quality
+    claude_model_free: str = "claude-haiku-4-5-20251001"  # free plan: fast + cheap
 
     # Premium AI video. "stub" = metering works, no real video yet (no cost).
     # "higgsfield" = call the real Cloud API (requires a key + spends money).

@@ -29,6 +29,8 @@ class User(Base):
     usage_period: Mapped[str] = mapped_column(String(7), default="")  # "YYYY-MM"
     videos_used: Mapped[int] = mapped_column(Integer, default=0)
     extra_video_credits: Mapped[int] = mapped_column(Integer, default=0)
+    # Study-set generation monthly metering (shares usage_period with videos).
+    sets_used: Mapped[int] = mapped_column(Integer, default=0)
     # AI read-aloud (TTS) monthly character metering.
     tts_chars_used: Mapped[int] = mapped_column(Integer, default=0)
     tts_period: Mapped[str] = mapped_column(String(7), default="")  # "YYYY-MM"

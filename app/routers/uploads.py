@@ -1,6 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from .. import billing
 from ..auth import get_current_user
 from ..db import get_db
 from ..models import Job, User
@@ -9,6 +10,26 @@ from ..schemas import JobResponse, LinkIngestRequest, TextIngestRequest
 from ..storage import UploadValidationError, save_upload
 
 router = APIRouter(tags=["uploads"])
+
+
+def _require_generation(user: User, db: Session, *, transcription: bool = False) -> None:
+    """Enforce the monthly study-set allowance (and paid-only transcription),
+    then reserve one credit. Raises 402 so the client opens the upgrade screen."""
+    if transcription and not billing.can_transcribe(user):
+        raise HTTPException(
+            status_code=402,
+            detail="Turning audio & video into study sets is a Premium feature. "
+                   "Upgrade to transcribe lectures — or paste notes / a YouTube link for free.",
+        )
+    status = billing.sets_status(user)
+    if not status["can_create"]:
+        raise HTTPException(
+            status_code=402,
+            detail="You've used all your free study sets this month. Upgrade for "
+                   "unlimited study sets (and the sharper AI model).",
+        )
+    billing.consume_set(user)
+    db.commit()
 
 
 @router.post("/uploads", response_model=JobResponse, status_code=202)
@@ -27,6 +48,7 @@ def create_upload(
     except UploadValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+    _require_generation(user, db)
     job = Job(user_id=user.id, source_filename=file.filename or "upload")
     db.add(job)
     db.commit()
@@ -55,6 +77,7 @@ def create_multi_upload(
     except UploadValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+    _require_generation(user, db)
     label = title.strip() or f"Combined ({len(files)} files)"
     job = Job(user_id=user.id, source_filename=label[:255])
     db.add(job)
@@ -72,6 +95,7 @@ def create_text_upload(
     db: Session = Depends(get_db),
 ):
     """Generate a study set from pasted or typed text."""
+    _require_generation(user, db)
     label = (body.title or "").strip() or "Pasted notes"
     job = Job(user_id=user.id, source_filename=label[:255])
     db.add(job)
@@ -89,6 +113,7 @@ def create_link_upload(
     db: Session = Depends(get_db),
 ):
     """Generate a study set from the readable text of a web link."""
+    _require_generation(user, db)
     job = Job(user_id=user.id, source_filename=body.url.strip()[:255])
     db.add(job)
     db.commit()
@@ -105,6 +130,7 @@ def create_youtube_upload(
     db: Session = Depends(get_db),
 ):
     """Generate a study set from a YouTube video's captions."""
+    _require_generation(user, db)
     job = Job(user_id=user.id, source_filename=body.url.strip()[:255])
     db.add(job)
     db.commit()
@@ -121,11 +147,19 @@ def create_media_upload(
     db: Session = Depends(get_db),
 ):
     """Generate a study set from a lecture audio/video file (transcribed)."""
+    # Transcription is Premium-only; check before we bother storing the file.
+    if not billing.can_transcribe(user):
+        raise HTTPException(
+            status_code=402,
+            detail="Turning audio & video into study sets is a Premium feature. "
+                   "Upgrade to transcribe lectures — or paste notes / a YouTube link for free.",
+        )
     try:
         stored_path, ext = save_upload(file, user.id)
     except UploadValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+    _require_generation(user, db, transcription=True)
     job = Job(user_id=user.id, source_filename=file.filename or "lecture")
     db.add(job)
     db.commit()

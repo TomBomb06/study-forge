@@ -24,6 +24,14 @@ from .youtube import fetch_youtube_transcript
 logger = logging.getLogger("studyforge.jobs")
 
 
+def _model_for(user) -> Optional[str]:
+    """Paid plans get the best model; free plan gets the fast, cheap one."""
+    from ..config import get_settings
+    s = get_settings()
+    plan = (getattr(user, "plan", None) or "free")
+    return s.claude_model if plan in ("basic", "pro") else s.claude_model_free
+
+
 def run_video_job(study_set_id: str) -> None:
     """Generate a premium video in the background and record the result.
 
@@ -130,17 +138,22 @@ def run_multi_job(job_id: str, files: list) -> None:
 
 def _finish(db, job: "Job", text: str) -> None:
     """Shared tail: generate from text and save the study set (or fail)."""
+    user = db.get(User, job.user_id)
     try:
-        content = generate_study_set(text, job.source_filename)
+        content = generate_study_set(text, job.source_filename, model=_model_for(user))
     except (ExtractionError, GenerationError) as e:
         job.status = "failed"
         job.error = str(e)
+        if user is not None:
+            billing.refund_set(user)  # don't charge a credit for a failed set
         db.commit()
         return
     except Exception:
         logger.exception("Unexpected failure finishing job %s", job.id)
         job.status = "failed"
         job.error = "Something went wrong while processing this. Please try again."
+        if user is not None:
+            billing.refund_set(user)
         db.commit()
         return
     study_set = StudySet(
@@ -184,16 +197,24 @@ def run_processing_job(
                 file_path=file_path, ext=ext, raw_text=raw_text, url=url,
                 youtube_url=youtube_url, media_path=media_path,
             )
-            content = generate_study_set(text, job.source_filename, topic=is_topic)
+            user = db.get(User, job.user_id)
+            content = generate_study_set(text, job.source_filename, topic=is_topic,
+                                         model=_model_for(user))
         except (ExtractionError, GenerationError) as e:
             job.status = "failed"
             job.error = str(e)
+            _u = db.get(User, job.user_id)
+            if _u is not None:
+                billing.refund_set(_u)  # don't charge a credit for a failed set
             db.commit()
             return
         except Exception:
             logger.exception("Unexpected failure processing job %s", job_id)
             job.status = "failed"
             job.error = "Something went wrong while processing this. Please try again."
+            _u = db.get(User, job.user_id)
+            if _u is not None:
+                billing.refund_set(_u)
             db.commit()
             return
 

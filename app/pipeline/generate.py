@@ -395,16 +395,17 @@ class ClaudeGenerator:
 
 # ---------------------------------------------------------------- entry
 
-def get_generator():
+def get_generator(model: Optional[str] = None):
     settings = get_settings()
     if settings.generator == "claude":
-        return ClaudeGenerator()
+        return ClaudeGenerator(model=model)
     return MockGenerator()
 
 
-def generate_study_set(text: str, filename: str, topic: bool = False) -> StudySetContent:
+def generate_study_set(text: str, filename: str, topic: bool = False,
+                       model: Optional[str] = None) -> StudySetContent:
     if len(text) > MAX_INPUT_CHARS:
         text = text[:MAX_INPUT_CHARS]
-    content = get_generator().generate(text, filename, topic=topic)
+    content = get_generator(model).generate(text, filename, topic=topic)
     # Belt-and-braces: whatever the provider, re-validate before returning.
     return StudySetContent.model_validate(content.model_dump())

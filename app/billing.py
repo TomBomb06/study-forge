@@ -12,13 +12,20 @@ from datetime import date
 
 # Plan catalog. Prices are placeholders for now — tune once you've tested
 # willingness to pay. `monthly_videos` is the allowance included each month.
-# `monthly_tts_chars` is the free/paid allowance of AI read-aloud characters
-# per month (OpenAI TTS bills per character). Free users get a taste; when they
-# run out, /tts/speak returns 402 and the app sends them to upgrade.
+# Per-plan monthly allowances:
+#   monthly_sets      — study sets a user can generate per month (the main AI cost).
+#   monthly_tts_chars — AI read-aloud characters per month.
+#   transcription     — may turn audio/video into study sets (the priciest feature).
+# Free users get a generous taste; when they run out it's a 402 → upgrade.
+UNLIMITED = 100000  # displayed as "Unlimited"; still a ceiling to stop abuse.
+
 PLANS: dict[str, dict] = {
-    "free":  {"name": "Free",  "monthly_videos": 0,  "price_usd": 0,  "monthly_tts_chars": 6000},
-    "basic": {"name": "Basic", "monthly_videos": 10, "price_usd": 9,  "monthly_tts_chars": 150000},
-    "pro":   {"name": "Pro",   "monthly_videos": 40, "price_usd": 19, "monthly_tts_chars": 600000},
+    "free":  {"name": "Free",  "monthly_videos": 0,  "price_usd": 0,
+              "monthly_sets": 20,        "monthly_tts_chars": 6000,   "transcription": False},
+    "basic": {"name": "Basic", "monthly_videos": 10, "price_usd": 9,
+              "monthly_sets": 120,       "monthly_tts_chars": 150000, "transcription": True},
+    "pro":   {"name": "Pro",   "monthly_videos": 40, "price_usd": 19,
+              "monthly_sets": UNLIMITED, "monthly_tts_chars": 600000, "transcription": True},
 }
 
 DEFAULT_PLAN = "free"
@@ -36,11 +43,12 @@ def _current_period() -> str:
 
 
 def ensure_period(user) -> None:
-    """Reset the monthly counter when a new month starts. Caller commits."""
+    """Reset the monthly counters when a new month starts. Caller commits."""
     cur = _current_period()
     if getattr(user, "usage_period", None) != cur:
         user.usage_period = cur
         user.videos_used = 0
+        user.sets_used = 0
 
 
 def plan_of(user) -> dict:
@@ -99,6 +107,45 @@ def consume_tts_chars(user, n: int) -> dict:
     ensure_tts_period(user)
     user.tts_chars_used = (user.tts_chars_used or 0) + max(0, int(n))
     return voice_status(user)
+
+
+# ---------------- study-set generation metering (the main AI cost) ----------------
+
+def sets_status(user) -> dict:
+    """The user's monthly study-set generation balance."""
+    ensure_period(user)
+    plan = plan_of(user)
+    quota = plan.get("monthly_sets", 0)
+    used = user.sets_used or 0
+    remaining = max(0, quota - used)
+    return {
+        "plan": user.plan or DEFAULT_PLAN,
+        "monthly_sets": quota,
+        "sets_used": used,
+        "remaining": remaining,
+        "unlimited": quota >= UNLIMITED,
+        "can_create": remaining > 0,
+    }
+
+
+def consume_set(user) -> dict:
+    """Count one generated study set against the monthly allowance."""
+    ensure_period(user)
+    user.sets_used = (user.sets_used or 0) + 1
+    return sets_status(user)
+
+
+def refund_set(user) -> dict:
+    """Give a set-credit back (e.g. when generation fails)."""
+    ensure_period(user)
+    if (user.sets_used or 0) > 0:
+        user.sets_used -= 1
+    return sets_status(user)
+
+
+def can_transcribe(user) -> bool:
+    """Audio/video transcription is a paid feature (it's the priciest to run)."""
+    return bool(plan_of(user).get("transcription", False))
 
 
 class QuotaExceeded(Exception):

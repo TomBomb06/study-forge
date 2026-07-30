@@ -43,6 +43,7 @@ def _ensure_columns() -> None:
             "usage_period": "VARCHAR(7) DEFAULT ''",
             "videos_used": "INTEGER DEFAULT 0",
             "extra_video_credits": "INTEGER DEFAULT 0",
+            "sets_used": "INTEGER DEFAULT 0",
             "tts_chars_used": "INTEGER DEFAULT 0",
             "tts_period": "VARCHAR(7) DEFAULT ''",
             "stripe_customer_id": "VARCHAR(64)",

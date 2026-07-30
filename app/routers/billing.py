@@ -78,12 +78,15 @@ def get_progress(
 @router.get("/me/usage")
 def get_usage(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     status = billing.video_status(user)
+    sets = billing.sets_status(user)
     db.commit()  # persist any monthly reset ensure_period() applied
     settings = get_settings()
     plan = user.plan or "free"
     return {
         "email": user.email,
         "video": status,
+        "sets": sets,
+        "can_transcribe": billing.can_transcribe(user),
         "plans": billing.PLANS,
         "credit_packs": billing.CREDIT_PACKS,
         "billing_provider": settings.billing_provider,
