@@ -107,12 +107,30 @@ _WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web")
 _NO_CACHE = {"Cache-Control": "no-cache, must-revalidate", "Pragma": "no-cache"}
 
 
+def _extract_pixel_id(raw: str) -> str:
+    """Pull a usable Pixel ID out of whatever was pasted into the setting.
+
+    Accepts the plain number ("1234567890123456") but also copes with someone
+    pasting Meta's whole <script> snippet — we look for fbq('init','<id>') and
+    otherwise fall back to the longest run of digits. Returns digits only, so
+    nothing executable can ever reach the page.
+    """
+    raw = (raw or "").strip()
+    if not raw:
+        return ""
+    if raw.isdigit():
+        return raw
+    import re as _re
+    m = _re.search(r"init['\"\s,]+(\d{6,})", raw)
+    if m:
+        return m.group(1)
+    runs = _re.findall(r"\d{6,}", raw)
+    return max(runs, key=len) if runs else ""
+
+
 def _meta_pixel_snippet() -> str:
     """Meta Pixel base code — only emitted when META_PIXEL_ID is configured."""
-    pid = get_settings().meta_pixel_id.strip()
-    if not pid:
-        return ""
-    safe = "".join(c for c in pid if c.isalnum())  # ids are numeric; be strict
+    safe = _extract_pixel_id(get_settings().meta_pixel_id)
     if not safe:
         return ""
     return (
