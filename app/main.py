@@ -2,7 +2,7 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
 
@@ -107,8 +107,43 @@ _WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web")
 _NO_CACHE = {"Cache-Control": "no-cache, must-revalidate", "Pragma": "no-cache"}
 
 
-def _html(name: str) -> FileResponse:
-    return FileResponse(os.path.join(_WEB_DIR, name), headers=_NO_CACHE)
+def _meta_pixel_snippet() -> str:
+    """Meta Pixel base code — only emitted when META_PIXEL_ID is configured."""
+    pid = get_settings().meta_pixel_id.strip()
+    if not pid:
+        return ""
+    safe = "".join(c for c in pid if c.isalnum())  # ids are numeric; be strict
+    if not safe:
+        return ""
+    return (
+        "<script>window.SF_PIXEL_ID='%s';"
+        "!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?"
+        "n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;"
+        "n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;"
+        "t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}"
+        "(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');"
+        "fbq('init','%s');fbq('track','PageView');</script>"
+        "<noscript><img height=\"1\" width=\"1\" style=\"display:none\" "
+        "src=\"https://www.facebook.com/tr?id=%s&ev=PageView&noscript=1\"/></noscript>"
+    ) % (safe, safe, safe)
+
+
+def _html(name: str):
+    """Serve an HTML page, injecting the Meta Pixel when one is configured."""
+    path = os.path.join(_WEB_DIR, name)
+    snippet = _meta_pixel_snippet()
+    if not snippet:
+        return FileResponse(path, headers=_NO_CACHE)
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            html = f.read()
+    except OSError:
+        return FileResponse(path, headers=_NO_CACHE)
+    if "<!--META_PIXEL-->" in html:
+        html = html.replace("<!--META_PIXEL-->", snippet, 1)
+    else:  # fall back to just before </head>
+        html = html.replace("</head>", snippet + "</head>", 1)
+    return HTMLResponse(content=html, headers=_NO_CACHE)
 
 
 if os.path.isdir(_WEB_DIR):

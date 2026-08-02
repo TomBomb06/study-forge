@@ -70,6 +70,10 @@ class Settings(BaseSettings):
     adsense_slot_quiz: str = ""
     adsense_slot_break: str = ""  # full-screen ad-break unit between study actions
 
+    # Meta (Facebook/Instagram) Pixel — measures which ads drive signups.
+    # Empty = no tracking code is served at all.
+    meta_pixel_id: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

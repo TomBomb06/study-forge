@@ -339,6 +339,7 @@
   }
   @media (max-width:380px){ .grid{grid-template-columns:1fr} .hud .flame,.hud .coins{font-size:13px} }
 </style>
+<!--META_PIXEL-->
 </head>
 <body>
 <div id="app"></div>
@@ -373,6 +374,11 @@ function toast(msg,kind=""){
   clearTimeout(_toastT); _toastT=setTimeout(()=>el.classList.remove("show"),2600);
 }
 function setToken(t){state.token=t; if(t)localStorage.setItem("sf_token",t); else localStorage.removeItem("sf_token");}
+// Meta Pixel conversion tracking. No-op unless META_PIXEL_ID is configured
+// on the server (the base code is injected server-side into the page head).
+function track(event,params,custom){
+  try{ if(typeof fbq!=="function")return; fbq(custom?"trackCustom":"track",event,params||{}); }catch{}
+}
 function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function stopSpeech(){ try{window.speechSynthesis.cancel();}catch{} }
 
@@ -570,7 +576,10 @@ function renderAuth(initial){
     const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value,err=document.getElementById("err"),btn=document.getElementById("submit");
     err.textContent=""; if(!email||!password){err.textContent="Enter an email and password.";return;}
     const label=btn.textContent; btn.disabled=true; btn.textContent=mode==="signup"?"Creating account…":"Logging in…";
-    try{const r=await api("/auth/"+(mode==="signup"?"signup":"login"),{method:"POST",body:{email,password}});setToken(r.access_token);renderHome();}
+    try{const r=await api("/auth/"+(mode==="signup"?"signup":"login"),{method:"POST",body:{email,password}});
+      setToken(r.access_token);
+      if(mode==="signup") track("CompleteRegistration",{content_name:"StudyForge signup"});
+      renderHome();}
     catch(e){err.textContent=e.message; btn.disabled=false; btn.textContent=label;}
   };
   document.getElementById("password").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("submit").click();});
@@ -1033,7 +1042,10 @@ async function renderUpgrade(){
        <button class="btn upg" data-p="${k}" style="margin-top:14px;width:100%">Choose ${esc(p.name)}</button></div>`).join("")}</div>
      ${u.billing_provider!=="stripe"?`<div class="muted" style="font-size:12px;margin-top:12px">Demo mode — upgrading here doesn’t charge real money yet. Real payments connect via Stripe.</div>`:""}`;
   box.querySelectorAll(".upg").forEach(b=>b.onclick=async()=>{
-    try{const r=await api("/billing/checkout/plan",{method:"POST",body:{plan:b.dataset.p}});
+    try{
+      const _p=(u.plans&&u.plans[b.dataset.p])||{};
+      track("InitiateCheckout",{content_name:b.dataset.p,value:_p.price_usd||0,currency:"USD"});
+      const r=await api("/billing/checkout/plan",{method:"POST",body:{plan:b.dataset.p}});
       if(r.url){toast("Opening secure checkout…");location.href=r.url;return;}
       toast("You’re upgraded ✓ — ads off","good"); state.showAds=false; renderHome();
     }catch(e){toast(e.message,"bad");}
@@ -1246,7 +1258,7 @@ async function startJob(createFn,label,isTopic){
     const poll=setInterval(async()=>{
       pct=Math.min(pct+7,90); if(bar())bar().style.width=pct+"%";
       let j; try{j=await api("/jobs/"+created.id);}catch{return;}
-      if(j.status==="completed"){clearInterval(poll);clearInterval(gm);if(bar())bar().style.width="100%";job.innerHTML="";sendGame("set_created",{});await loadSets();openSet(j.study_set_id);}
+      if(j.status==="completed"){clearInterval(poll);clearInterval(gm);if(bar())bar().style.width="100%";job.innerHTML="";track("StudySetCreated",{},true);sendGame("set_created",{});await loadSets();openSet(j.study_set_id);}
       else if(j.status==="failed"){clearInterval(poll);clearInterval(gm);
         job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="font-weight:600;color:var(--bad)">Couldn’t create a study set</div>
           <div class="muted" style="margin-top:6px">${esc(j.error||"Unknown error")}</div>
@@ -1522,7 +1534,7 @@ async function renderPremium(){
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">${upgrades}</div>
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">${packs}</div>
       <div class="muted" style="font-size:12px;margin-top:10px">Demo mode — these don’t charge real money yet. Payments connect via Stripe later.</div>`;
-    act.querySelectorAll(".upg").forEach(b=>b.onclick=async()=>{try{const r=await api("/billing/checkout/plan",{method:"POST",body:{plan:b.dataset.p}});if(r.url){toast("Opening secure checkout…");location.href=r.url;return;}toast("Plan updated ✓","good");renderPremium();}catch(e){toast(e.message,"bad");}});
+    act.querySelectorAll(".upg").forEach(b=>b.onclick=async()=>{try{track("InitiateCheckout",{content_name:b.dataset.p,currency:"USD"});const r=await api("/billing/checkout/plan",{method:"POST",body:{plan:b.dataset.p}});if(r.url){toast("Opening secure checkout…");location.href=r.url;return;}toast("Plan updated ✓","good");renderPremium();}catch(e){toast(e.message,"bad");}});
     act.querySelectorAll(".buypack").forEach(b=>b.onclick=async()=>{try{const r=await api("/billing/checkout/pack",{method:"POST",body:{pack:b.dataset.p}});if(r.url){toast("Opening secure checkout…");location.href=r.url;return;}toast("Video pack added ✓","good");renderPremium();}catch(e){toast(e.message,"bad");}});
   }
 }
@@ -1941,6 +1953,7 @@ try{applyThemeEarly(localStorage.getItem("sf_theme_id"));}catch{}
 const _params=new URLSearchParams(location.search);
 state.pendingShare=_params.get("s");
 const _checkout=_params.get("checkout");
+if(_checkout==="success") track("Purchase",{currency:"USD",value:0,content_name:"StudyForge subscription"});
 if(_checkout){ history.replaceState({},"",location.pathname);
   setTimeout(()=>toast(_checkout==="success"?"Payment complete — your account is updated ✓":"Checkout canceled",_checkout==="success"?"good":""),400); }
 if(state.token) renderHome(); else if(state.pendingShare) renderAuth("signup"); else renderLanding();
