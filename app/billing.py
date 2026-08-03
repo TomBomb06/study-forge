@@ -21,7 +21,7 @@ UNLIMITED = 100000  # displayed as "Unlimited"; still a ceiling to stop abuse.
 
 PLANS: dict[str, dict] = {
     "free":  {"name": "Free",  "monthly_videos": 0,  "price_usd": 0,
-              "monthly_sets": 20,        "monthly_tts_chars": 6000,   "transcription": False},
+              "monthly_sets": 5,         "monthly_tts_chars": 6000,   "transcription": False},
     "basic": {"name": "Basic", "monthly_videos": 10, "price_usd": 9,
               "monthly_sets": 120,       "monthly_tts_chars": 150000, "transcription": True},
     "pro":   {"name": "Pro",   "monthly_videos": 40, "price_usd": 19,

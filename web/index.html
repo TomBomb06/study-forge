@@ -148,6 +148,22 @@
   .notes li{margin:5px 0}
   .notes strong{color:#fff}
   .pill{display:inline-block;padding:4px 12px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
+  /* Math solver: the answer is the reward, the locked steps are the pitch. */
+  .mathres{border-color:rgba(139,108,255,.45)}
+  .manswer{font-family:Sora,Inter,sans-serif;font-size:34px;font-weight:800;letter-spacing:-.02em;
+    background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+    margin:2px 0 16px;word-break:break-word}
+  .mstep-head{font-weight:700;font-size:14px;margin-bottom:8px}
+  ol.msteps{margin:0;padding-left:20px;font-size:14.5px;line-height:1.6}
+  ol.msteps li{margin:7px 0}
+  .mcheck{margin-top:14px;padding:10px 12px;border-radius:12px;background:var(--surface-2);
+    border:1px solid var(--border);font-size:13px;color:var(--muted)}
+  .msteps-lock{border-top:1px solid var(--border);padding-top:14px}
+  .mblurwrap{position:relative;margin-bottom:6px}
+  .mstep-blur{font-size:14.5px;line-height:1.6;color:var(--muted);margin:7px 0;
+    filter:blur(4.5px);user-select:none;pointer-events:none}
+  .mstep-blur:first-child{filter:blur(2.5px)}
+  .mfade{position:absolute;inset:0;background:linear-gradient(180deg,transparent,var(--surface) 82%)}
   .stack>*+*{margin-top:12px}
   .big-score{font-size:46px;font-weight:800;letter-spacing:-.03em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   a.link{color:var(--brand-2);cursor:pointer;text-decoration:none;font-weight:600}
@@ -538,9 +554,9 @@ function renderLanding(){
     <h2>Simple pricing</h2>
     <p class="lead">Start free. Upgrade when you want no ads and AI video lessons.</p>
     <div class="lp-price">
-      <div class="lp-plan"><div class="pn">Free</div><div class="pp">$0</div><ul><li>20 study sets / month</li><li>All study modes + games</li><li>Natural AI voice (limited)</li><li>Supported by ads</li></ul></div>
-      <div class="lp-plan feat"><div class="lp-badge">Most popular</div><div class="pn">Basic</div><div class="pp">$9<span>/mo</span></div><ul><li>Unlimited study sets</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Lots more natural AI voice</li><li>No ads · 10 AI videos/mo</li></ul></div>
-      <div class="lp-plan"><div class="pn">Pro</div><div class="pp">$19<span>/mo</span></div><ul><li>Unlimited study sets</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Most natural AI voice</li><li>No ads · 40 AI videos/mo</li></ul></div>
+      <div class="lp-plan"><div class="pn">Free</div><div class="pp">$0</div><ul><li>5 study sets / month</li><li><b>Unlimited</b> math photo answers</li><li>All study modes + games</li><li>Natural AI voice (limited)</li><li>Supported by ads</li></ul></div>
+      <div class="lp-plan feat"><div class="lp-badge">Most popular</div><div class="pn">Basic</div><div class="pp">$9<span>/mo</span></div><ul><li>Unlimited study sets</li><li><b>Math steps</b> — how to solve it</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Lots more natural AI voice</li><li>No ads · 10 AI videos/mo</li></ul></div>
+      <div class="lp-plan"><div class="pn">Pro</div><div class="pp">$19<span>/mo</span></div><ul><li>Unlimited study sets</li><li><b>Math steps</b> — how to solve it</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Most natural AI voice</li><li>No ads · 40 AI videos/mo</li></ul></div>
     </div>
     <div style="text-align:center;margin-top:28px"><button class="btn" data-auth="signup" style="font-size:16px;padding:14px 26px">Get started free</button></div>
   </section>
@@ -628,7 +644,12 @@ function updateSetsNote(){
   const s=state.usage&&state.usage.sets;
   if(!s||s.unlimited){ n.innerHTML=""; return; }
   const left=Math.max(0,s.remaining);
-  n.innerHTML=`<div class="muted" style="font-size:13px">📚 <b style="color:var(--brand-ink)">${left}</b> free study set${left===1?"":"s"} left this month · <a class="link" id="sets-up">Upgrade for unlimited</a></div>`;
+  // Don't call a paid user's allowance "free", and don't nag them to buy what
+  // they already have — Basic gets pointed at Pro, Pro/unlimited sees nothing.
+  const plan=s.plan||"free";
+  const word=plan==="free"?"free study set":"study set";
+  const cta=plan==="free"?"Upgrade for unlimited":"Go Pro for unlimited";
+  n.innerHTML=`<div class="muted" style="font-size:13px">📚 <b style="color:var(--brand-ink)">${left}</b> ${word}${left===1?"":"s"} left this month${s.monthly_sets?` <span style="opacity:.7">of ${s.monthly_sets}</span>`:""} · <a class="link" id="sets-up">${cta}</a></div>`;
   const u=document.getElementById("sets-up"); if(u)u.onclick=(e)=>{e.preventDefault();renderUpgrade();};
 }
 // ---------- Premium AI tutor: deep explanations + personalized review ----------
@@ -1038,7 +1059,7 @@ async function renderUpgrade(){
   box.innerHTML=`<div class="grid">${plans.map(([k,p])=>`<div class="card">
        <div style="font-weight:700;font-size:18px">${esc(p.name)}</div>
        <div style="font-weight:800;font-size:22px;margin-top:4px">$${p.price_usd}<span class="muted" style="font-size:13px;font-weight:500">/mo</span></div>
-       <div class="muted" style="font-size:13px;margin-top:8px">✓ <b>Unlimited study sets</b><br>✓ <b>Sharper AI model</b> (better sets)<br>✓ AI tutor + personalized mistake reviews<br>✓ Lecture audio/video transcription<br>✓ Natural AI voice${p.monthly_tts_chars?` (~${Math.round(p.monthly_tts_chars/1000)}k chars/mo)`:""}<br>✓ No ads · ${p.monthly_videos} AI videos / month</div>
+       <div class="muted" style="font-size:13px;margin-top:8px">✓ <b>Unlimited study sets</b><br>✓ <b>Math step-by-step</b> — how to solve it, not just the answer<br>✓ <b>Sharper AI model</b> (better sets)<br>✓ AI tutor + personalized mistake reviews<br>✓ Lecture audio/video transcription<br>✓ Natural AI voice${p.monthly_tts_chars?` (~${Math.round(p.monthly_tts_chars/1000)}k chars/mo)`:""}<br>✓ No ads · ${p.monthly_videos} AI videos / month</div>
        <button class="btn upg" data-p="${k}" style="margin-top:14px;width:100%">Choose ${esc(p.name)}</button></div>`).join("")}</div>
      ${u.billing_provider!=="stripe"?`<div class="muted" style="font-size:12px;margin-top:12px">Demo mode — upgrading here doesn’t charge real money yet. Real payments connect via Stripe.</div>`:""}`;
   box.querySelectorAll(".upg").forEach(b=>b.onclick=async()=>{
@@ -1059,6 +1080,7 @@ async function renderHome(){
     <div class="gamestrip" id="gamestrip"></div>
     <div class="tabs" style="margin:18px 0 0;flex-wrap:wrap">
       <button class="tab active" data-src="file">File</button>
+      <button class="tab" data-src="math">📷 Math solver</button>
       <button class="tab" data-src="text">Paste text</button>
       <button class="tab" data-src="link">Web / YouTube</button>
       <button class="tab" data-src="media">Audio/Video</button></div>
@@ -1103,6 +1125,35 @@ function renderSource(src){
       const isTopic=content.length<240;
       startJob(()=>api("/uploads/text",{method:"POST",body:{content,title:title||null}}),title||(isTopic?content:"your text"),isTopic);
     };
+  }else if(src==="math"){
+    box.innerHTML=`<div class="card">
+      <div style="font-weight:800;font-size:17px">Stuck on a problem? Snap it.</div>
+      <div class="muted" style="font-size:13px;margin:6px 0 14px">Take a photo of any math problem and get the answer instantly — free, unlimited.</div>
+      <div class="dropzone" id="mathdrop" style="padding:26px 16px">
+        <input id="mathfile" type="file" accept="image/png,image/jpeg,image/webp" capture="environment" class="hidden"/>
+        <div style="font-size:32px">📷</div>
+        <div style="font-weight:600;margin-top:6px">Take a photo or upload</div>
+        <div class="muted" style="font-size:13px;margin-top:4px">Fill the frame with just the problem, in focus</div>
+      </div>
+      <div class="muted" style="font-size:12px;text-align:center;margin:12px 0 10px">— or type it —</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="math-q" placeholder="e.g. 2x + 5 = 17" style="flex:1;min-width:180px"/>
+        <button class="btn sm" id="math-go">Solve</button>
+      </div>
+      <div id="math-out" style="margin-top:16px"></div></div>`;
+    const md=document.getElementById("mathdrop"),mf=document.getElementById("mathfile");
+    md.onclick=()=>mf.click();
+    ["dragover","dragenter"].forEach(ev=>md.addEventListener(ev,e=>{e.preventDefault();md.classList.add("drag");}));
+    ["dragleave","drop"].forEach(ev=>md.addEventListener(ev,e=>{e.preventDefault();md.classList.remove("drag");}));
+    md.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)solveMathPhoto(f);});
+    mf.onchange=()=>{ if(mf.files[0]) solveMathPhoto(mf.files[0]); };
+    const go=()=>{
+      const q=document.getElementById("math-q").value.trim();
+      if(q.length<1){flashError("Type a problem first — like 2x + 5 = 17.");return;}
+      solveMath(()=>api("/math/solve-text",{method:"POST",body:{problem:q}}));
+    };
+    document.getElementById("math-go").onclick=go;
+    document.getElementById("math-q").addEventListener("keydown",e=>{if(e.key==="Enter")go();});
   }else if(src==="link"){
     box.innerHTML=`<div class="card">
       <div class="field"><label>Web link or YouTube URL</label><input id="l-url" placeholder="https://en.wikipedia.org/wiki/Photosynthesis"/></div>
@@ -1134,6 +1185,62 @@ function renderSource(src){
   }
 }
 function flashError(msg){document.getElementById("job").innerHTML=`<div class="card" style="margin-bottom:20px"><div style="color:var(--bad);font-weight:600">${esc(msg)}</div></div>`;}
+
+// ---------- Math solver ----------
+function solveMathPhoto(f){
+  if(!/^image\//.test(f.type||"")){mathErr("That needs to be a photo — PNG, JPG or WEBP.");return;}
+  const form=new FormData();form.append("file",f);
+  solveMath(()=>api("/math/solve",{method:"POST",form}));
+}
+function mathErr(msg){
+  const out=document.getElementById("math-out");
+  if(out) out.innerHTML=`<div class="card" style="border-color:var(--bad)"><div style="color:var(--bad);font-weight:600">${esc(msg)}</div></div>`;
+}
+async function solveMath(fn){
+  const out=document.getElementById("math-out");
+  if(!out) return;
+  out.innerHTML=`<div class="card" style="text-align:center"><div class="spinner"></div>
+    <div class="muted" style="font-size:13px;margin-top:10px">Reading your problem…</div></div>`;
+  try{
+    const r=await fn();
+    renderMathResult(r);
+    track("MathSolve",{locked:!!r.locked},true);
+  }catch(e){
+    mathErr((e&&e.message)||"Couldn't solve that one. Try a clearer photo.");
+  }
+}
+function renderMathResult(r){
+  const out=document.getElementById("math-out");
+  if(!out) return;
+  const topic=r.topic?`<span class="pill">${esc(r.topic)}</span>`:"";
+  const problem=r.problem?`<div class="muted" style="font-size:13px;margin-bottom:8px">${esc(r.problem)}</div>`:"";
+  let steps;
+  if(r.locked){
+    const n=r.step_count||3;
+    const blur=Array.from({length:Math.min(n,4)},(_,i)=>
+      `<div class="mstep-blur">${esc(i===0&&r.teaser?r.teaser:"—————— —— ———— ————— —— ———— ——————")}</div>`).join("");
+    steps=`<div class="msteps-lock">
+      <div class="mstep-head">How to solve it — ${n} step${n===1?"":"s"}</div>
+      <div class="mblurwrap">${blur}<div class="mfade"></div></div>
+      <div style="text-align:center;margin-top:-6px;position:relative">
+        <div style="font-size:22px">🔒</div>
+        <div style="font-weight:700;font-size:15px;margin-top:2px">See how it's done</div>
+        <div class="muted" style="font-size:13px;margin:4px 0 12px">${esc(r.upgrade||"")}</div>
+        <button class="btn premium sm" id="math-up">✨ Unlock the steps</button>
+      </div></div>`;
+  }else{
+    steps=`<div class="mstep-head">How to solve it</div><ol class="msteps">
+      ${(r.steps||[]).map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
+      ${r.check?`<div class="mcheck">✓ <b>Check it:</b> ${esc(r.check)}</div>`:""}`;
+  }
+  out.innerHTML=`<div class="card mathres">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <div class="muted" style="font-size:12px;letter-spacing:.04em;text-transform:uppercase">Answer</div>${topic}</div>
+    ${problem}
+    <div class="manswer">${esc(r.answer||"")}</div>
+    ${steps}</div>`;
+  const up=document.getElementById("math-up"); if(up) up.onclick=renderUpgrade;
+}
 
 function setItemHTML(s){
   const col=MASTERY_COLOR[s.mastery]||"var(--muted)";
