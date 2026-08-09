@@ -87,3 +87,17 @@ def auth_headers(client):
     r = client.post("/auth/signup", json={"email": email, "password": "password123"})
     assert r.status_code == 201, r.text
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    """Clear brute-force counters between tests.
+
+    The suite signs up dozens of throwaway accounts from what looks like one
+    IP, which is exactly the pattern the limiter exists to stop. Resetting per
+    test keeps the protection real in production while letting tests run.
+    """
+    from app import ratelimit
+    ratelimit.reset_all()
+    yield
+    ratelimit.reset_all()

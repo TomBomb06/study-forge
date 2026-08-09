@@ -155,13 +155,25 @@ def test_paste_text_flow(client, auth_headers):
     assert len(ss["flashcards"]) >= 5
 
 
-def test_paste_text_too_short_fails(client, auth_headers):
+def test_short_paste_becomes_a_topic_set(client, auth_headers):
+    # Short input is no longer rejected — it's treated as a TOPIC to research
+    # and build a full study set from.
     r = client.post(
-        "/uploads/text", headers=auth_headers, json={"content": "too short"}
+        "/uploads/text", headers=auth_headers, json={"content": "Photosynthesis"}
     )
     assert r.status_code == 202
     job = _wait_for_job(client, auth_headers, r.json()["id"])
-    assert job["status"] == "failed"
+    assert job["status"] == "completed"
+
+
+def test_empty_paste_still_fails(client, auth_headers):
+    r = client.post("/uploads/text", headers=auth_headers, json={"content": " "})
+    # Either rejected at validation (422) or fails the job cleanly.
+    if r.status_code == 202:
+        job = _wait_for_job(client, auth_headers, r.json()["id"])
+        assert job["status"] == "failed"
+    else:
+        assert r.status_code == 422
 
 
 def test_link_flow_mocked(client, auth_headers, monkeypatch):

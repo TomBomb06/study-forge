@@ -2,12 +2,18 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+DEV_SECRET_KEY = "dev-only-secret-change-me"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "sqlite:///./studyforge.db"
-    secret_key: str = "dev-only-secret-change-me"
+    # The JWT signing key. If this is ever left at the default in production,
+    # anyone who reads this file (it's a public repo) can forge a login token
+    # for ANY user — no password needed. `verify_production_config()` below
+    # refuses to boot in that state rather than run silently insecure.
+    secret_key: str = DEV_SECRET_KEY
     # Comma-separated list of allowed browser origins, or "*" for any.
     allowed_origins: str = "*"
     access_token_expire_minutes: int = 10080  # 7 days
@@ -75,6 +81,65 @@ class Settings(BaseSettings):
     meta_pixel_id: str = ""
 
 
+    # ---- Transactional email (password reset) ----
+    # "console" prints the email to the server log — fine for development,
+    # useless in production. Set to "resend" (or "smtp") before launch or
+    # nobody can recover a forgotten password.
+    email_provider: str = "console"          # "console" | "resend" | "smtp"
+    email_from: str = "StudyForge <noreply@forge.study>"
+    resend_api_key: str = ""
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    # Used to build links in emails. Must match the real site or reset links
+    # will point somewhere useless.
+    app_base_url: str = "https://forge.study"
+    password_reset_ttl_minutes: int = 60
+
+    # Set to "production" on the live server. Turns the checks below from
+    # warnings into hard failures.
+    environment: str = "development"
+
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+class InsecureConfigError(RuntimeError):
+    """Production is misconfigured in a way that would expose users."""
+
+
+def verify_production_config(settings: Settings | None = None) -> list[str]:
+    """Refuse to run production with settings that would leak or forge data.
+
+    Returns the list of problems found. In production it raises instead —
+    a server that won't start is a bad afternoon; a server running on a
+    publicly-known signing key is every account compromised at once.
+    """
+    s = settings or get_settings()
+    problems: list[str] = []
+
+    if s.secret_key == DEV_SECRET_KEY or len(s.secret_key) < 32:
+        problems.append(
+            "SECRET_KEY is the default or too short. Anyone can forge login "
+            "tokens for any account. Set it to 32+ random characters."
+        )
+    if s.allowed_origins.strip() == "*":
+        problems.append(
+            "ALLOWED_ORIGINS is '*', so any website can call this API with a "
+            "user's credentials. Set it to https://forge.study."
+        )
+    if s.database_url.startswith("sqlite"):
+        problems.append(
+            "DATABASE_URL is SQLite. On Railway this is wiped on every deploy "
+            "— all user accounts would be lost. Use the Postgres URL."
+        )
+
+    if problems and s.environment.lower() == "production":
+        raise InsecureConfigError(
+            "Refusing to start — insecure production configuration:\n  - "
+            + "\n  - ".join(problems)
+        )
+    return problems

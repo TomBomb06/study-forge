@@ -106,13 +106,28 @@ def test_claude_fails_after_two_bad_responses():
     assert client.calls == 2  # exactly two attempts, no infinite retry
 
 
-def test_claude_rejects_schema_violation():
-    # Only 1 flashcard — violates the min-5 schema rule; must be rejected.
-    bad = dict(VALID_PAYLOAD, flashcards=[{"front": "q", "back": "a"}])
+def test_claude_rejects_empty_content():
+    # No usable flashcards at all -> even the lenient schema rejects it.
+    bad = dict(VALID_PAYLOAD, flashcards=[])
     client = _FakeClient(json.dumps(bad), json.dumps(bad))
     gen = ClaudeGenerator(client=client, model="test-model")
     with pytest.raises(GenerationError):
         gen.generate("source text", "bio.pdf")
+
+
+def test_claude_coerces_odd_but_usable_output():
+    # 3 choices + out-of-range answer_index + weird test kind: should be
+    # accepted and cleaned up, not thrown away.
+    odd = dict(
+        VALID_PAYLOAD,
+        quiz=[{"question": "Q?", "choices": ["a", "b", "c"], "answer_index": 9, "explanation": "x"}],
+        test=[{"kind": "multiple_choice", "question": "What?", "answer": "Thing"}],
+    )
+    gen = ClaudeGenerator(client=_FakeClient(json.dumps(odd)), model="test-model")
+    result = gen.generate("source text", "bio.pdf")
+    assert result.quiz[0].answer_index == 0  # clamped into range
+    assert len(result.quiz[0].choices) == 3  # 3 choices accepted
+    assert result.test[0].kind == "short_answer"  # unknown kind normalized
 
 
 def test_claude_wraps_sdk_errors():

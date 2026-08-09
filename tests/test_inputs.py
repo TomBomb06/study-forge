@@ -98,25 +98,33 @@ def test_youtube_endpoint_mocked(client, auth_headers, monkeypatch):
     assert j["status"] == "completed", j.get("error")
 
 
-def test_media_upload_transcription_off(client, auth_headers):
-    # With transcription off (default), the job should fail with a clear note.
+def test_media_upload_is_premium_only(client, auth_headers):
+    # Transcription is a paid feature now: a free user gets a 402 upsell.
     files = {"file": ("lecture.mp3", io.BytesIO(b"fake audio data here padding padding"), "audio/mpeg")}
     r = client.post("/uploads/media", headers=auth_headers, files=files)
-    assert r.status_code == 202
-    jid = r.json()["id"]
-    for _ in range(50):
-        j = client.get(f"/jobs/{jid}", headers=auth_headers).json()
-        if j["status"] in ("completed", "failed"):
-            break
-        time.sleep(0.05)
-    assert j["status"] == "failed"
-    assert "transcription" in (j["error"] or "").lower()
+    assert r.status_code == 402
+    assert "premium" in r.json()["detail"].lower()
 
 
-def test_media_upload_accepts_video_extension(client, auth_headers):
+def test_media_upload_accepts_video_extension_for_paid(client, auth_headers):
+    # A paying user is allowed past the gate (job is accepted for processing).
+    import uuid as _uuid
+    from app.db import SessionLocal
+    from app.models import User
+    # Find the just-created user by their token isn't trivial; make a fresh paid one.
+    email = f"paid-{_uuid.uuid4().hex[:8]}@example.com"
+    su = client.post("/auth/signup", json={"email": email, "password": "password123"})
+    headers = {"Authorization": f"Bearer {su.json()['access_token']}"}
+    db = SessionLocal()
+    try:
+        u = db.query(User).filter(User.email == email).one()
+        u.plan = "pro"
+        db.commit()
+    finally:
+        db.close()
     files = {"file": ("class.mp4", io.BytesIO(b"\x00\x00\x00\x18ftypmp42 padding bytes"), "video/mp4")}
-    r = client.post("/uploads/media", headers=auth_headers, files=files)
-    assert r.status_code == 202  # accepted by extension (transcription decides later)
+    r = client.post("/uploads/media", headers=headers, files=files)
+    assert r.status_code == 202  # accepted past the paywall
 
 
 def test_media_requires_auth(client):

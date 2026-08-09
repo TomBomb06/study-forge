@@ -147,6 +147,12 @@
   .notes ul{margin:8px 0;padding-left:22px}
   .notes li{margin:5px 0}
   .notes strong{color:#fff}
+  #cookiebar{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:var(--surface-2);
+    border-top:1px solid var(--border);box-shadow:0 -8px 30px rgba(0,0,0,.45);padding:14px 16px}
+  #cookiebar .cb-inner{max-width:900px;margin:0 auto;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  #cookiebar .cb-text{flex:1;min-width:260px;font-size:13.5px;line-height:1.55;color:var(--muted)}
+  #cookiebar .cb-btns{display:flex;gap:10px}
+  .btn.ghost{background:transparent;border:1px solid var(--border-2);color:var(--text)}
   .pill{display:inline-block;padding:4px 12px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
   /* Math solver: the answer is the reward, the locked steps are the pitch. */
   .mathres{border-color:rgba(139,108,255,.45)}
@@ -972,9 +978,44 @@ async function renderLeaderboard(){
 
 const MASTERY_COLOR={Learning:"var(--muted)",Familiar:"var(--brand-2)",Strong:"var(--brand)",Mastered:"var(--good)"};
 
+// ---------- Cookie consent ----------
+// Nothing that sets a third-party cookie (Meta Pixel, AdSense) runs until the
+// visitor chooses. "Reject" is a real choice, not a delayed yes: the app works
+// fully without consent, you just get non-personalised house ads instead.
+function hasConsent(){ try{ return localStorage.getItem("sf_consent")==="accepted"; }catch{ return false; } }
+function consentAnswered(){ try{ return !!localStorage.getItem("sf_consent"); }catch{ return true; } }
+function setConsent(choice){
+  try{ localStorage.setItem("sf_consent", choice); }catch{}
+  const b=document.getElementById("cookiebar"); if(b) b.remove();
+  if(choice==="accepted"){
+    try{ if(window.SF_loadPixel) window.SF_loadPixel(); }catch{}
+    // Ads can now load for free users on the next render.
+    if(state.showAds && state.ads && state.ads.provider==="adsense") loadAdsenseScript(state.ads.client_id);
+  }
+}
+function renderCookieBar(){
+  if(consentAnswered()) return;
+  const bar=document.createElement("div");
+  bar.id="cookiebar";
+  bar.innerHTML=`<div class="cb-inner">
+      <div class="cb-text"><b>Cookies</b> — we use essential cookies to keep you signed in.
+      With your OK we'd also use advertising cookies (Meta, Google) to measure and fund the free plan.
+      <a class="link" href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></div>
+      <div class="cb-btns">
+        <button class="btn ghost sm" id="cb-no">Reject</button>
+        <button class="btn sm" id="cb-yes">Accept</button>
+      </div></div>`;
+  document.body.appendChild(bar);
+  document.getElementById("cb-yes").onclick=()=>setConsent("accepted");
+  document.getElementById("cb-no").onclick=()=>setConsent("rejected");
+}
+
 // ---------- Ads (free users only; paid = no ads) ----------
 let _adsenseLoaded=false;
 function loadAdsenseScript(clientId){
+  // Personalised ads set cookies, so this waits for consent. Without consent
+  // we simply show no third-party ads rather than loading them anyway.
+  if(!hasConsent())return;
   if(_adsenseLoaded||!clientId)return; _adsenseLoaded=true;
   const sc=document.createElement("script");
   sc.async=true; sc.crossOrigin="anonymous";
@@ -2064,6 +2105,7 @@ if(_checkout==="success") track("Purchase",{currency:"USD",value:0,content_name:
 if(_checkout){ history.replaceState({},"",location.pathname);
   setTimeout(()=>toast(_checkout==="success"?"Payment complete — your account is updated ✓":"Checkout canceled",_checkout==="success"?"good":""),400); }
 if(state.token) renderHome(); else if(state.pendingShare) renderAuth("signup"); else renderLanding();
+renderCookieBar();
 </script>
 </body>
 </html>
