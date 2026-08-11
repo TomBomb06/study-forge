@@ -55,7 +55,10 @@ class Settings(BaseSettings):
     # Payments. "dev" = the instant test buttons (no real money). "stripe" =
     # real Stripe Checkout + webhooks (needs a Stripe account + keys).
     billing_provider: str = "dev"  # "dev" | "stripe"
-    app_base_url: str = "http://127.0.0.1:8000"  # for checkout redirect URLs
+    # Public address of the site. Used for Stripe checkout redirects AND
+    # for links inside emails (password reset). Must be the real domain in
+    # production or reset links point nowhere.
+    app_base_url: str = "http://127.0.0.1:8000"
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     stripe_price_basic: str = ""
@@ -80,6 +83,11 @@ class Settings(BaseSettings):
     # Empty = no tracking code is served at all.
     meta_pixel_id: str = ""
 
+    # Google Analytics 4. Empty = no analytics code is served at all.
+    # Like the Pixel, it is consent-gated and never fires before the visitor
+    # accepts cookies.
+    ga_measurement_id: str = ""   # "G-XXXXXXXXXX"
+
 
     # ---- Transactional email (password reset) ----
     # "console" prints the email to the server log — fine for development,
@@ -92,9 +100,8 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_user: str = ""
     smtp_password: str = ""
-    # Used to build links in emails. Must match the real site or reset links
-    # will point somewhere useless.
-    app_base_url: str = "https://forge.study"
+    # NOTE: email links reuse APP_BASE_URL (defined above with billing) so
+    # there is exactly one source of truth for "where does this site live".
     password_reset_ttl_minutes: int = 60
 
     # Set to "production" on the live server. Turns the checks below from
@@ -135,6 +142,18 @@ def verify_production_config(settings: Settings | None = None) -> list[str]:
         problems.append(
             "DATABASE_URL is SQLite. On Railway this is wiped on every deploy "
             "— all user accounts would be lost. Use the Postgres URL."
+        )
+
+    if s.email_provider.lower() == "console":
+        problems.append(
+            "EMAIL_PROVIDER is 'console', so password-reset emails are only "
+            "printed to the server log and never delivered. Anyone who forgets "
+            "their password is permanently locked out. Set it to 'resend' or 'smtp'."
+        )
+    if not s.app_base_url.startswith("https://"):
+        problems.append(
+            "APP_BASE_URL is not https. Password-reset links would be emailed "
+            "pointing at an insecure or local address."
         )
 
     if problems and s.environment.lower() == "production":
