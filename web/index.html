@@ -15,10 +15,12 @@
 <meta property="og:image" content="https://forge.study/og.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="StudyForge — turn any notes, PDF or topic into flashcards, quizzes and study games" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="StudyForge — Turn anything into a study kit" />
 <meta name="twitter:description" content="Flashcards, quizzes, tests, matching games, audio, and AI video lessons from your notes, PDFs, or web links." />
 <meta name="twitter:image" content="https://forge.study/og.png" />
+<meta name="twitter:image:alt" content="StudyForge — turn any notes, PDF or topic into flashcards, quizzes and study games" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%237c5cff'/%3E%3Cpath d='M20 22h16a6 6 0 0 1 6 6v16H26a6 6 0 0 1-6-6V22z' fill='%23ffffff' opacity='.92'/%3E%3Crect x='20' y='19' width='19' height='4' rx='2' fill='%23ffffff'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -153,6 +155,26 @@
   #cookiebar .cb-text{flex:1;min-width:260px;font-size:13.5px;line-height:1.55;color:var(--muted)}
   #cookiebar .cb-btns{display:flex;gap:10px}
   .btn.ghost{background:transparent;border:1px solid var(--border-2);color:var(--text)}
+  .lp-navlinks a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:600}
+  .lp-navlinks a:hover{color:var(--text)}
+  @media (max-width:820px){ .lp-navlinks{display:none} }
+  .faq{max-width:760px;margin:0 auto;text-align:left}
+  .faq details{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    padding:16px 20px;margin-bottom:12px}
+  .faq details[open]{border-color:rgba(139,108,255,.45)}
+  .faq summary{cursor:pointer;font-weight:700;font-size:16px;list-style:none;position:relative;padding-right:28px}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";position:absolute;right:2px;top:-2px;font-size:22px;color:var(--brand-ink);font-weight:700}
+  .faq details[open] summary::after{content:"−"}
+  .faq p{color:var(--muted);font-size:14.5px;margin:12px 0 2px}
+  .sticky-cta{position:fixed;left:12px;right:12px;bottom:12px;z-index:900;display:none;
+    align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;
+    background:var(--surface-2);border:1px solid var(--border);border-radius:16px;
+    box-shadow:0 10px 34px rgba(0,0,0,.5)}
+  .sticky-cta .sc-text{display:flex;flex-direction:column;line-height:1.3}
+  .sticky-cta .sc-text b{font-size:15px}
+  .sticky-cta .sc-text span{font-size:12px;color:var(--muted)}
+  @media (max-width:720px){ .sticky-cta.show{display:flex} }
   .pill{display:inline-block;padding:4px 12px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
   /* Math solver: the answer is the reward, the locked steps are the pitch. */
   .mathres{border-color:rgba(139,108,255,.45)}
@@ -361,6 +383,23 @@
   }
   @media (max-width:380px){ .grid{grid-template-columns:1fr} .hud .flame,.hud .coins{font-size:13px} }
 </style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"WebSite","name":"StudyForge","url":"https://forge.study/"},
+{"@type":"SoftwareApplication","name":"StudyForge","applicationCategory":"EducationalApplication",
+ "operatingSystem":"Web","url":"https://forge.study/",
+ "description":"Turn any notes, PDF, photo, or topic into flashcards, quizzes, practice tests, study games, read-aloud audio, and a math photo solver.",
+ "offers":[{"@type":"Offer","price":"0","priceCurrency":"USD","name":"Free"},
+           {"@type":"Offer","price":"9","priceCurrency":"USD","name":"Basic"},
+           {"@type":"Offer","price":"19","priceCurrency":"USD","name":"Pro"}]},
+{"@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"Is StudyForge really free?","acceptedAnswer":{"@type":"Answer","text":"Yes. The free plan gives you 5 study sets a month, unlimited math photo answers, and every study mode including the games. No credit card to start."}},
+{"@type":"Question","name":"What can I upload?","acceptedAnswer":{"@type":"Answer","text":"PDFs, text files, photos of notes, pasted text, web links, and YouTube videos with captions. You can also just type a topic and StudyForge writes the material for you."}},
+{"@type":"Question","name":"Is the AI ever wrong?","acceptedAnswer":{"@type":"Answer","text":"Sometimes. StudyForge is a study aid, not a textbook — check anything important against your course material. The math solver refuses rather than guesses when it is not sure."}},
+{"@type":"Question","name":"Do I need to download an app?","acceptedAnswer":{"@type":"Answer","text":"No. StudyForge runs in your browser on any phone, tablet, or laptop."}},
+{"@type":"Question","name":"What happens to my notes and uploads?","acceptedAnswer":{"@type":"Answer","text":"They are stored so you can return to them and are only readable by your account. We never send your study material to advertisers, and you can delete them at any time."}}]}
+]}
+</script>
 <!--META_PIXEL-->
 </head>
 <body>
@@ -516,6 +555,19 @@ function mdLite(s){
 }
 
 // ---------- Landing ----------
+function wireStickyCta(){
+  const bar=document.getElementById("sticky-cta");
+  if(!bar) return;
+  const hero=document.querySelector(".lp-hero .lp-cta");
+  if(!hero){ bar.classList.add("show"); return; }
+  // Only show it once the real CTA has scrolled out of view, so we're not
+  // covering the screen with a button that's already visible.
+  const io=new IntersectionObserver(entries=>{
+    bar.classList.toggle("show", !entries[0].isIntersecting);
+  },{threshold:0});
+  io.observe(hero);
+}
+
 function renderLanding(){
   const feats=[
     ["📖","Study guide","Clean, organized notes that pull out what actually matters."],
@@ -528,6 +580,12 @@ function renderLanding(){
   el.innerHTML=`
   <nav class="lp-nav">
     <div class="brand" style="font-size:22px">Study<span>Forge</span></div>
+    <div class="row lp-navlinks" style="gap:18px">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </div>
     <div class="row" style="gap:10px">
       <button class="btn ghost sm" data-auth="login">Log in</button>
       <button class="btn sm" data-auth="signup">Get started</button>
@@ -543,12 +601,12 @@ function renderLanding(){
     </div>
     <div class="lp-note">Free to start · No credit card required</div>
   </header>
-  <section class="lp-section">
+  <section class="lp-section" id="features">
     <h2>Every way to study, from one upload</h2>
     <p class="lead">One upload becomes six ways to learn — pick whatever fits how your brain studies.</p>
     <div class="lp-feats">${feats.map(f=>`<div class="lp-feat"><div class="fi">${f[0]}</div><h3>${f[1]}</h3><p>${f[2]}</p></div>`).join("")}</div>
   </section>
-  <section class="lp-section">
+  <section class="lp-section" id="how">
     <h2>How it works</h2>
     <div class="steps">
       <div class="step"><div class="num">1</div><div><strong>Add your material</strong><div class="muted" style="font-size:14px">Upload a file or photo, paste text, or drop a web or YouTube link.</div></div></div>
@@ -556,7 +614,37 @@ function renderLanding(){
       <div class="step"><div class="num">3</div><div><strong>Learn and track progress</strong><div class="muted" style="font-size:14px">Quiz yourself and StudyForge resurfaces weak topics right when you need them.</div></div></div>
     </div>
   </section>
-  <section class="lp-section">
+  <section class="lp-section" id="usecases">
+    <h2>How students actually use it</h2>
+    <p class="lead">Concrete ways StudyForge fits into real coursework.</p>
+    <div class="lp-feats">
+      <div class="lp-feat"><div class="fi">📸</div><h3>Stuck on homework at 11pm</h3>
+        <p>Snap the problem, get the answer free. Premium walks through every step so the next one is easier.</p></div>
+      <div class="lp-feat"><div class="fi">📚</div><h3>50 pages to revise, one evening</h3>
+        <p>Drop the PDF in, get a study guide and a quiz that shows which sections you haven't actually learned yet.</p></div>
+      <div class="lp-feat"><div class="fi">🎧</div><h3>Revising on the bus</h3>
+        <p>Have your notes read aloud in a natural voice — hands-free, no screen needed.</p></div>
+      <div class="lp-feat"><div class="fi">🎮</div><h3>Can't make yourself start</h3>
+        <p>Meteor Blitz turns the material into a game with high scores and streaks. You study because you want the score.</p></div>
+    </div>
+  </section>
+  <section class="lp-section" id="faq">
+    <h2>Frequently asked questions</h2>
+    <div class="faq">
+      <details><summary>Is StudyForge really free?</summary>
+        <p>Yes. The free plan gives you 5 study sets a month, unlimited math photo answers, and every study mode including the games. No credit card to start. Premium ($9/mo) unlocks unlimited study sets, step-by-step math solutions, the AI tutor, lecture transcription, and removes ads.</p></details>
+      <details><summary>What can I upload?</summary>
+        <p>PDFs, text files, photos of notes or a textbook page, pasted text, web links, and YouTube videos with captions. You can also just type a topic — like "the American Revolution" — and StudyForge researches and writes the material for you.</p></details>
+      <details><summary>Is the AI ever wrong?</summary>
+        <p>Sometimes, yes. StudyForge is a study aid, not a textbook — always check anything important against your course material. For the math solver specifically, we'd rather say "we couldn't do this one" than give you a confident wrong answer, so it refuses rather than guesses when it isn't sure.</p></details>
+      <details><summary>Do I need to download an app?</summary>
+        <p>No. StudyForge runs in your browser on any phone, tablet, or laptop. Nothing to install and nothing to update.</p></details>
+      <details><summary>What happens to my notes and uploads?</summary>
+        <p>They're stored so you can come back to them, and they're only readable by your account. We never send your study material to advertisers. You can delete any study set, or ask us to delete your whole account, at any time — see our <a href="/privacy">Privacy Policy</a>.</p></details>
+    </div>
+    <p class="lead" style="margin-top:26px">Still stuck? Email <a href="mailto:tslater0812@gmail.com">tslater0812@gmail.com</a> — we reply to every message within one business day.</p>
+  </section>
+  <section class="lp-section" id="pricing">
     <h2>Simple pricing</h2>
     <p class="lead">Start free. Upgrade when you want no ads and AI video lessons.</p>
     <div class="lp-price">
@@ -566,14 +654,89 @@ function renderLanding(){
     </div>
     <div style="text-align:center;margin-top:28px"><button class="btn" data-auth="signup" style="font-size:16px;padding:14px 26px">Get started free</button></div>
   </section>
+  <div class="sticky-cta" id="sticky-cta">
+    <div class="sc-text"><b>Start free</b><span>5 study sets/mo · no card</span></div>
+    <button class="btn sm" data-auth="signup">Get started</button>
+  </div>
   <footer class="lp-foot">
     <div class="brand" style="font-size:18px">Study<span>Forge</span></div>
     <div style="margin-top:10px"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <span>© StudyForge</span></div>
   </footer>`;
   el.querySelectorAll("[data-auth]").forEach(b=>b.onclick=()=>renderAuth(b.dataset.auth));
+  document.querySelectorAll("#sticky-cta [data-auth]").forEach(b=>b.onclick=()=>renderAuth(b.dataset.auth));
+  wireStickyCta();
 }
 
 // ---------- Auth ----------
+
+// ---------- Forgot / reset password ----------
+// Your email IS your username, so there's no separate "forgot username" —
+// the reset email goes to the address on file and names the account.
+function renderForgot(prefill){
+  el.innerHTML=`<div class="center"><div class="wrap" style="max-width:420px">
+    <a class="link" id="fp-back" style="display:inline-block;margin-bottom:8px">← Back to log in</a>
+    <div style="text-align:center;margin-bottom:24px">
+      <div class="brand" style="font-size:30px">Study<span>Forge</span></div></div>
+    <div class="card">
+      <h2 style="margin:0 0 6px;font-size:20px">Forgot your password?</h2>
+      <p class="muted" style="font-size:14px;margin:0 0 16px">Enter the email you signed up with and we'll send you a link to choose a new one.</p>
+      <div class="field"><label>Email</label><input id="fp-email" type="email" placeholder="you@example.com" value="${esc(prefill||"")}"/></div>
+      <button class="btn" id="fp-send" style="width:100%">Send reset link</button>
+      <div class="error" id="fp-err"></div>
+      <div id="fp-done" style="display:none;margin-top:14px;padding:14px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);font-size:14px;line-height:1.6"></div>
+    </div></div></div>`;
+  document.getElementById("fp-back").onclick=()=>renderAuth("login");
+  const send=async()=>{
+    const email=document.getElementById("fp-email").value.trim();
+    const err=document.getElementById("fp-err"), btn=document.getElementById("fp-send");
+    err.textContent="";
+    if(!email){err.textContent="Enter your email address.";return;}
+    btn.disabled=true; btn.textContent="Sending…";
+    try{
+      const r=await api("/auth/forgot-password",{method:"POST",body:{email}});
+      const done=document.getElementById("fp-done");
+      done.style.display="block";
+      done.innerHTML=`✅ ${esc(r.message)}<div class="muted" style="font-size:13px;margin-top:8px">The link expires in 1 hour and can only be used once.</div>`;
+      btn.style.display="none";
+    }catch(e){ err.textContent=e.message; btn.disabled=false; btn.textContent="Send reset link"; }
+  };
+  document.getElementById("fp-send").onclick=send;
+  document.getElementById("fp-email").addEventListener("keydown",e=>{if(e.key==="Enter")send();});
+}
+
+function renderReset(token){
+  el.innerHTML=`<div class="center"><div class="wrap" style="max-width:420px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div class="brand" style="font-size:30px">Study<span>Forge</span></div></div>
+    <div class="card">
+      <h2 style="margin:0 0 6px;font-size:20px">Choose a new password</h2>
+      <p class="muted" style="font-size:14px;margin:0 0 16px">Pick something you don't use anywhere else.</p>
+      <div class="field"><label>New password</label><input id="rp-pw" type="password" placeholder="At least 8 characters"/></div>
+      <div class="field"><label>Confirm new password</label><input id="rp-pw2" type="password" placeholder="Type it again"/></div>
+      <button class="btn" id="rp-go" style="width:100%">Set new password</button>
+      <div class="error" id="rp-err"></div>
+      <div style="text-align:center;margin-top:12px"><a class="link" id="rp-forgot" style="font-size:13px">Link expired? Request a new one</a></div>
+    </div></div></div>`;
+  document.getElementById("rp-forgot").onclick=()=>{history.replaceState({},"",location.pathname);renderForgot("");};
+  const go=async()=>{
+    const pw=document.getElementById("rp-pw").value, pw2=document.getElementById("rp-pw2").value;
+    const err=document.getElementById("rp-err"), btn=document.getElementById("rp-go");
+    err.textContent="";
+    if(pw.length<8){err.textContent="Password must be at least 8 characters.";return;}
+    if(pw!==pw2){err.textContent="Those two passwords don't match.";return;}
+    btn.disabled=true; btn.textContent="Saving…";
+    try{
+      const r=await api("/auth/reset-password",{method:"POST",body:{token,password:pw}});
+      setToken(r.access_token);
+      history.replaceState({},"",location.pathname);
+      toast("Password updated — you're signed in ✓","good");
+      renderHome();
+    }catch(e){ err.textContent=e.message; btn.disabled=false; btn.textContent="Set new password"; }
+  };
+  document.getElementById("rp-go").onclick=go;
+  document.getElementById("rp-pw2").addEventListener("keydown",e=>{if(e.key==="Enter")go();});
+}
+
 function renderAuth(initial){
   let mode=initial==="login"?"login":"signup";
   el.innerHTML=`<div class="center"><div class="wrap" style="max-width:420px">
@@ -586,6 +749,7 @@ function renderAuth(initial){
       <div class="field" style="margin-top:16px"><label>Email</label><input id="email" type="email" placeholder="you@example.com"/></div>
       <div class="field"><label>Password</label><input id="password" type="password" placeholder="At least 8 characters"/></div>
       <button class="btn" id="submit" style="width:100%">Create account</button>
+      <div style="text-align:center;margin-top:12px"><a class="link" id="forgot-link" style="font-size:13.5px">Forgot your password?</a></div>
       <div class="error" id="err"></div></div>
     <p class="muted" style="text-align:center;font-size:13px;margin-top:16px">Free to start · No credit card required</p>
    </div></div>`;
@@ -593,6 +757,7 @@ function renderAuth(initial){
   document.getElementById("t-signup").onclick=()=>setMode("signup");
   document.getElementById("t-login").onclick=()=>setMode("login");
   document.getElementById("lp-back").onclick=renderLanding;
+  document.getElementById("forgot-link").onclick=()=>renderForgot(document.getElementById("email").value.trim());
   setMode(mode);
   document.getElementById("submit").onclick=async()=>{
     const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value,err=document.getElementById("err"),btn=document.getElementById("submit");
@@ -989,6 +1154,7 @@ function setConsent(choice){
   const b=document.getElementById("cookiebar"); if(b) b.remove();
   if(choice==="accepted"){
     try{ if(window.SF_loadPixel) window.SF_loadPixel(); }catch{}
+    try{ if(window.SF_loadGA) window.SF_loadGA(); }catch{}
     // Ads can now load for free users on the next render.
     if(state.showAds && state.ads && state.ads.provider==="adsense") loadAdsenseScript(state.ads.client_id);
   }
@@ -999,7 +1165,7 @@ function renderCookieBar(){
   bar.id="cookiebar";
   bar.innerHTML=`<div class="cb-inner">
       <div class="cb-text"><b>Cookies</b> — we use essential cookies to keep you signed in.
-      With your OK we'd also use advertising cookies (Meta, Google) to measure and fund the free plan.
+      With your OK we'd also use analytics and advertising cookies (Google Analytics, Meta, AdSense) to see what's working and fund the free plan.
       <a class="link" href="/privacy" target="_blank" rel="noopener">Privacy Policy</a></div>
       <div class="cb-btns">
         <button class="btn ghost sm" id="cb-no">Reject</button>
@@ -2104,7 +2270,11 @@ const _checkout=_params.get("checkout");
 if(_checkout==="success") track("Purchase",{currency:"USD",value:0,content_name:"StudyForge subscription"});
 if(_checkout){ history.replaceState({},"",location.pathname);
   setTimeout(()=>toast(_checkout==="success"?"Payment complete — your account is updated ✓":"Checkout canceled",_checkout==="success"?"good":""),400); }
-if(state.token) renderHome(); else if(state.pendingShare) renderAuth("signup"); else renderLanding();
+const _resetToken=_params.get("reset");
+if(_resetToken) renderReset(_resetToken);
+else if(state.token) renderHome();
+else if(state.pendingShare) renderAuth("signup");
+else renderLanding();
 renderCookieBar();
 </script>
 </body>

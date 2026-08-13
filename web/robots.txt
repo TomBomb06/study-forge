@@ -1,0 +1,9 @@
+# StudyForge — https://forge.study
+User-agent: *
+Allow: /
+
+# The app itself is behind a login and has nothing useful for a crawler.
+Disallow: /app/
+Disallow: /api/
+
+Sitemap: https://forge.study/sitemap.xml
