@@ -2,11 +2,11 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
 
-from .config import get_settings
+from .config import get_settings, verify_production_config
 from .db import Base, engine
 from .routers import (auth, billing, gamify, math, shares, study_sets, tutor,
                       uploads, voice)
@@ -65,6 +65,13 @@ def _ensure_columns() -> None:
 
 _ensure_columns()
 
+# Fail fast on an insecure production setup rather than serving users from it.
+# In development this just prints what would be wrong on the live server.
+_config_problems = verify_production_config()
+if _config_problems:
+    for _p in _config_problems:
+        print(f"[config warning] {_p}")
+
 app = FastAPI(
     title="StudyForge API",
     version="0.1.0",
@@ -82,6 +89,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    """Baseline hardening headers.
+
+    nosniff stops a browser from treating an uploaded file as executable
+    script; DENY on framing stops clickjacking (an attacker iframing
+    forge.study invisibly over their own buttons); the referrer policy stops
+    study-set IDs in URLs leaking to third parties via the Referer header.
+    """
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), payment=()")
+    return response
+
 
 app.include_router(auth.router)
 app.include_router(uploads.router)
@@ -135,23 +159,58 @@ def _meta_pixel_snippet() -> str:
     safe = _extract_pixel_id(get_settings().meta_pixel_id)
     if not safe:
         return ""
+    # Consent-gated. The tracker is DEFINED here but nothing loads and no
+    # cookie is set until SF_loadPixel() is called, which only happens after
+    # the visitor accepts. Loading first and asking later is the thing that
+    # actually gets sites fined under GDPR/ePrivacy.
     return (
         "<script>window.SF_PIXEL_ID='%s';"
+        "window.SF_loadPixel=function(){"
+        "if(window.__sfPixelLoaded)return;window.__sfPixelLoaded=true;"
         "!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?"
         "n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;"
         "n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;"
         "t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}"
         "(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');"
-        "fbq('init','%s');fbq('track','PageView');</script>"
-        "<noscript><img height=\"1\" width=\"1\" style=\"display:none\" "
-        "src=\"https://www.facebook.com/tr?id=%s&ev=PageView&noscript=1\"/></noscript>"
-    ) % (safe, safe, safe)
+        "fbq('init',window.SF_PIXEL_ID);fbq('track','PageView');};"
+        "try{if(localStorage.getItem('sf_consent')==='accepted')window.SF_loadPixel();}catch(e){}"
+        "</script>"
+    ) % (safe,)
+
+
+def _ga_snippet() -> str:
+    """Google Analytics 4 — consent-gated, same rule as the Pixel.
+
+    Nothing loads and no cookie is set until SF_loadGA() is called by the
+    consent banner. Only the measurement ID is emitted, sanitised to the
+    G-XXXX shape so nothing executable can reach the page.
+    """
+    import re as _re
+    raw = (get_settings().ga_measurement_id or "").strip()
+    m = _re.search(r"G-[A-Z0-9]{4,20}", raw.upper())
+    if not m:
+        return ""
+    gid = m.group(0)
+    return (
+        "<script>window.SF_GA_ID='%s';"
+        "window.SF_loadGA=function(){"
+        "if(window.__sfGaLoaded)return;window.__sfGaLoaded=true;"
+        "var s=document.createElement('script');s.async=true;"
+        "s.src='https://www.googletagmanager.com/gtag/js?id='+window.SF_GA_ID;"
+        "document.head.appendChild(s);"
+        "window.dataLayer=window.dataLayer||[];"
+        "window.gtag=function(){dataLayer.push(arguments)};"
+        "gtag('js',new Date());"
+        "gtag('config',window.SF_GA_ID,{anonymize_ip:true});};"
+        "try{if(localStorage.getItem('sf_consent')==='accepted')window.SF_loadGA();}catch(e){}"
+        "</script>"
+    ) % (gid,)
 
 
 def _html(name: str):
     """Serve an HTML page, injecting the Meta Pixel when one is configured."""
     path = os.path.join(_WEB_DIR, name)
-    snippet = _meta_pixel_snippet()
+    snippet = _meta_pixel_snippet() + _ga_snippet()
     if not snippet:
         return FileResponse(path, headers=_NO_CACHE)
     try:
@@ -184,3 +243,31 @@ if os.path.isdir(_WEB_DIR):
     @app.get("/og.png", include_in_schema=False)
     def _og():
         return FileResponse(os.path.join(_WEB_DIR, "og.png"))
+
+    @app.get("/robots.txt", include_in_schema=False)
+    def _robots():
+        return FileResponse(os.path.join(_WEB_DIR, "robots.txt"),
+                            media_type="text/plain")
+
+    @app.get("/sitemap.xml", include_in_schema=False)
+    def _sitemap():
+        return FileResponse(os.path.join(_WEB_DIR, "sitemap.xml"),
+                            media_type="application/xml")
+
+    @app.exception_handler(404)
+    async def _not_found(request, exc):
+        """Branded 404 for pages; JSON for the API.
+
+        An API client that hits a bad path should get JSON, not a page of
+        HTML it can't parse — so only browser-facing paths get the page.
+        """
+        path = request.url.path
+        if path.startswith(("/auth", "/me", "/math", "/tutor", "/uploads",
+                            "/study-sets", "/billing", "/shared", "/voice",
+                            "/jobs", "/health", "/docs", "/openapi.json")):
+            return JSONResponse({"detail": "Not found"}, status_code=404)
+        try:
+            with open(os.path.join(_WEB_DIR, "404.html"), "r", encoding="utf-8") as f:
+                return HTMLResponse(f.read(), status_code=404, headers=_NO_CACHE)
+        except OSError:
+            return JSONResponse({"detail": "Not found"}, status_code=404)
