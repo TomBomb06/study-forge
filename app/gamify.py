@@ -28,9 +28,9 @@ STREAK_COIN_BONUS = 10
 
 # Shop items you buy with coins.
 SHOP = {
-    "freeze": {"name": "Streak Freeze", "icon": "🧊", "cost": 100, "max": 3,
+    "freeze": {"name": "Streak Freeze", "icon": "snowflake", "cost": 100, "max": 3,
                "desc": "Saves your streak if you miss a single day."},
-    "adfree": {"name": "30-Min Ad-Free", "icon": "✨", "cost": 60, "once": True,
+    "adfree": {"name": "30-Min Ad-Free", "icon": "spark", "cost": 60, "once": True,
                "desc": "A one-time 30 minutes with zero ads — a taste of premium."},
 }
 
