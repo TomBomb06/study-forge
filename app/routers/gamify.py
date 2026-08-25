@@ -40,13 +40,27 @@ class SpinReq(BaseModel):
     tz_offset: int = 0
 
 
+def _tz(user: User, claimed: int) -> int:
+    """The offset to do day arithmetic in: whatever we saw first, not whatever
+    the current request claims.
+
+    A client-supplied offset combined with a per-local-day XP cap is a free
+    reset button — flip the offset, it's a different "day", the cap refills.
+    Pinned on first sight and then ignored. Real travel is rare enough, and the
+    cost of being an hour out is cosmetic.
+    """
+    if user.tz_offset_min is None:
+        user.tz_offset_min = max(-14 * 60, min(14 * 60, int(claimed or 0)))
+    return int(user.tz_offset_min)
+
+
 @router.get("/me/game")
 def get_game(
     tz_offset: int = 0,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    state = gamify.ensure_state(user, tz_offset)
+    state = gamify.ensure_state(user, _tz(user, tz_offset))
     user.game = dict(state)
     db.commit()
     return {
@@ -62,7 +76,7 @@ def game_event(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    result = gamify.apply_event(user, body.type, body.data, body.tz_offset)
+    result = gamify.apply_event(user, body.type, body.data, _tz(user, body.tz_offset))
     db.commit()
     if not result.get("ok"):
         raise HTTPException(status_code=422, detail=result.get("error", "bad event"))
@@ -76,7 +90,7 @@ def leaderboard(
     db: Session = Depends(get_db),
 ):
     """Top players by weekly XP. Only anonymous display names are exposed."""
-    me = gamify.ensure_state(user, tz_offset)
+    me = gamify.ensure_state(user, _tz(user, tz_offset))
     user.game = dict(me)
     db.commit()
 
@@ -113,7 +127,7 @@ def buy_reward(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    result = gamify.buy_reward(user, body.item, body.tz_offset)
+    result = gamify.buy_reward(user, body.item, _tz(user, body.tz_offset))
     db.commit()
     if not result.get("ok"):
         raise HTTPException(status_code=422, detail=result.get("error", "Can't buy that."))
@@ -126,7 +140,7 @@ def spin_wheel(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    result = gamify.spin_wheel(user, body.tz_offset)
+    result = gamify.spin_wheel(user, _tz(user, body.tz_offset))
     db.commit()
     if not result.get("ok"):
         raise HTTPException(status_code=422, detail=result.get("error", "Can't spin."))

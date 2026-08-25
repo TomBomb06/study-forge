@@ -43,12 +43,17 @@ def create_upload(
 
     Returns a job immediately; the client polls GET /jobs/{id}.
     """
+    # Check the quota first: an out-of-quota upload used to be written to the
+    # storage volume and only then rejected, so a blocked user could still fill
+    # the disk (nothing deletes uploads afterwards).
+    _require_generation(user, db)
     try:
         stored_path, ext = save_upload(file, user.id)
     except UploadValidationError as e:
+        billing.refund_set(user)  # they never got a study set out of it
+        db.commit()
         raise HTTPException(status_code=422, detail=str(e))
 
-    _require_generation(user, db)
     job = Job(user_id=user.id, source_filename=file.filename or "upload")
     db.add(job)
     db.commit()

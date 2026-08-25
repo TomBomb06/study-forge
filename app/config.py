@@ -1,4 +1,6 @@
+import os
 from functools import lru_cache
+from typing import List, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -16,6 +18,10 @@ class Settings(BaseSettings):
     secret_key: str = DEV_SECRET_KEY
     # Comma-separated list of allowed browser origins, or "*" for any.
     allowed_origins: str = "*"
+    # How many proxies sit in front of this app (Railway alone = 1; add one for
+    # Cloudflare or a load balancer). Used to pick the trustworthy entry out of
+    # X-Forwarded-For — see ratelimit.client_ip.
+    trusted_proxy_hops: int = 1
     access_token_expire_minutes: int = 10080  # 7 days
     storage_dir: str = "./storage"
     max_upload_mb: int = 25
@@ -118,7 +124,33 @@ class InsecureConfigError(RuntimeError):
     """Production is misconfigured in a way that would expose users."""
 
 
-def verify_production_config(settings: Settings | None = None) -> list[str]:
+def looks_like_production(s) -> bool:
+    """Decide whether this is a real deployment, without trusting a label.
+
+    ENVIRONMENT used to be the only switch, and it defaults to "development".
+    So an unset — or merely misspelled ("Production", "prod ") — variable
+    silently turned every safety check into a printed warning, and the server
+    would happily serve real users while signing JWTs with the dev key that is
+    committed to a public repo. Anyone could then mint a token for any account.
+
+    Deployment is now INFERRED from things that are true only in production and
+    that nobody sets by accident. A local dev box (SQLite + http + dev billing)
+    still boots; a live one cannot be talked out of the checks by a typo.
+    """
+    if s.environment.strip().lower() in ("production", "prod", "live"):
+        return True
+    # Deliberately NOT billing_provider: testing Stripe test-mode against a
+    # local SQLite database is a legitimate thing to do, and treating it as
+    # production would refuse to start for a developer doing exactly that.
+    # The real deploy trips all three of the signals below anyway.
+    return any((
+        s.database_url.startswith(("postgres://", "postgresql://")),
+        s.app_base_url.startswith("https://"),
+        bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_SERVICE_ID")),
+    ))
+
+
+def verify_production_config(settings: Optional["Settings"] = None) -> List[str]:
     """Refuse to run production with settings that would leak or forge data.
 
     Returns the list of problems found. In production it raises instead —
@@ -126,7 +158,7 @@ def verify_production_config(settings: Settings | None = None) -> list[str]:
     publicly-known signing key is every account compromised at once.
     """
     s = settings or get_settings()
-    problems: list[str] = []
+    problems: List[str] = []
 
     if s.secret_key == DEV_SECRET_KEY or len(s.secret_key) < 32:
         problems.append(
@@ -156,7 +188,20 @@ def verify_production_config(settings: Settings | None = None) -> list[str]:
             "pointing at an insecure or local address."
         )
 
-    if problems and s.environment.lower() == "production":
+    if s.billing_provider.lower() == "stripe":
+        for name, value in (
+            ("STRIPE_SECRET_KEY", s.stripe_secret_key),
+            ("STRIPE_WEBHOOK_SECRET", s.stripe_webhook_secret),
+            ("STRIPE_PRICE_BASIC", s.stripe_price_basic),
+            ("STRIPE_PRICE_PRO", s.stripe_price_pro),
+        ):
+            if not value:
+                problems.append(
+                    name + " is empty while BILLING_PROVIDER=stripe. Customers "
+                    "can be charged and never upgraded, with nothing in the logs."
+                )
+
+    if problems and looks_like_production(s):
         raise InsecureConfigError(
             "Refusing to start — insecure production configuration:\n  - "
             + "\n  - ".join(problems)

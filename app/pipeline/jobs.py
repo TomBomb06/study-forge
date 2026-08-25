@@ -43,13 +43,15 @@ def run_video_job(study_set_id: str) -> None:
         ss = db.get(StudySet, study_set_id)
         if ss is None:
             return
+        # Which bucket paid for this video (see billing.consume_video).
+        charged = (ss.video or {}).get("charged", "")
         try:
             asset = generate_video_asset(ss)
         except VideoGenerationError as e:
             ss.video = {"status": "failed", "error": str(e)}
             user = db.get(User, ss.user_id)
             if user is not None:
-                billing.refund_video(user)
+                billing.refund_video(user, charged)
             db.commit()
             return
         except Exception:
@@ -57,7 +59,7 @@ def run_video_job(study_set_id: str) -> None:
             ss.video = {"status": "failed", "error": "Something went wrong making the video."}
             user = db.get(User, ss.user_id)
             if user is not None:
-                billing.refund_video(user)
+                billing.refund_video(user, charged)
             db.commit()
             return
         ss.video = asset
@@ -119,21 +121,43 @@ def run_multi_job(job_id: str, files: list) -> None:
         job.status = "processing"
         db.commit()
 
-        chunks = []
-        for path, ext in files:
-            try:
-                chunks.append(extract_text(path, ext))
-            except ExtractionError:
-                continue
-        text = "\n\n".join(chunks).strip()
-        if len(text) < MIN_USABLE_CHARS:
+        try:
+            chunks = []
+            for path, ext in files:
+                try:
+                    chunks.append(extract_text(path, ext))
+                except ExtractionError:
+                    continue
+            text = "\n\n".join(chunks).strip()
+            if len(text) < MIN_USABLE_CHARS:
+                # The upload route already charged a study-set credit. Give it
+                # back — the user got nothing, so they shouldn't pay for it.
+                _refund(db, job)
+                job.status = "failed"
+                job.error = "We couldn't read enough text from those files to build a study set."
+                db.commit()
+                return
+            _finish(db, job, text)
+        except Exception as e:  # a corrupt PDF, an OCR crash, a full disk...
+            # Without this the job sits on "processing" forever: the client
+            # spins, the credit stays spent, and nothing ever says why.
+            _refund(db, job)
             job.status = "failed"
-            job.error = "We couldn't read enough text from those files to build a study set."
+            job.error = "Something went wrong building this study set. Please try again."
             db.commit()
-            return
-        _finish(db, job, text)
+            logger.exception("run_multi_job failed for job %s: %s", job_id, e)
     finally:
         db.close()
+
+
+def _refund(db, job: "Job") -> None:
+    """Return the study-set credit consumed up front by the upload route."""
+    try:
+        user = db.get(User, job.user_id)
+        if user is not None:
+            billing.refund_set(user)
+    except Exception:  # a refund must never mask the original failure
+        logger.exception("could not refund study-set credit for job %s", job.id)
 
 
 def _finish(db, job: "Job", text: str) -> None:

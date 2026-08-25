@@ -288,19 +288,64 @@ def _coerce(data: dict) -> dict:
             flashcards.append({"front": str(c["front"])[:500], "back": str(c["back"])[:2000]})
     out["flashcards"] = flashcards
 
+    # Detect a whole-quiz 1-based indexing mistake before judging any single
+    # question. Models do this, and it is recoverable *only* as a pattern: if
+    # EVERY question's index sits in 1..len(choices) and at least one is out of
+    # 0-based range, the model was counting from 1. Shifting on that evidence is
+    # safe; guessing per-question would not be.
+    _raw_quiz = [q for q in (out.get("quiz") or []) if isinstance(q, dict)]
+    _shift = 0
+    if _raw_quiz:
+        idxs = []
+        for q in _raw_quiz:
+            try:
+                idxs.append((int(q.get("answer_index", 0)), len([c for c in (q.get("choices") or [])])))
+            except (TypeError, ValueError):
+                idxs = []
+                break
+        if idxs and any(i >= n for i, n in idxs) and all(1 <= i <= n for i, n in idxs):
+            _shift = 1
+
     quiz = []
     for q in out.get("quiz") or []:
         if not isinstance(q, dict):
             continue
-        choices = [str(x) for x in (q.get("choices") or []) if str(x).strip()][:6]
-        if len(choices) < 2:
-            continue
+        raw = [str(x) for x in (q.get("choices") or [])]
         try:
             ai = int(q.get("answer_index", 0))
         except (TypeError, ValueError):
-            ai = 0
-        if ai < 0 or ai >= len(choices):
-            ai = 0
+            ai = -1
+        ai -= _shift
+
+        # Resolve the correct answer BY VALUE before touching the list.
+        #
+        # This used to filter blanks and truncate to 6 first, then clamp any
+        # out-of-range index to 0. Both steps silently moved the right answer:
+        #   ["", "Mitochondria", "Ribosome"] with answer_index 1 became
+        #   ["Mitochondria", "Ribosome"] — and index 1 is now "Ribosome".
+        # A model using 1-based indexing (they do) landed out of range and got
+        # snapped to choice 0. Either way the app then taught that wrong choice
+        # as correct, confidently, with no error anywhere. For a study app that
+        # is the worst possible failure: the student revises the wrong fact.
+        correct = raw[ai] if 0 <= ai < len(raw) else None
+
+        seen, choices = set(), []
+        for x in raw:
+            k = x.strip()
+            if not k or k.casefold() in seen:   # drop blanks and duplicates —
+                continue                        # two identical options make one
+            seen.add(k.casefold())              # of them "wrong" for no reason
+            choices.append(x)
+        choices = choices[:6]
+
+        if len(choices) < 2:
+            continue
+        if correct is None or correct.strip() not in [c.strip() for c in choices]:
+            # We don't know which option is right. Dropping the question costs
+            # the student one question; keeping it teaches them a wrong answer.
+            continue
+        ai = [c.strip() for c in choices].index(correct.strip())
+
         quiz.append({
             "question": (str(q.get("question", "")).strip() or "Question")[:1000],
             "choices": choices,

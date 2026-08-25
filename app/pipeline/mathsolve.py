@@ -116,6 +116,9 @@ def _clean(data: dict) -> dict:
 # ------------------------------------------------------------------ fallback
 
 _SAFE_EXPR = re.compile(r"^[0-9+\-*/^(). \t]+$")
+# At most one `**`, with a small integer exponent. Anything else is refused
+# rather than evaluated.
+_EXPONENT_OK = re.compile(r"[^*]*\*\*\s*\d{1,2}(?![\d*])[^*]*")
 
 
 def _local_solve(text: str) -> Optional[dict]:
@@ -156,13 +159,22 @@ def _local_solve(text: str) -> Optional[dict]:
 
     # plain arithmetic
     expr = t.replace("^", "**").replace("×", "*").replace("÷", "/")
+    # Exponentiation is the one operator here that can turn a tiny string into
+    # an enormous computation: "9^9^9" pins a worker thread for minutes and eats
+    # hundreds of MB, and every route in this app is sync, so a handful of those
+    # takes the whole API down. Refuse anything with a big or stacked exponent.
+    if "**" in expr and not _EXPONENT_OK.fullmatch(expr.replace(" ", "")):
+        return None
     if _SAFE_EXPR.match(expr.replace("**", "^").replace("^", "")) or _SAFE_EXPR.match(expr):
         try:
             val = eval(expr, {"__builtins__": {}}, {})  # noqa: S307 - regex-gated arithmetic only
+            if isinstance(val, (int, float)):
+                # f"{val:g}" raises OverflowError on a huge int (10**400), which
+                # used to escape as a 500 on ordinary typed input.
+                vs = f"{val:g}"
         except Exception:
             return None
         if isinstance(val, (int, float)):
-            vs = f"{val:g}"
             return {"problem": t, "answer": vs,
                     "steps": ["Work left to right, doing brackets and powers first, "
                               "then multiplication and division, then addition and "

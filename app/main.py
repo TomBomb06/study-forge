@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect, text
 
-from .config import get_settings, verify_production_config
+from .config import get_settings, looks_like_production, verify_production_config
 from .db import Base, engine
 from .routers import (auth, billing, gamify, math, shares, study_sets, tutor,
                       uploads, voice)
@@ -38,6 +38,7 @@ def _ensure_columns() -> None:
             "last_reviewed": "DATETIME",
             "next_review": "DATETIME",
             "share_token": "VARCHAR(32)",
+            "imported_from": "VARCHAR(32)",
         },
         "users": {
             "plan": "VARCHAR(20) DEFAULT 'free'",
@@ -48,6 +49,9 @@ def _ensure_columns() -> None:
             "tts_chars_used": "INTEGER DEFAULT 0",
             "tts_period": "VARCHAR(7) DEFAULT ''",
             "stripe_customer_id": "VARCHAR(64)",
+            "stripe_subscription_id": "VARCHAR(64)",
+            "token_version": "INTEGER DEFAULT 0",
+            "tz_offset_min": "INTEGER",
             "display_name": "VARCHAR(40)",
             "game": "JSON",
             "voice": "VARCHAR(64)",
@@ -72,10 +76,17 @@ if _config_problems:
     for _p in _config_problems:
         print(f"[config warning] {_p}")
 
+_IS_PROD = looks_like_production(get_settings())
+
 app = FastAPI(
     title="StudyForge API",
     version="0.1.0",
     description="Upload study material, get back a generated study kit.",
+    # The interactive docs publish every route, including the dev-only
+    # free-upgrade endpoints. Useful locally, a map for anyone else.
+    docs_url=None if _IS_PROD else "/docs",
+    redoc_url=None if _IS_PROD else "/redoc",
+    openapi_url=None if _IS_PROD else "/openapi.json",
 )
 
 # Allow the web frontend (and a future Expo app in dev) to call the API.
@@ -89,6 +100,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+_CSP = "; ".join([
+    "default-src 'self'",
+    # 'unsafe-inline' is required: the whole app is one inline <script>.
+    "script-src 'self' 'unsafe-inline' https://connect.facebook.net "
+    "https://www.googletagmanager.com https://pagead2.googlesyndication.com "
+    "https://googleads.g.doubleclick.net https://tpc.googlesyndication.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "img-src 'self' data: blob: https:",
+    "media-src 'self' data: blob: https:",
+    "connect-src 'self' https://www.google-analytics.com "
+    "https://connect.facebook.net https://pagead2.googlesyndication.com",
+    "frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "object-src 'none'",
+])
+
 
 @app.middleware("http")
 async def security_headers(request, call_next):
@@ -104,6 +135,14 @@ async def security_headers(request, call_next):
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), payment=()")
+    # The session token lives in localStorage, so a CSP is the difference
+    # between "an XSS somewhere" and "every account". Kept to exactly the
+    # third parties actually loaded: Meta Pixel, GA, AdSense, Google Fonts.
+    response.headers.setdefault("Content-Security-Policy", _CSP)
+    if _IS_PROD:
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+        )
     return response
 
 
@@ -207,10 +246,25 @@ def _ga_snippet() -> str:
     ) % (gid,)
 
 
+def _feature_flags_snippet() -> str:
+    """Tell the page which optional features are actually switched on.
+
+    The landing page advertises plan features before anyone logs in, so it can't
+    ask /me/usage. Without this it promised "10 AI videos / month" while
+    VIDEO_PROVIDER was unset and every generation returned a placeholder.
+    """
+    from .pipeline import video
+
+    return (
+        "<script>window.SF_FLAGS={videoLive:%s};</script>"
+        % ("true" if video.is_live() else "false")
+    )
+
+
 def _html(name: str):
     """Serve an HTML page, injecting the Meta Pixel when one is configured."""
     path = os.path.join(_WEB_DIR, name)
-    snippet = _meta_pixel_snippet() + _ga_snippet()
+    snippet = _meta_pixel_snippet() + _ga_snippet() + _feature_flags_snippet()
     if not snippet:
         return FileResponse(path, headers=_NO_CACHE)
     try:

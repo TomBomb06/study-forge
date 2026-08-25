@@ -28,7 +28,11 @@ class VoiceSave(BaseModel):
 
 
 class SpeakRequest(BaseModel):
-    text: str = Field(min_length=1, max_length=8000)
+    # Must match tts.MAX_CHARS. It used to allow 8000 while the synthesizer
+    # truncated at 4000, so a user was billed for twice the audio they got —
+    # and a free user's whole monthly allowance could vanish in one request
+    # that returned half a passage.
+    text: str = Field(min_length=1, max_length=tts.MAX_CHARS)
     voice: Optional[str] = None
     speed: float = 1.0
 
@@ -89,7 +93,9 @@ def speak(
         audio = tts.synthesize(body.text, voice=voice, speed=body.speed)
     except tts.TTSError as e:
         raise HTTPException(status_code=502, detail=str(e))
-    billing.consume_tts_chars(user, len(body.text or ""))
+    # Charge for what was actually spoken, never for what was submitted.
+    spoken = len((body.text or "").strip()[:tts.MAX_CHARS])
+    billing.consume_tts_chars(user, spoken)
     db.commit()
     return Response(content=audio, media_type="audio/mpeg",
                     headers={"Cache-Control": "no-store"})

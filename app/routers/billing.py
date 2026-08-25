@@ -9,7 +9,9 @@ later (a successful subscription/checkout webhook flips the plan or adds
 packs). They let you exercise the whole flow now without real payments.
 """
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+import time
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -19,9 +21,15 @@ from ..auth import get_current_user
 from ..config import get_settings
 from ..db import get_db
 from ..models import QuizAttempt, StudySet, User
+from ..pipeline import video
 from ..pipeline.jobs import run_video_job
 
 router = APIRouter(tags=["billing"])
+
+# A video stuck on "processing" for longer than this is assumed dead (the
+# worker was killed mid-job) and may be retried. Generation itself is capped
+# well below this by the provider timeout.
+STALE_VIDEO_SECONDS = 15 * 60
 
 
 @router.get("/me/progress")
@@ -76,7 +84,14 @@ def get_progress(
 
 
 @router.get("/me/usage")
-def get_usage(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_usage(
+    response: Response,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Per-user billing state: never let a proxy or CDN hand one user's plan
+    # to another, or serve a stale "free" after an upgrade.
+    response.headers["Cache-Control"] = "no-store"
     status = billing.video_status(user)
     sets = billing.sets_status(user)
     db.commit()  # persist any monthly reset ensure_period() applied
@@ -87,6 +102,9 @@ def get_usage(user: User = Depends(get_current_user), db: Session = Depends(get_
         "video": status,
         "sets": sets,
         "can_transcribe": billing.can_transcribe(user),
+        # False while VIDEO_PROVIDER=stub: the UI must not sell or charge for
+        # AI video until a real provider key is connected.
+        "video_live": video.is_live(),
         "plans": billing.PLANS,
         "credit_packs": billing.CREDIT_PACKS,
         "billing_provider": settings.billing_provider,
@@ -163,6 +181,19 @@ def checkout_pack(
     return {"mode": "applied", "video": billing.video_status(user)}
 
 
+@router.post("/billing/portal")
+def billing_portal(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    """Open Stripe's billing portal so a subscriber can manage or cancel."""
+    if get_settings().billing_provider != "stripe":
+        raise HTTPException(status_code=400, detail="Billing isn't live yet.")
+    try:
+        return {"url": payments.create_portal_session(user)}
+    except payments.PaymentsError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.post("/billing/webhook", include_in_schema=False)
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     """Receive Stripe events (payment succeeded, subscription canceled, …)."""
@@ -196,9 +227,27 @@ def generate_video(
     refunded automatically if generation fails."""
     ss = _owned_set(study_set_id, user, db)
 
-    # Already have (or are making) a video? Don't charge again.
-    if ss.video and ss.video.get("status") in ("ready", "processing"):
+    # Already have a video? Don't charge again.
+    if ss.video and ss.video.get("status") == "ready":
         return {"video": ss.video, "remaining": billing.video_status(user)}
+    # Still making one? Same — unless the worker died mid-job. A process
+    # restart (deploy, OOM) leaves the row on "processing" forever, and this
+    # guard used to make that permanent: charged a credit, no video, no retry.
+    if ss.video and ss.video.get("status") == "processing":
+        started = ss.video.get("started_at") or 0
+        if time.time() - started < STALE_VIDEO_SECONDS:
+            return {"video": ss.video, "remaining": billing.video_status(user)}
+        # Stale. Refund the old attempt before charging for a fresh one.
+        billing.refund_video(user, ss.video.get("charged", ""))
+        db.commit()
+
+    # In demo mode there is no real video to make, so charging for one is
+    # simply taking a paid allowance and returning a placeholder. Hand back the
+    # preview and leave their balance alone.
+    if not video.is_live():
+        ss.video = video.generate_video_asset(ss)
+        db.commit()
+        return {"video": ss.video, "remaining": billing.video_status(user), "demo": True}
 
     # Enforce the paywall BEFORE scheduling any paid work.
     try:
@@ -214,7 +263,11 @@ def generate_video(
                 "credit_packs": billing.CREDIT_PACKS,
             },
         )
-    ss.video = {"status": "processing"}
+    ss.video = {
+        "status": "processing",
+        "started_at": time.time(),
+        "charged": remaining.get("charged", ""),
+    }
     db.commit()  # deduction + processing state are now durable
 
     background.add_task(run_video_job, ss.id)
@@ -232,6 +285,12 @@ def get_video(
 
 
 # ---------- DEV stand-ins for Stripe (replace with payment webhooks) ----------
+#
+# These two routes hand out paid plans and video credits for free. They exist so
+# the whole flow can be exercised without real money. That makes them a wide-open
+# door in production: any signed-up user could POST /me/plan {"plan":"pro"} and
+# grant themselves Pro forever, with no Stripe record and nothing to notice.
+# _require_dev_billing() slams that door whenever real payments are switched on.
 
 class PlanChange(BaseModel):
     plan: str
@@ -241,6 +300,13 @@ class CreditPurchase(BaseModel):
     pack: str
 
 
+def _require_dev_billing() -> None:
+    """Refuse the free-upgrade test routes once real payments are live."""
+    if get_settings().billing_provider != "dev":
+        # 404, not 403: don't advertise that the route exists at all.
+        raise HTTPException(status_code=404, detail="Not found.")
+
+
 @router.post("/me/plan")
 def change_plan(
     body: PlanChange,
@@ -248,6 +314,7 @@ def change_plan(
     db: Session = Depends(get_db),
 ):
     """DEV ONLY: simulate a successful plan upgrade (real: Stripe webhook)."""
+    _require_dev_billing()
     if body.plan not in billing.PLANS:
         raise HTTPException(status_code=422, detail="Unknown plan.")
     user.plan = body.plan
@@ -262,6 +329,7 @@ def buy_credits(
     db: Session = Depends(get_db),
 ):
     """DEV ONLY: simulate buying an add-on video pack (real: Stripe checkout)."""
+    _require_dev_billing()
     pack = billing.CREDIT_PACKS.get(body.pack)
     if pack is None:
         raise HTTPException(status_code=422, detail="Unknown credit pack.")

@@ -65,18 +65,25 @@ class QuizQuestion(BaseModel):
     answer_index: int = Field(default=0, ge=0)
     explanation: str = Field(default="", max_length=2000)
 
-    @field_validator("choices")
-    @classmethod
-    def choices_nonempty(cls, v: list[str]) -> list[str]:
-        cleaned = [c for c in v if c and c.strip()]
+    @model_validator(mode="after")
+    def _resolve_answer(self) -> "QuizQuestion":
+        """Drop blank choices WITHOUT moving the correct answer.
+
+        The old version cleaned the list in a field validator and then clamped
+        an out-of-range index to 0 — so removing one blank option silently
+        shifted which choice was marked correct, and a 1-based index from the
+        model snapped to choice 0. Both produce a confidently wrong answer key,
+        which for a revision app is worse than no question at all.
+        """
+        raw = list(self.choices)
+        correct = raw[self.answer_index] if 0 <= self.answer_index < len(raw) else None
+        cleaned = [c for c in raw if c and c.strip()]
         if len(cleaned) < 2:
             raise ValueError("quiz question needs at least two choices")
-        return cleaned
-
-    @model_validator(mode="after")
-    def _clamp_answer(self) -> "QuizQuestion":
-        if self.answer_index >= len(self.choices) or self.answer_index < 0:
-            self.answer_index = 0
+        if correct is None or correct not in cleaned:
+            raise ValueError("quiz question has no identifiable correct answer")
+        self.choices = cleaned
+        self.answer_index = cleaned.index(correct)
         return self
 
 
@@ -139,8 +146,13 @@ class StudySetResponse(StudySetSummary):
     summary: str
     flashcards: list[Flashcard]
     quiz: list[QuizQuestion]
-    test: list[TestQuestion]
-    matching: list[MatchPair]
+    # Study sets created before the test/matching feature shipped hold NULL in
+    # these columns (_ensure_columns adds them without a default). Declaring
+    # them non-optional made opening an older set fail response validation —
+    # the set listed fine and then 500'd on click, which reads to a student as
+    # "the app ate my notes".
+    test: list[TestQuestion] = []
+    matching: list[MatchPair] = []
     video: Optional[dict] = None
 
 

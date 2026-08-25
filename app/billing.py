@@ -164,15 +164,33 @@ def consume_video(user) -> dict:
         raise QuotaExceeded()
     if status["plan_remaining"] > 0:
         user.videos_used = (user.videos_used or 0) + 1
+        charged = "plan"
     else:
         user.extra_video_credits = (user.extra_video_credits or 0) - 1
-    return video_status(user)
+        charged = "credit"
+    out = video_status(user)
+    # Which bucket paid for this one. refund_video needs it: a purchased credit
+    # refunded into the monthly counter gets wiped at the next month rollover,
+    # so the customer's cash quietly evaporates.
+    out["charged"] = charged
+    return out
 
 
-def refund_video(user) -> dict:
-    """Give back one deducted video (e.g. when generation fails)."""
+def refund_video(user, charged: str = "") -> dict:
+    """Give back one deducted video (e.g. when generation fails).
+
+    Pass the `charged` value returned by consume_video so the refund lands in
+    the bucket that actually paid. Without it we guess "plan first", which
+    turns a purchased, never-expiring credit into a monthly slot that
+    ensure_period() deletes on the 1st.
+    """
     ensure_period(user)
-    if (user.videos_used or 0) > 0:
+    if charged == "credit":
+        user.extra_video_credits = (user.extra_video_credits or 0) + 1
+    elif charged == "plan":
+        if (user.videos_used or 0) > 0:
+            user.videos_used -= 1
+    elif (user.videos_used or 0) > 0:  # legacy callers with no bucket recorded
         user.videos_used -= 1
     else:
         user.extra_video_credits = (user.extra_video_credits or 0) + 1

@@ -12,8 +12,12 @@ on a laptop and doesn't scale server-side, so it's intentionally not wired.
 
 from typing import Optional
 
+import logging
+
 from ..config import get_settings
 from .extract import ExtractionError
+
+logger = logging.getLogger("studyforge.transcribe")
 
 
 def transcribe(path: str, client=None) -> str:
@@ -50,8 +54,19 @@ def _openai_transcribe(path: str, settings, client=None) -> str:
         text = getattr(resp, "text", None) or (resp.get("text") if isinstance(resp, dict) else "")
     except ExtractionError:
         raise
+    except OSError:
+        # An OSError here embeds the on-disk path (/app/storage/<user id>/…)
+        # and it ends up in job.error, which is returned over the API.
+        logger.exception("could not read the uploaded media file")
+        raise ExtractionError(
+            "We couldn't read that recording. Try uploading it again."
+        )
     except Exception as e:
-        raise ExtractionError(f"Transcription failed: {e}")
+        logger.exception("transcription failed")
+        raise ExtractionError(
+            "We couldn't turn that recording into text. Try a clearer or "
+            "shorter recording."
+        )
 
     text = (text or "").strip()
     if len(text) < 40:

@@ -28,6 +28,8 @@ from dataclasses import dataclass
 
 from fastapi import HTTPException, Request, status
 
+from .config import get_settings
+
 
 @dataclass(frozen=True)
 class Rule:
@@ -47,7 +49,10 @@ LOGIN_PER_ACCOUNT = Rule(max_attempts=8,  window_s=600,  block_s=900)
 LOGIN_PER_IP      = Rule(max_attempts=20, window_s=600,  block_s=900)
 # Signup is capped to stop mass fake-account creation burning AI credits —
 # every free account is 5 study sets of real spend.
-SIGNUP_PER_IP     = Rule(max_attempts=10, window_s=3600, block_s=3600)
+# NOTE: a classroom, dorm or mobile carrier is ONE IP. Ten was low enough that
+# a student showing the app to friends would get the 11th of them blocked for an
+# hour — which is the growth loop, not an attack.
+SIGNUP_PER_IP     = Rule(max_attempts=40, window_s=3600, block_s=1800)
 # Password reset. Tight per account so the endpoint can't be used to spam
 # someone's inbox, and tight per IP so it can't be used to enumerate emails.
 FORGOT_PER_ACCOUNT = Rule(max_attempts=3,  window_s=900,  block_s=900)
@@ -64,13 +69,28 @@ _MAX_KEYS = 20000  # hard cap so a spray of unique keys can't exhaust memory
 def client_ip(request: Request) -> str:
     """Best-effort client IP.
 
-    Railway (like most PaaS) terminates TLS at a proxy, so `request.client`
-    is the proxy. The real address is the FIRST entry of X-Forwarded-For;
-    later entries are attacker-controllable and must never be trusted.
+    Railway (like most PaaS) terminates TLS at a proxy, so `request.client` is
+    the proxy. A proxy APPENDS to any X-Forwarded-For the caller sent, so the
+    header reads `<whatever the client typed>, <what proxy 1 saw>, ...` and only
+    the entries our own infrastructure added can be trusted. Counting back
+    TRUSTED_PROXY_HOPS from the end gives the address the outermost proxy saw.
+
+    Reading the FIRST entry (the old behaviour) meant the value was whatever the
+    caller put in the header: every per-IP limit was bypassable by rotating it,
+    and because the per-account login rule is checked before the password is
+    verified, anyone could lock a known customer out of their own account.
+
+    TRUSTED_PROXY_HOPS is 1 for a single proxy (Railway alone). Put another one
+    in front — Cloudflare, a load balancer — and it must become 2, or every
+    request will look like it came from that proxy and share one rate-limit
+    bucket.
     """
+    hops = max(1, get_settings().trusted_proxy_hops)
     xff = request.headers.get("x-forwarded-for", "")
     if xff:
-        return xff.split(",")[0].strip()[:64]
+        parts = [p.strip() for p in xff.split(",") if p.strip()]
+        if parts:
+            return parts[-min(hops, len(parts))][:64]
     return (request.client.host if request.client else "unknown")[:64]
 
 
@@ -116,6 +136,21 @@ def record_success(key: str) -> None:
     with _LOCK:
         _HITS.pop(key, None)
         _BLOCKED.pop(key, None)
+
+
+def clear_prefix(prefix: str) -> None:
+    """Clear every counter whose key starts with `prefix`.
+
+    Login counters are keyed per (account, IP), so clearing an account's
+    lockout after a successful password reset has to sweep all of them —
+    otherwise the machine the attacker used stays blocked forever and,
+    more importantly, the owner's own earlier failures don't clear.
+    """
+    with _LOCK:
+        for k in [k for k in _HITS if k.startswith(prefix)]:
+            _HITS.pop(k, None)
+        for k in [k for k in _BLOCKED if k.startswith(prefix)]:
+            _BLOCKED.pop(k, None)
 
 
 def reset_all() -> None:

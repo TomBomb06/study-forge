@@ -92,13 +92,24 @@ def test_login_does_not_reveal_whether_an_email_is_registered(client):
     assert a.json()["detail"] == b.json()["detail"]
 
 
-def test_client_ip_prefers_first_forwarded_entry():
-    """Later X-Forwarded-For entries are attacker-controlled; trusting them
-    would let anyone rotate their apparent IP and skip the limit."""
+def test_client_ip_ignores_the_client_supplied_forwarded_entry():
+    """A proxy APPENDS to X-Forwarded-For, so the FIRST entry is whatever the
+    caller typed. Trusting it let anyone rotate their apparent IP past every
+    per-IP limit, and lock a known account out by burning its login attempts."""
     class FakeReq:
         headers = {"x-forwarded-for": "203.0.113.9, 10.0.0.1, 172.16.0.1"}
         client = None
-    assert ratelimit.client_ip(FakeReq()) == "203.0.113.9"
+    # One proxy in front (the default): trust the last entry, the one it added.
+    assert ratelimit.client_ip(FakeReq()) == "172.16.0.1"
+
+
+def test_spoofed_forwarded_header_cannot_rotate_the_rate_limit_key():
+    class FakeReq:
+        def __init__(self, spoof):
+            self.headers = {"x-forwarded-for": f"{spoof}, 198.51.100.7"}
+            self.client = None
+    keys = {ratelimit.client_ip(FakeReq(f"10.0.0.{i}")) for i in range(20)}
+    assert keys == {"198.51.100.7"}, "spoofed entries still change the key"
 
 
 # ------------------------------------------------------------ config safety
@@ -130,8 +141,20 @@ def test_production_refuses_sqlite():
 def test_good_production_config_passes():
     s = Settings(environment="production", secret_key="x" * 40,
                  allowed_origins="https://forge.study",
-                 database_url="postgresql://user:pw@host/db")
+                 database_url="postgresql://user:pw@host/db",
+                 email_provider="resend", resend_api_key="re_x",
+                 app_base_url="https://forge.study")
     assert verify_production_config(s) == []
+
+
+def test_production_refuses_undeliverable_email():
+    """Console email in production = nobody can ever reset a password."""
+    s = Settings(environment="production", secret_key="x" * 40,
+                 allowed_origins="https://forge.study",
+                 database_url="postgresql://user:pw@host/db",
+                 email_provider="console", app_base_url="https://forge.study")
+    with pytest.raises(InsecureConfigError):
+        verify_production_config(s)
 
 
 def test_development_warns_but_does_not_crash():

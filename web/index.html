@@ -6,7 +6,7 @@
 <title>StudyForge — Turn anything into a study kit</title>
 <meta name="description" content="StudyForge turns any notes, PDF, or web link into flashcards, quizzes, tests, matching games, read-aloud audio, and AI video lessons — in seconds. Free to start." />
 <link rel="canonical" href="https://forge.study/" />
-<meta name="theme-color" content="#0a0b10" />
+<meta name="theme-color" content="#070d1a" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="StudyForge" />
 <meta property="og:title" content="StudyForge — Turn anything into a study kit" />
@@ -21,60 +21,64 @@
 <meta name="twitter:description" content="Flashcards, quizzes, tests, matching games, audio, and AI video lessons from your notes, PDFs, or web links." />
 <meta name="twitter:image" content="https://forge.study/og.png" />
 <meta name="twitter:image:alt" content="StudyForge — turn any notes, PDF or topic into flashcards, quizzes and study games" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%237c5cff'/%3E%3Cpath d='M20 22h16a6 6 0 0 1 6 6v16H26a6 6 0 0 1-6-6V22z' fill='%23ffffff' opacity='.92'/%3E%3Crect x='20' y='19' width='19' height='4' rx='2' fill='%23ffffff'/%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%232563eb'/%3E%3Cpath d='M20 22h16a6 6 0 0 1 6 6v16H26a6 6 0 0 1-6-6V22z' fill='%23ffffff' opacity='.92'/%3E%3Crect x='20' y='19' width='19' height='4' rx='2' fill='%23ffffff'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#0a0b10; --surface:#13151d; --surface-2:#1a1d27; --surface-3:#21252f;
-    --border:#242833; --border-2:#333a49;
-    --text:#eef0f6; --muted:#969cad; --faint:#6a707f;
-    --brand:#8b6cff; --brand-2:#5b8cff; --brand-ink:#b9a9ff;
+    --bg:#070d1a; --surface:#0e1626; --surface-2:#142033; --surface-3:#1b2b42;
+    --border:#1d2c42; --border-2:#2b3c56;
+    --text:#eef2f8; --muted:#93a3ba; --faint:#64748b;
+    --brand:#2f6fed; --brand-2:#58a6ff; --brand-ink:#9ec5ff;
     --good:#3ecf8e; --bad:#ff5c7c; --warn:#ffb454;
     --radius:16px; --radius-sm:12px;
     --shadow:0 4px 22px -8px rgba(0,0,0,.55);
     --shadow-lg:0 26px 60px -14px rgba(0,0,0,.62);
-    --glow:0 0 0 1px rgba(139,108,255,.35),0 10px 34px -8px rgba(139,108,255,.42);
+    --glow:0 0 0 1px rgba(47,111,237,.35),0 10px 34px -8px rgba(47,111,237,.42);
     --grad:linear-gradient(135deg,var(--brand),var(--brand-2));
   }
   *{box-sizing:border-box}
+  .card.owned-plan{border-color:var(--brand);box-shadow:var(--glow)}
+  /* Inline icons: sized from the text they sit in, coloured by it too. */
+  svg.ic{width:1em;height:1em;vertical-align:-0.125em;flex:none}
+  .ic+*{margin-left:.1em}
   html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   html,body{margin:0;height:100%;max-width:100%;overflow-x:hidden}
   img,video,canvas,svg,pre,textarea{max-width:100%}
   .card,.notes,.mode,p,h1,h2,li{overflow-wrap:anywhere}
   body{font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.55;letter-spacing:-.006em;position:relative}
   body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
-    background:radial-gradient(900px 520px at 50% -12%,rgba(139,108,255,.16),transparent 62%),
-      radial-gradient(760px 520px at 108% 0%,rgba(91,140,255,.10),transparent 56%)}
-  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.035;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")}
+    background:radial-gradient(1100px 620px at 50% -20%,rgba(47,111,237,.10),transparent 60%)}
   h1,h2,.brand,.lp-h1,.big-score,.mode .nm,.lp-plan .pp{font-family:Sora,Inter,sans-serif}
   #app{min-height:100%;display:flex;flex-direction:column;position:relative;z-index:1}
   .wrap{width:100%;max-width:900px;margin:0 auto;padding:26px 24px}
   button{font-family:inherit;cursor:pointer;border:none}
-  .btn{position:relative;background:var(--grad);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:15px;letter-spacing:-.01em;box-shadow:0 6px 18px -6px rgba(139,108,255,.55),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .1s ease,box-shadow .2s ease,opacity .2s;}
-  .btn:hover{transform:translateY(-1px);box-shadow:0 11px 26px -6px rgba(139,108,255,.7),inset 0 1px 0 rgba(255,255,255,.22)}
+  .btn{position:relative;background:var(--grad);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:15px;letter-spacing:-.01em;box-shadow:0 6px 18px -6px rgba(47,111,237,.55),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .1s ease,box-shadow .2s ease,opacity .2s;}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 11px 26px -6px rgba(47,111,237,.7),inset 0 1px 0 rgba(255,255,255,.22)}
   .btn:active{transform:translateY(0) scale(.97)}
   .mode:active,.set-item:active,.choice:active:not(:disabled),.match-item:active{transform:scale(.98)}
   .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
   .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border);box-shadow:none}
   .btn.ghost:hover{border-color:var(--border-2);background:var(--surface-3)}
   /* eye-catching top-bar upgrade button */
-  .btn.premium{background:linear-gradient(115deg,#ffcf5c,#ff8f4d 35%,#ff5ca8 65%,#8b6cff);background-size:220% 100%;color:#1a1024;font-weight:800;border:none;overflow:hidden;box-shadow:0 6px 20px -6px rgba(255,150,80,.75),inset 0 1px 0 rgba(255,255,255,.45);animation:premgrad 6s linear infinite}
+  .btn.premium{background:linear-gradient(120deg,#f4c257,#e0a032);color:#231703;font-weight:800;border:none;box-shadow:0 6px 18px -8px rgba(224,160,50,.6),inset 0 1px 0 rgba(255,255,255,.35)}
+  .btn.premium:hover{box-shadow:0 10px 24px -8px rgba(224,160,50,.75),inset 0 1px 0 rgba(255,255,255,.4)}
+  .btn.premium.owned{background:transparent;color:var(--brand-ink);border:1px solid var(--border-2);box-shadow:none;font-weight:700}
+  .btn.premium.owned:hover{border-color:var(--brand);box-shadow:none}
   @keyframes premgrad{to{background-position:220% 0}}
   .btn.premium::after{content:"";position:absolute;top:0;left:-65%;width:45%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-18deg);animation:premshine 3.6s ease-in-out infinite}
   @keyframes premshine{0%{left:-65%}55%{left:135%}100%{left:135%}}
   .btn.premium:hover{transform:translateY(-1px);box-shadow:0 9px 26px -6px rgba(255,150,80,.9)}
   /* already-subscribed state: calmer chip, no shimmer */
-  .btn.premium.owned{background:var(--surface-2);color:var(--brand-ink);border:1px solid rgba(139,108,255,.5);box-shadow:none;animation:none;font-weight:700}
+  .btn.premium.owned{background:var(--surface-2);color:var(--brand-ink);border:1px solid rgba(47,111,237,.5);box-shadow:none;animation:none;font-weight:700}
   .btn.premium.owned::after{display:none}
-  .btn.premium.owned:hover{transform:translateY(-1px);box-shadow:0 6px 16px -8px rgba(139,108,255,.6)}
+  .btn.premium.owned:hover{transform:translateY(-1px);box-shadow:0 6px 16px -8px rgba(47,111,237,.6)}
   /* premium tutor */
-  .btn.teach{background:linear-gradient(135deg,#8b6cff,#5b8cff);color:#fff;border:none;box-shadow:0 5px 16px -6px rgba(139,108,255,.7)}
+  .btn.teach{background:linear-gradient(135deg,#2f6fed,#58a6ff);color:#fff;border:none;box-shadow:0 5px 16px -6px rgba(47,111,237,.7)}
   .btn.teach:hover{transform:translateY(-1px)}
-  .btn.teach.locked{background:var(--surface-2);color:var(--brand-ink);border:1px dashed rgba(139,108,255,.55);box-shadow:none}
-  .card.tutor{border-color:rgba(139,108,255,.4);line-height:1.6;animation:fadein .3s ease}
+  .btn.teach.locked{background:var(--surface-2);color:var(--brand-ink);border:1px dashed rgba(47,111,237,.55);box-shadow:none}
+  .card.tutor{border-color:rgba(47,111,237,.4);line-height:1.6;animation:fadein .3s ease}
   .card.tutor h1,.card.tutor h2,.card.tutor h3{margin:.7em 0 .35em;font-size:17px}
   .card.tutor strong{color:var(--brand-ink)}
   /* voice picker */
@@ -84,21 +88,21 @@
   .voicecard.active{border-color:var(--brand);box-shadow:var(--glow)}
   .voicecard .vn{font-weight:700;font-size:15px}
   .voicecard .vd{font-size:12px;color:var(--muted);margin:2px 0 8px;line-height:1.3}
-  .tutor-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;color:var(--brand-ink);border:1px solid rgba(139,108,255,.5);border-radius:99px;padding:2px 9px;margin-bottom:8px}
+  .tutor-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;color:var(--brand-ink);border:1px solid rgba(47,111,237,.5);border-radius:99px;padding:2px 9px;margin-bottom:8px}
   .btn.sm{padding:8px 14px;font-size:14px;border-radius:10px}
   input,textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:12px;font-size:15px;font-family:inherit;transition:border-color .15s,box-shadow .15s;}
   input::placeholder,textarea::placeholder{color:var(--faint)}
-  input:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(139,108,255,.18)}
+  input:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(47,111,237,.18)}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.03)}
   .muted{color:var(--muted)}
   .row{display:flex;gap:12px;align-items:center}
   .brand{font-weight:800;font-size:20px;letter-spacing:-.03em}
   .brand span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-  header.top{border-bottom:1px solid var(--border);background:rgba(10,11,16,.72);backdrop-filter:blur(12px) saturate(1.4);position:sticky;top:0;z-index:5}
+  header.top{border-bottom:1px solid var(--border);background:rgba(7,13,26,.72);backdrop-filter:blur(12px) saturate(1.4);position:sticky;top:0;z-index:5}
   .top .wrap{display:flex;justify-content:space-between;align-items:center;padding:15px 24px}
   .hidden{display:none!important}
   .center{min-height:100%;display:flex;align-items:center;justify-content:center;flex:1}
-  h1{font-size:29px;font-weight:800;letter-spacing:-.032em;margin:0 0 6px;background:linear-gradient(180deg,#fff,#c7cbd8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  h1{font-size:29px;font-weight:800;letter-spacing:-.032em;margin:0 0 6px;background:linear-gradient(180deg,#fff,#c3d0e2);-webkit-background-clip:text;background-clip:text;color:transparent}
   h2{font-size:20px;font-weight:700;letter-spacing:-.02em;margin:0 0 4px}
   .field{margin-bottom:14px}
   .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
@@ -106,7 +110,7 @@
   .tabs{display:flex;gap:6px;background:var(--surface-2);padding:6px;border-radius:14px;border:1px solid var(--border)}
   .tab{flex:1;padding:10px;border-radius:10px;background:transparent;color:var(--muted);font-weight:600;font-size:14px;transition:.15s}
   .tab:hover{color:var(--text)}
-  .tab.active{background:var(--grad);color:#fff;box-shadow:0 6px 16px -6px rgba(139,108,255,.6)}
+  .tab.active{background:var(--grad);color:#fff;box-shadow:0 6px 16px -6px rgba(47,111,237,.6)}
   .dropzone{border:1.5px dashed var(--border-2);border-radius:var(--radius);padding:44px 24px;text-align:center;transition:.18s;cursor:pointer;background:var(--surface)}
   .dropzone:hover,.dropzone.drag{border-color:var(--brand);background:var(--surface-2);box-shadow:var(--glow)}
   .set-item{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border:1px solid var(--border);border-radius:14px;margin-bottom:10px;background:var(--surface);cursor:pointer;transition:.16s;box-shadow:var(--shadow)}
@@ -114,20 +118,20 @@
   /* chooser grid */
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:20px}
   .mode{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:.16s;text-align:left;overflow:hidden;box-shadow:var(--shadow)}
-  .mode::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:.16s;box-shadow:inset 0 0 0 1px rgba(139,108,255,.45)}
+  .mode::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:.16s;box-shadow:inset 0 0 0 1px rgba(47,111,237,.45)}
   .mode:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
   .mode:hover::after{opacity:1}
-  .mode .ic{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:13px 15px 12px 16px;font-size:22px;background:rgba(139,108,255,.14);border:1px solid rgba(139,108,255,.22);transform:rotate(-3deg);transition:transform .18s}
+  .mode>.ic{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:13px 15px 12px 16px;font-size:22px;background:rgba(47,111,237,.14);border:1px solid rgba(47,111,237,.22);transform:rotate(-3deg);transition:transform .18s}
   .mode:nth-child(even) .ic{transform:rotate(2.5deg)}
   .mode:hover .ic{transform:rotate(0) scale(1.08)}
   .mode .nm{font-weight:700;margin-top:12px;font-size:16px;letter-spacing:-.01em}
   .mode .ds{color:var(--muted);font-size:13px;margin-top:3px;line-height:1.45}
-  .mode .soon{display:inline-block;margin-top:10px;font-size:11px;color:var(--brand-ink);background:rgba(139,108,255,.1);border:1px solid rgba(139,108,255,.22);border-radius:99px;padding:2px 9px;font-weight:600}
-  .mode:nth-child(2) .ic{background:rgba(91,140,255,.15);border-color:rgba(91,140,255,.28)}
+  .mode .soon{display:inline-block;margin-top:10px;font-size:11px;color:var(--brand-ink);background:rgba(47,111,237,.1);border:1px solid rgba(47,111,237,.22);border-radius:99px;padding:2px 9px;font-weight:600}
+  .mode:nth-child(2) .ic{background:rgba(88,166,255,.15);border-color:rgba(88,166,255,.28)}
   .mode:nth-child(3) .ic{background:rgba(62,207,142,.15);border-color:rgba(62,207,142,.28)}
   .mode:nth-child(4) .ic{background:rgba(255,180,84,.15);border-color:rgba(255,180,84,.28)}
   .mode:nth-child(5) .ic{background:rgba(255,92,124,.15);border-color:rgba(255,92,124,.28)}
-  .mode:nth-child(6) .ic{background:rgba(91,140,255,.15);border-color:rgba(91,140,255,.28)}
+  .mode:nth-child(6) .ic{background:rgba(88,166,255,.15);border-color:rgba(88,166,255,.28)}
   .mode:nth-child(7) .ic{background:rgba(62,207,142,.15);border-color:rgba(62,207,142,.28)}
   .flash{perspective:1200px;height:280px;margin:16px 0;cursor:pointer;user-select:none}
   .flash-inner{position:relative;width:100%;height:100%;transition:transform .5s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d}
@@ -141,7 +145,7 @@
   .choice.wrong{border-color:var(--bad);background:rgba(255,92,124,.14)}
   .choice:disabled{cursor:default}
   .progress{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin:14px 0;border:1px solid var(--border)}
-  .progress>div{height:100%;background:var(--grad);transition:width .35s ease;box-shadow:0 0 12px rgba(139,108,255,.5)}
+  .progress>div{height:100%;background:var(--grad);transition:width .35s ease;box-shadow:0 0 12px rgba(47,111,237,.5)}
   .spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto}
   @keyframes spin{to{transform:rotate(360deg)}}
   .notes{font-size:16px;line-height:1.78}
@@ -161,7 +165,7 @@
   .faq{max-width:760px;margin:0 auto;text-align:left}
   .faq details{background:var(--surface);border:1px solid var(--border);border-radius:14px;
     padding:16px 20px;margin-bottom:12px}
-  .faq details[open]{border-color:rgba(139,108,255,.45)}
+  .faq details[open]{border-color:rgba(47,111,237,.45)}
   .faq summary{cursor:pointer;font-weight:700;font-size:16px;list-style:none;position:relative;padding-right:28px}
   .faq summary::-webkit-details-marker{display:none}
   .faq summary::after{content:"+";position:absolute;right:2px;top:-2px;font-size:22px;color:var(--brand-ink);font-weight:700}
@@ -177,7 +181,7 @@
   @media (max-width:720px){ .sticky-cta.show{display:flex} }
   .pill{display:inline-block;padding:4px 12px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
   /* Math solver: the answer is the reward, the locked steps are the pitch. */
-  .mathres{border-color:rgba(139,108,255,.45)}
+  .mathres{border-color:rgba(47,111,237,.45)}
   .manswer{font-family:Sora,Inter,sans-serif;font-size:34px;font-weight:800;letter-spacing:-.02em;
     background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
     margin:2px 0 16px;word-break:break-word}
@@ -195,6 +199,11 @@
   .stack>*+*{margin-top:12px}
   .big-score{font-size:46px;font-weight:800;letter-spacing:-.03em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   a.link{color:var(--brand-2);cursor:pointer;text-decoration:none;font-weight:600}
+  }
+  /* Standalone .link controls (Back, etc.) are navigation, not inline prose
+     links — give them a real 24px+ tap target without shifting the layout. */
+  a.link{display:inline-flex;align-items:center;gap:.3em;min-height:24px}
+  a.link:focus-visible,[role="button"]:focus-visible,button:focus-visible{outline:2px solid var(--brand-2);outline-offset:2px}
   a.link:hover{text-decoration:underline}
   /* video slideshow */
   .slide{min-height:260px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:22px;font-weight:600;line-height:1.5;padding:30px}
@@ -202,7 +211,7 @@
   .match-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
   .match-item{padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);cursor:pointer;transition:.13s;font-size:15px}
   .match-item:hover{border-color:var(--brand);background:var(--surface-3)}
-  .match-item.sel{border-color:var(--brand);background:rgba(139,108,255,.18);box-shadow:var(--glow)}
+  .match-item.sel{border-color:var(--brand);background:rgba(47,111,237,.18);box-shadow:var(--glow)}
   .match-item.done{border-color:var(--good);background:rgba(62,207,142,.12);cursor:default;opacity:.65}
   .match-item.bad{border-color:var(--bad);background:rgba(255,92,124,.15)}
   input[type=range]{accent-color:var(--brand)}
@@ -214,7 +223,7 @@
   #toast.bad{border-color:var(--bad)} #toast.good{border-color:var(--good)}
   .adbox{border:1px dashed var(--border-2);border-radius:14px;padding:18px;text-align:center;background:var(--surface)}
   .adbox .tag{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
-  #adgate{position:fixed;inset:0;z-index:9999;background:rgba(8,9,13,.78);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px}
+  #adgate{position:fixed;inset:0;z-index:9999;background:rgba(5,10,21,.78);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px}
   #adgate .sheet{background:var(--surface);border:1px solid var(--border);border-radius:18px;max-width:440px;width:100%;padding:22px;box-shadow:var(--shadow-lg)}
   #adgate .tag{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
   #adgate .adslot{min-height:180px;margin:12px 0;display:flex;align-items:center;justify-content:center;border-radius:12px;overflow:hidden}
@@ -225,7 +234,7 @@
   .steps{display:flex;flex-direction:column;gap:10px;max-width:430px;margin:18px auto 0;text-align:left}
   .step{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px;box-shadow:var(--shadow)}
   .step .num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
-  .skeleton{background:linear-gradient(90deg,var(--surface-2) 25%,#232733 37%,var(--surface-2) 63%);background-size:400% 100%;animation:sk 1.4s ease infinite;border-radius:10px}
+  .skeleton{background:linear-gradient(90deg,var(--surface-2) 25%,#1d2c42 37%,var(--surface-2) 63%);background-size:400% 100%;animation:sk 1.4s ease infinite;border-radius:10px}
   @keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
   /* ---------- game HUD & effects ---------- */
   .hud{display:flex;align-items:center;gap:10px}
@@ -234,16 +243,16 @@
   @keyframes flamepulse{0%,100%{box-shadow:0 0 0 0 rgba(255,150,60,0)}50%{box-shadow:0 0 14px 1px rgba(255,150,60,.35)}}
   .hud .lvl{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:99px;padding:5px 12px 5px 6px;cursor:pointer}
   .hud .lvl:hover{border-color:var(--border-2)}
-  .hud .lvl .n{width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;box-shadow:0 0 10px rgba(139,108,255,.5)}
+  .hud .lvl .n{width:26px;height:26px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;box-shadow:0 0 10px rgba(47,111,237,.5)}
   .hud .xpbar{width:64px;height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden}
   .hud .xpbar>div{height:100%;background:var(--grad);transition:width .5s ease}
   .xp-float{position:fixed;z-index:10001;font-weight:800;font-size:18px;color:#ffd166;text-shadow:0 2px 8px rgba(0,0,0,.6);pointer-events:none;animation:xpfloat 1.1s ease-out forwards}
-  .xp-float.big{font-size:24px;color:#8b6cff;color:var(--brand-ink)}
+  .xp-float.big{font-size:24px;color:#2f6fed;color:var(--brand-ink)}
   @keyframes xpfloat{0%{opacity:0;transform:translateY(8px) scale(.8)}15%{opacity:1;transform:translateY(0) scale(1.15)}30%{transform:scale(1)}100%{opacity:0;transform:translateY(-46px)}}
-  .combo-chip{position:fixed;right:18px;bottom:84px;z-index:10001;background:var(--grad);color:#fff;font-weight:800;border-radius:14px;padding:10px 16px;font-size:16px;box-shadow:0 10px 30px -8px rgba(139,108,255,.8);animation:combopop .25s ease;pointer-events:none}
+  .combo-chip{position:fixed;right:18px;bottom:84px;z-index:10001;background:var(--grad);color:#fff;font-weight:800;border-radius:14px;padding:10px 16px;font-size:16px;box-shadow:0 10px 30px -8px rgba(47,111,237,.8);animation:combopop .25s ease;pointer-events:none}
   @keyframes combopop{0%{transform:scale(.6)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
-  #lvlup{position:fixed;inset:0;z-index:10002;background:rgba(8,9,13,.82);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;flex-direction:column;animation:fadein .25s ease}
-  #lvlup .ring{width:130px;height:130px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:800;color:#fff;box-shadow:0 0 80px rgba(139,108,255,.8);animation:lvlpop .5s cubic-bezier(.2,1.6,.4,1)}
+  #lvlup{position:fixed;inset:0;z-index:10002;background:rgba(5,10,21,.82);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;flex-direction:column;animation:fadein .25s ease}
+  #lvlup .ring{width:130px;height:130px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:800;color:#fff;box-shadow:0 0 80px rgba(47,111,237,.8);animation:lvlpop .5s cubic-bezier(.2,1.6,.4,1)}
   #lvlup h2{font-size:34px;margin:22px 0 6px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   @keyframes lvlpop{0%{transform:scale(.2)}70%{transform:scale(1.12)}100%{transform:scale(1)}}
   @keyframes fadein{from{opacity:0}to{opacity:1}}
@@ -254,7 +263,7 @@
   .mb-hud .lives{letter-spacing:2px;font-size:15px}
   .mb-combo{color:var(--brand-ink);font-weight:800;font-size:14px}
   .mb-field{position:relative;height:300px;overflow:hidden;border-radius:16px;border:1px solid var(--border);
-    background:radial-gradient(120% 90% at 50% -10%,rgba(139,108,255,.18),transparent 60%),var(--surface-2)}
+    background:radial-gradient(120% 90% at 50% -10%,rgba(47,111,237,.18),transparent 60%),var(--surface-2)}
   .meteor{position:absolute;left:50%;top:-80px;transform:translateX(-50%);max-width:86%;text-align:center;
     background:linear-gradient(135deg,#ff8a5b,#ff5c9d);color:#fff;font-weight:700;font-size:14px;line-height:1.25;
     padding:11px 15px;border-radius:14px;box-shadow:0 10px 26px -6px rgba(255,100,120,.75),0 0 0 4px rgba(255,140,90,.15);will-change:top}
@@ -274,12 +283,12 @@
   .sl-timer{height:8px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-bottom:8px}
   .sl-timer>div{height:100%;width:100%;background:var(--grad)}
   /* welcome wheel */
-  #wheelov{position:fixed;inset:0;z-index:10002;background:rgba(8,9,13,.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;flex-direction:column;animation:fadein .25s ease;padding:20px;text-align:center}
+  #wheelov{position:fixed;inset:0;z-index:10002;background:rgba(5,10,21,.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;flex-direction:column;animation:fadein .25s ease;padding:20px;text-align:center}
   #wheelov h2{font-size:28px;margin:4px 0;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   #wheelov .wsub{color:var(--muted);margin:2px 0 18px;max-width:360px;line-height:1.5}
   .wheel-wrap{position:relative;width:304px;height:304px;max-width:80vw;max-height:80vw}
   .wheel-wrap .ptr{position:absolute;top:-10px;left:50%;transform:translateX(-50%);z-index:3;color:#fff;font-size:26px;line-height:1;filter:drop-shadow(0 3px 4px rgba(0,0,0,.55))}
-  .wheel{position:absolute;inset:0;border-radius:50%;border:6px solid rgba(255,255,255,.92);box-shadow:0 0 0 5px rgba(139,108,255,.5),0 22px 55px -12px rgba(0,0,0,.75);transition:transform 4.6s cubic-bezier(.13,.86,.22,1)}
+  .wheel{position:absolute;inset:0;border-radius:50%;border:6px solid rgba(255,255,255,.92);box-shadow:0 0 0 5px rgba(47,111,237,.5),0 22px 55px -12px rgba(0,0,0,.75);transition:transform 4.6s cubic-bezier(.13,.86,.22,1)}
   .wheel .seg-label{position:absolute;inset:0;display:flex;justify-content:center;padding-top:16px;font-weight:800;font-size:12.5px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
   .wheel .seg-label span{max-width:84px;text-align:center;line-height:1.15}
   .wheel-hub{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:var(--grad);border:4px solid #fff;z-index:2;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 14px rgba(0,0,0,.55)}
@@ -300,7 +309,7 @@
   .badge .bn{font-weight:700;font-size:13px;margin-top:6px}
   .badge .bd{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.35}
   .badge.locked{opacity:.32;filter:grayscale(1)}
-  .badge.earned{border-color:rgba(139,108,255,.4);box-shadow:0 0 14px -4px rgba(139,108,255,.45)}
+  .badge.earned{border-color:rgba(47,111,237,.4);box-shadow:0 0 14px -4px rgba(47,111,237,.45)}
   /* leaderboard */
   .lb-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;background:var(--surface)}
   .lb-row.me{border-color:var(--brand);box-shadow:var(--glow)}
@@ -325,12 +334,12 @@
   .themebtn .tl{font-size:11px;color:var(--muted);margin-top:2px}
   @media (max-width:600px){ .gamestrip{grid-template-columns:1fr} .hud .xpbar{width:40px} .shop-grid{grid-template-columns:1fr} }
   /* landing */
-  .lp-nav{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;max-width:1080px;margin:0 auto;padding:18px 24px;background:rgba(10,11,16,.6);backdrop-filter:blur(12px)}
+  .lp-nav{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:24px;width:100%;max-width:1080px;margin:0 auto;padding:18px 24px;background:rgba(7,13,26,.6);backdrop-filter:blur(12px)}
   .lp-hero{max-width:820px;margin:0 auto;text-align:center;padding:64px 24px 36px}
-  .lp-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--brand-ink);background:rgba(139,108,255,.1);border:1px solid rgba(139,108,255,.25);border-radius:99px;padding:6px 14px;margin-bottom:22px}
-  .lp-h1{font-size:56px;line-height:1.05;font-weight:800;letter-spacing:-.04em;margin:0;background:linear-gradient(180deg,#fff,#b8bccb);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lp-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--brand-ink);background:rgba(47,111,237,.1);border:1px solid rgba(47,111,237,.25);border-radius:99px;padding:6px 14px;margin-bottom:22px}
+  .lp-h1{font-size:56px;line-height:1.05;font-weight:800;letter-spacing:-.04em;margin:0;background:linear-gradient(180deg,#fff,#b3c2d6);-webkit-background-clip:text;background-clip:text;color:transparent}
   .lp-h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;position:relative;white-space:nowrap}
-  .lp-h1 em::after{content:"";position:absolute;left:2%;right:2%;bottom:-10px;height:12px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 Q 30 2 60 8 T 120 7 T 197 6' fill='none' stroke='%238b6cff' stroke-width='5' stroke-linecap='round' opacity='0.85'/%3E%3C/svg%3E") no-repeat center/100% 100%}
+  .lp-h1 em::after{content:"";position:absolute;left:2%;right:2%;bottom:-10px;height:12px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 14' preserveAspectRatio='none'%3E%3Cpath d='M3 10 Q 30 2 60 8 T 120 7 T 197 6' fill='none' stroke='%232f6fed' stroke-width='5' stroke-linecap='round' opacity='0.85'/%3E%3C/svg%3E") no-repeat center/100% 100%}
   .cheer{min-height:20px;font-weight:700;font-size:14px;margin-top:10px;color:var(--brand-ink);transition:.15s}
   .cheer.good{color:var(--good)} .cheer.miss{color:var(--muted)}
   .lp-sub{font-size:19px;color:var(--muted);max-width:600px;margin:20px auto 30px;line-height:1.6}
@@ -341,12 +350,12 @@
   .lp-section .lead{text-align:center;color:var(--muted);max-width:560px;margin:0 auto 32px}
   .lp-feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
   .lp-feat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
-  .lp-feat .fi{width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:22px;background:rgba(139,108,255,.14);border:1px solid rgba(139,108,255,.22)}
+  .lp-feat .fi{width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:22px;background:rgba(47,111,237,.14);border:1px solid rgba(47,111,237,.22)}
   .lp-feat h3{font-size:17px;margin:12px 0 4px}
   .lp-feat p{color:var(--muted);font-size:14px;margin:0;line-height:1.5}
   .lp-price{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;max-width:860px;margin:0 auto}
   .lp-plan{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;box-shadow:var(--shadow);position:relative}
-  .lp-plan.feat{border-color:rgba(139,108,255,.5);box-shadow:var(--glow)}
+  .lp-plan.feat{border-color:rgba(47,111,237,.5);box-shadow:var(--glow)}
   .lp-plan .pn{font-weight:700;font-size:18px}
   .lp-plan .pp{font-size:34px;font-weight:800;letter-spacing:-.02em;margin:6px 0}
   .lp-plan .pp span{font-size:14px;font-weight:500;color:var(--muted)}
@@ -382,6 +391,17 @@
     .vgrid{grid-template-columns:1fr 1fr}
   }
   @media (max-width:380px){ .grid{grid-template-columns:1fr} .hud .flame,.hud .coins{font-size:13px} }
+  /* Phones: every control gets a real thumb-sized target. Measured before
+     this, .btn.sm and .tab were 32-35px tall and the back/upgrade links 24px.
+     Last in the sheet on purpose so it beats the earlier a.link rule. */
+  @media (max-width:640px){
+    .btn.sm{min-height:44px;padding-top:10px;padding-bottom:10px}
+    .btn{min-height:46px}
+    .tab{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+    a.link, a.link[style]{min-height:44px;display:inline-flex;align-items:center}
+    .hud .flame,.hud .coins,.hud .lvl{min-height:40px;display:inline-flex;align-items:center}
+    .match-item{min-height:44px;display:flex;align-items:center}
+  }
 </style>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
@@ -422,8 +442,17 @@ async function api(path,{method="GET",body=null,form=null}={}){
   try{ res=await fetch(API+path,{method,headers,body:payload}); }
   catch(netErr){ throw new Error("Can’t reach StudyForge — make sure the app window (start.command) is still open."); }
   const t=await res.text(); let d=null; try{d=t?JSON.parse(t):null;}catch{d=t;}
-  if(res.status===401 && state.token){ setToken(null); renderAuth(); throw new Error("Your session expired — please log in again."); }
-  if(!res.ok){ const m=(d&&d.detail); throw new Error((typeof m==="string"?m:null)||("Request failed ("+res.status+")")); }
+  if(res.status===401 && state.token){ setToken(null); resetUserState(); renderAuth(); throw new Error("Your session expired — please log in again."); }
+  if(!res.ok){
+    const m=(d&&d.detail);
+    let msg=null;
+    if(typeof m==="string") msg=m;
+    // pydantic returns detail as a list of {msg, loc}; showing the raw status
+    // turned "your name is too short" into "Request failed (422)".
+    else if(Array.isArray(m)&&m.length) msg=(m[0]&&(m[0].msg||m[0].detail))||null;
+    else if(m&&typeof m==="object"&&m.message) msg=m.message;
+    throw new Error(msg||("Request failed ("+res.status+")"));
+  }
   return d;
 }
 let _toastT=null;
@@ -435,13 +464,63 @@ function toast(msg,kind=""){
   clearTimeout(_toastT); _toastT=setTimeout(()=>el.classList.remove("show"),2600);
 }
 function setToken(t){state.token=t; if(t)localStorage.setItem("sf_token",t); else localStorage.removeItem("sf_token");}
+// Everything derived from WHO is signed in. Logout used to clear only the token,
+// the current set and the game — so `state.usage` survived, and because the
+// loaders are cached ("if(!state.usage)") the next person to sign in on that
+// tab inherited the previous user's plan: Premium chip, no ads, and the paid
+// transcription uploader instead of the paywall, with no /me/usage call at all.
+function resetUserState(){
+  state.usage=null; state.showAds=undefined; state.ads=null; state.adPacing=null;
+  state.current=null; state.game=null; state.sets=[]; state.displayName=null;
+  state.badgeCatalog=null; state.voicePref=null; state._sharedOnce=false;
+  state._pendingMode=null; state._studySent=null;
+  _usageInFlight=null; _wheelShown=false;
+}
 // Meta Pixel conversion tracking. No-op unless META_PIXEL_ID is configured
 // on the server (the base code is injected server-side into the page head).
 function track(event,params,custom){
   try{ if(typeof fbq!=="function")return; fbq(custom?"trackCustom":"track",event,params||{}); }catch{}
 }
 function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+// ---------- Icons ----------
+// Inline SVG rather than emoji. Emoji render as a different picture on every
+// OS (and as a blank box on some), can't take the surrounding text colour, and
+// read as unfinished on desktop. These inherit currentColor and font-size.
+const _svg=(d,extra="")=>`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}${extra}</svg>`;
+const ICON={
+  star:_svg('<path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/>'),
+  spark:_svg('<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.8 2.8M14.9 14.9l2.8 2.8M17.7 6.3l-2.8 2.8M9.1 14.9l-2.8 2.8"/>'),
+  flame:_svg('<path d="M12 22c3.9 0 6.5-2.5 6.5-6 0-4.2-4-5.6-4.6-10.5C11.5 7 10 8.6 10 11c-1 0-2-1.2-2-2.6C6.6 10 5.5 12 5.5 14.6 5.5 19 8.4 22 12 22z"/>'),
+  coin:_svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v9M14.4 9.6c-.5-.7-1.4-1.1-2.4-1.1-1.4 0-2.4.7-2.4 1.8s1 1.5 2.4 1.8 2.4.7 2.4 1.8-1 1.8-2.4 1.8c-1 0-1.9-.4-2.4-1.1"/>'),
+  chart:_svg('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
+  gear:_svg('<circle cx="12" cy="12" r="3.4"/><path d="M12 2.2l1.5 2.3 2.7-.5.5 2.7 2.3 1.5-1.4 2.4 1.4 2.4-2.3 1.5-.5 2.7-2.7-.5L12 21.8l-1.5-2.3-2.7.5-.5-2.7-2.3-1.5L6.4 13.4 5 11l2.3-1.5.5-2.7 2.7.5z"/>'),
+  check:_svg('<path d="M20 6L9 17l-5-5"/>'),
+  stack:_svg('<path d="M4 7l8-4 8 4-8 4z"/><path d="M4 12l8 4 8-4M4 17l8 4 8-4"/>'),
+  lock:_svg('<rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/>'),
+  cap:_svg('<path d="M2.5 8.5L12 4l9.5 4.5L12 13z"/><path d="M6.5 10.7V16c0 1.4 2.5 2.6 5.5 2.6s5.5-1.2 5.5-2.6v-5.3M21.5 8.5v5"/>'),
+  camera:_svg('<path d="M4 8h3l1.5-2h7L17 8h3a1.5 1.5 0 011.5 1.5v8A1.5 1.5 0 0120 19H4a1.5 1.5 0 01-1.5-1.5v-8A1.5 1.5 0 014 8z"/><circle cx="12" cy="13" r="3.2"/>'),
+  gift:_svg('<rect x="3" y="9.5" width="18" height="4" rx="1"/><path d="M5 13.5V20h14v-6.5M12 9.5V20"/><path d="M12 9.5S10.8 5 8.6 5a2.1 2.1 0 000 4.5zM12 9.5S13.2 5 15.4 5a2.1 2.1 0 010 4.5z"/>'),
+  swords:_svg('<path d="M14.5 14.5L20 20M18 4l-8 8M6 4l8 8M4 18l5.5-5.5M4 4h3l1 3M20 4h-3l-1 3M4 20h4v-3M20 20h-4v-3"/>'),
+  bag:_svg('<path d="M5 9h14l-1 11H6z"/><path d="M9 9V6.5a3 3 0 016 0V9"/>'),
+  book:_svg('<path d="M4 5.5A1.5 1.5 0 015.5 4H11v16H5.5A1.5 1.5 0 014 18.5z"/><path d="M20 5.5A1.5 1.5 0 0018.5 4H13v16h5.5a1.5 1.5 0 001.5-1.5z"/>'),
+  arrowl:_svg('<path d="M19 12H5M11 6l-6 6 6 6"/>'),
+  link:_svg('<path d="M10.5 13.5a4 4 0 005.7 0l2.8-2.8a4 4 0 10-5.7-5.7l-1.4 1.4"/><path d="M13.5 10.5a4 4 0 00-5.7 0l-2.8 2.8a4 4 0 105.7 5.7l1.4-1.4"/>'),
+};
+
 function stopSpeech(){ try{window.speechSynthesis.cancel();}catch{} }
+// Clipboard of last resort for non-secure origins.
+function _copyFallback(text){
+  try{
+    const ta=document.createElement("textarea");
+    ta.value=text; ta.setAttribute("readonly","");
+    ta.style.cssText="position:fixed;top:-1000px;opacity:0";
+    document.body.appendChild(ta); ta.select();
+    const ok=document.execCommand("copy");
+    document.body.removeChild(ta);
+    toast(ok?"Link copied":"Press Cmd+C to copy",ok?"good":"");
+  }catch{ toast("Press Cmd+C to copy",""); }
+}
 
 // ---------- Voice (read-aloud) ----------
 async function loadVoiceOptions(){
@@ -491,7 +570,7 @@ function currentVoiceLabel(){
 }
 // ---------- Settings ----------
 async function renderSettings(){
-  shell(`<a class="link" id="back">← Back</a><h1 style="margin-top:12px">⚙️ Settings</h1>
+  shell(`<a class="link" id="back" href="#" role="button">← Back</a><h1 style="margin-top:12px">Settings</h1>
     <div id="set-body"><div class="center" style="min-height:24vh"><div class="spinner"></div></div></div>`);
   document.getElementById("back").onclick=renderHome;
   await loadVoiceOptions();
@@ -508,7 +587,7 @@ function paintSettings(){
     const remNote=quota?`<div class="muted" style="font-size:12px;margin-top:10px">${rem>0?`~${Math.max(1,Math.round(rem/1000))}k characters of free AI voice left this month`:`You've used this month's free AI voice`}${o.plan==="free"?` · <a class="link" id="set-up2">Upgrade for lots more</a>`:""}.</div>`:"";
     html+=`<div class="muted" style="font-size:13px;margin:4px 0 12px">Natural, studio-quality voices — free to use each month. Tap one to preview; it's saved automatically.</div>
       <div class="vgrid">${(o.voices||[]).map(v=>`
-        <div class="voicecard ${((pref||o.default)===v.id)?'active':''}" data-v="${v.id}">
+        <div role="button" tabindex="0" class="voicecard ${((pref||o.default)===v.id)?'active':''}" data-v="${v.id}">
           <div class="vn">${esc(v.name)}</div><div class="vd">${esc(v.desc)}</div>
           <button class="btn ghost sm vprev" data-v="${v.id}">▶ Preview</button></div>`).join("")}</div>${remNote}`;
   }else{
@@ -570,7 +649,7 @@ function wireStickyCta(){
 
 function renderLanding(){
   const feats=[
-    ["📖","Study guide","Clean, organized notes that pull out what actually matters."],
+    [ICON.book,"Study guide","Clean, organized notes that pull out what actually matters."],
     ["🃏","Flashcards","Flip-through cards for fast, active recall of key terms."],
     ["❓","Quizzes & tests","Multiple-choice quizzes and mixed practice tests with instant feedback."],
     ["🧩","Study games","A matching game and a timed Time Attack mode to make it stick."],
@@ -592,7 +671,7 @@ function renderLanding(){
     </div>
   </nav>
   <header class="lp-hero">
-    <div class="lp-eyebrow">✨ AI-powered study kits</div>
+    <div class="lp-eyebrow">Study smarter, in minutes</div>
     <h1 class="lp-h1">Turn anything into a <em>study kit</em>.</h1>
     <p class="lp-sub">Drop in your notes, a PDF, a photo, or a web link — and StudyForge instantly builds flashcards, quizzes, tests, games, audio, and AI video lessons you can actually learn from.</p>
     <div class="lp-cta">
@@ -620,7 +699,7 @@ function renderLanding(){
     <div class="lp-feats">
       <div class="lp-feat"><div class="fi">📸</div><h3>Stuck on homework at 11pm</h3>
         <p>Snap the problem, get the answer free. Premium walks through every step so the next one is easier.</p></div>
-      <div class="lp-feat"><div class="fi">📚</div><h3>50 pages to revise, one evening</h3>
+      <div class="lp-feat"><div class="fi">${ICON.stack}</div><h3>50 pages to revise, one evening</h3>
         <p>Drop the PDF in, get a study guide and a quiz that shows which sections you haven't actually learned yet.</p></div>
       <div class="lp-feat"><div class="fi">🎧</div><h3>Revising on the bus</h3>
         <p>Have your notes read aloud in a natural voice — hands-free, no screen needed.</p></div>
@@ -649,8 +728,8 @@ function renderLanding(){
     <p class="lead">Start free. Upgrade when you want no ads and AI video lessons.</p>
     <div class="lp-price">
       <div class="lp-plan"><div class="pn">Free</div><div class="pp">$0</div><ul><li>5 study sets / month</li><li><b>Unlimited</b> math photo answers</li><li>All study modes + games</li><li>Natural AI voice (limited)</li><li>Supported by ads</li></ul></div>
-      <div class="lp-plan feat"><div class="lp-badge">Most popular</div><div class="pn">Basic</div><div class="pp">$9<span>/mo</span></div><ul><li>Unlimited study sets</li><li><b>Math steps</b> — how to solve it</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Lots more natural AI voice</li><li>No ads · 10 AI videos/mo</li></ul></div>
-      <div class="lp-plan"><div class="pn">Pro</div><div class="pp">$19<span>/mo</span></div><ul><li>Unlimited study sets</li><li><b>Math steps</b> — how to solve it</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Most natural AI voice</li><li>No ads · 40 AI videos/mo</li></ul></div>
+      <div class="lp-plan feat"><div class="lp-badge">Most popular</div><div class="pn">Basic</div><div class="pp">$9<span>/mo</span></div><ul><li>120 study sets / month</li><li><b>Math steps</b> — how to solve it</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Lots more natural AI voice</li><li>No ads<span class="vid-line"> · 10 AI videos/mo</span></li></ul></div>
+      <div class="lp-plan"><div class="pn">Pro</div><div class="pp">$19<span>/mo</span></div><ul><li>Unlimited study sets</li><li><b>Math steps</b> — how to solve it</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Most natural AI voice</li><li>No ads<span class="vid-line"> · 40 AI videos/mo</span></li></ul></div>
     </div>
     <div style="text-align:center;margin-top:28px"><button class="btn" data-auth="signup" style="font-size:16px;padding:14px 26px">Get started free</button></div>
   </section>
@@ -665,6 +744,7 @@ function renderLanding(){
   el.querySelectorAll("[data-auth]").forEach(b=>b.onclick=()=>renderAuth(b.dataset.auth));
   document.querySelectorAll("#sticky-cta [data-auth]").forEach(b=>b.onclick=()=>renderAuth(b.dataset.auth));
   wireStickyCta();
+  applyFeatureFlags();   // renderLanding rebuilds the pricing cards; re-strip
 }
 
 // ---------- Auth ----------
@@ -772,22 +852,42 @@ function renderAuth(initial){
   document.getElementById("password").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("submit").click();});
 }
 
+// Timers, polls and audio started by a screen must die when that screen is
+// replaced. Without this, a game clock kept ticking after you navigated away
+// and then wrote a score + confetti onto whatever screen you were now on (and
+// threw, because the elements it wanted were gone).
+state._cleanups=[];
+function onLeaveScreen(fn){ state._cleanups.push(fn); }
+function runCleanups(){
+  const list=state._cleanups; state._cleanups=[];
+  list.forEach(fn=>{ try{fn();}catch{} });
+}
+// role="button" elements need Enter/Space wired up by hand, otherwise they are
+// mouse-only. One delegated listener covers every screen.
+document.addEventListener("keydown",(e)=>{
+  if(e.key!=="Enter"&&e.key!==" ") return;
+  const t=e.target;
+  if(!t || typeof t.getAttribute!=="function" || t.getAttribute("role")!=="button") return;
+  e.preventDefault(); t.click();
+});
 function shell(inner){
   stopSpeech();
+  runCleanups();
   if(state._stopAudio){ try{state._stopAudio();}catch{} state._stopAudio=null; }
   el.innerHTML=`<header class="top"><div class="wrap">
-     <div class="brand" id="home-link" style="cursor:pointer">Study<span>Forge</span></div>
+     <div class="brand" id="home-link" role="button" tabindex="0" style="cursor:pointer">Study<span>Forge</span></div>
      <div class="hud">
-       <button class="btn premium sm" id="go-premium" title="Go Premium — no ads + AI video lessons">✨ Go Premium</button>
-       <span class="flame" id="hud-streak" title="Daily streak">🔥 0</span>
-       <span class="coins" id="hud-coins" title="Rewards shop">🪙 0</span>
-       <span class="lvl" id="hud-lvl" title="Weekly leaderboard"><span class="n" id="hud-lvln">1</span><span class="xpbar"><div id="hud-xpfill" style="width:0%"></div></span></span>
-       <button class="btn ghost sm" id="progress-link" title="Your progress">📊</button>
-       <button class="btn ghost sm" id="settings-link" title="Settings">⚙️</button>
+       <button class="btn premium sm" id="go-premium" style="visibility:hidden" title="Go Premium">Go Premium</button>
+       <span class="flame" id="hud-streak" title="Daily streak">${ICON.flame} <span id="hud-streakn">0</span></span>
+       <span class="coins" id="hud-coins" role="button" tabindex="0" title="Rewards shop">0</span>
+       <span class="lvl" id="hud-lvl" role="button" tabindex="0" title="Weekly leaderboard"><span class="n" id="hud-lvln">1</span><span class="xpbar"><div id="hud-xpfill" style="width:0%"></div></span></span>
+       <button class="btn ghost sm" id="progress-link" title="Your progress" aria-label="Your progress">${ICON.chart}</button>
+       <button class="btn ghost sm" id="settings-link" title="Settings" aria-label="Settings">${ICON.gear}</button>
        <button class="btn ghost sm" id="logout">Log out</button>
      </div></div></header>
    <div class="wrap" id="body">${inner}</div>`;
-  document.getElementById("logout").onclick=()=>{setToken(null);state.current=null;state.game=null;renderLanding();};
+  el.querySelectorAll('a.link[href="#"]').forEach(a=>a.addEventListener("click",e=>e.preventDefault()));
+  document.getElementById("logout").onclick=()=>{setToken(null);resetUserState();renderLanding();};
   document.getElementById("home-link").onclick=renderHome;
   document.getElementById("progress-link").onclick=renderProgress;
   document.getElementById("settings-link").onclick=renderSettings;
@@ -796,18 +896,26 @@ function shell(inner){
   document.getElementById("go-premium").onclick=renderUpgrade;
   updateHUD(); updatePremiumBtn();
   if(!state.game) loadGame().then(updateHUD);
-  if(state.usage===undefined) loadUsage().then(updatePremiumBtn);
+  // `!state.usage` on purpose: the old guard was `=== undefined`, so once a
+  // single failed fetch wrote `null` nothing ever retried and a paying user
+  // was stuck looking at the upgrade button until a full page reload.
+  if(!state.usage) loadUsage();
 }
 // Top-bar plan button — ALWAYS visible. Free users get an upgrade CTA;
 // paying users get a calmer "Premium" chip that opens their plan to manage.
 function updatePremiumBtn(){
   const b=document.getElementById("go-premium"); if(!b) return;
-  const plan=state.usage&&state.usage.video&&state.usage.video.plan;
+  // Hidden until we actually know the plan. Painting "Go Premium" first and
+  // correcting it after the network call is what made a subscriber see their
+  // plan flash and then turn back into a buy button on every screen change.
+  if(!state.usage){ b.style.visibility="hidden"; return; }
+  const plan=state.usage.video&&state.usage.video.plan;
   const paid=plan==="basic"||plan==="pro";
-  b.style.display="";
+  b.style.visibility="visible";
   b.classList.toggle("owned",paid);
-  b.innerHTML=paid?"⭐ Premium":"✨ Go Premium";
-  b.title=paid?"You're Premium — tap to manage your plan":"Go Premium — no ads + AI video lessons";
+  b.innerHTML=paid?`${ICON.star} ${esc(state.usage.video.plan_name||"Premium")}`
+                  :`${ICON.spark} Go Premium`;
+  b.title=paid?"Your plan — tap to manage or cancel":"Go Premium — no ads + AI video lessons";
 }
 // Free users: show how many study sets they have left this month.
 function updateSetsNote(){
@@ -815,30 +923,33 @@ function updateSetsNote(){
   const s=state.usage&&state.usage.sets;
   if(!s||s.unlimited){ n.innerHTML=""; return; }
   const left=Math.max(0,s.remaining);
-  // Don't call a paid user's allowance "free", and don't nag them to buy what
-  // they already have — Basic gets pointed at Pro, Pro/unlimited sees nothing.
   const plan=s.plan||"free";
-  const word=plan==="free"?"free study set":"study set";
-  const cta=plan==="free"?"Upgrade for unlimited":"Go Pro for unlimited";
-  n.innerHTML=`<div class="muted" style="font-size:13px">📚 <b style="color:var(--brand-ink)">${left}</b> ${word}${left===1?"":"s"} left this month${s.monthly_sets?` <span style="opacity:.7">of ${s.monthly_sets}</span>`:""} · <a class="link" id="sets-up">${cta}</a></div>`;
+  if(plan!=="free"){
+    // A subscriber should see that they're a subscriber, not an upsell. The old
+    // copy ("120 study sets left of 120 · Go Pro for unlimited") was the most
+    // prominent line on their home screen and read as "you're on the free tier".
+    n.innerHTML=`<div class="muted" style="font-size:13px">${ICON.check} <b>${esc(state.usage.video&&state.usage.video.plan_name||"Premium")}</b> · ${left} study set${left===1?"":"s"} left this month</div>`;
+    return;
+  }
+  n.innerHTML=`<div class="muted" style="font-size:13px">${ICON.stack} <b style="color:var(--brand-ink)">${left}</b> free study set${left===1?"":"s"} left this month${s.monthly_sets?` <span style="opacity:.7">of ${s.monthly_sets}</span>`:""} · <a class="link" id="sets-up">Upgrade for unlimited</a></div>`;
   const u=document.getElementById("sets-up"); if(u)u.onclick=(e)=>{e.preventDefault();renderUpgrade();};
 }
 // ---------- Premium AI tutor: deep explanations + personalized review ----------
 function isPaidPlan(){const p=state.usage&&state.usage.video&&state.usage.video.plan;return p==="basic"||p==="pro";}
 // A 'Teach me' button — styled locked (with 🔒) for free users to drive upgrades.
 function teachBtnHTML(id,label,locked){
-  return `<button class="btn teach sm${locked?" locked":""}" id="${id}">${locked?"🔒 "+label+" · Premium":"🎓 "+label}</button>`;
+  return `<button class="btn teach sm${locked?" locked":""}" id="${id}">${locked?ICON.lock+" "+label+" · Premium":ICON.cap+" "+label}</button>`;
 }
 // Run a premium tutor request into mountEl; free users are sent to the upgrade screen.
 async function runTutor(mode,items,mountEl,btn){
   if(state.usage===undefined) await loadUsage();
   if(!isPaidPlan()){ toast("✨ Premium unlocks in-depth tutoring","good"); renderUpgrade(); return; }
   const label=btn?btn.innerHTML:"";
-  if(btn){btn.disabled=true;btn.innerHTML="🎓 Thinking…";}
+  if(btn){btn.disabled=true;btn.innerHTML=ICON.cap+" Thinking…";}
   if(mountEl) mountEl.innerHTML=`<div class="center" style="min-height:70px"><div class="spinner"></div></div>`;
   try{
     const r=await api("/tutor/explain",{method:"POST",body:{set_id:state.current.id,mode,items:items||[]}});
-    if(mountEl) mountEl.innerHTML=`<div class="card tutor"><span class="tutor-badge">✨ PREMIUM TUTOR</span>${mdLite(r.explanation)}</div>`;
+    if(mountEl) mountEl.innerHTML=`<div class="card tutor"><span class="tutor-badge">Premium tutor</span>${mdLite(r.explanation)}</div>`;
     if(btn) btn.style.display="none";
   }catch(e){
     if(/Premium/i.test(e.message||"")){ renderUpgrade(); return; }
@@ -887,7 +998,7 @@ function homeSubLine(){
 
 // ---------- Gamification ----------
 const tzOff=()=>new Date().getTimezoneOffset();
-const THEME_COLORS={aurora:["#8b6cff","#5b8cff","#b9a9ff"],mint:["#2fd6a3","#38b6ff","#8bf0d0"],sunset:["#ff8a5b","#ff5c9d","#ffc2a0"],ocean:["#3b82f6","#22d3ee","#9cc9ff"],rose:["#ff5c8a","#b06bff","#ffb3cc"],graphite:["#9aa4b2","#6b7787","#c9d2de"]};
+const THEME_COLORS={aurora:["#2f6fed","#58a6ff","#9ec5ff"],mint:["#2fd6a3","#38b6ff","#8bf0d0"],sunset:["#ff8a5b","#ff5c9d","#ffc2a0"],ocean:["#3b82f6","#22d3ee","#9cc9ff"],rose:["#ff5c8a","#b06bff","#ffb3cc"],graphite:["#9aa4b2","#6b7787","#c9d2de"]};
 function applyThemeEarly(id){const c=THEME_COLORS[id];if(!c)return;const r=document.documentElement.style;r.setProperty("--brand",c[0]);r.setProperty("--brand-2",c[1]);r.setProperty("--brand-ink",c[2]);r.setProperty("--grad",`linear-gradient(135deg,${c[0]},${c[1]})`);}
 // Apply a cosmetic theme by overriding the brand CSS variables.
 function applyTheme(t){
@@ -910,17 +1021,17 @@ async function loadGame(){
 function updateHUD(){
   const g=state.game; if(!g) return;
   const st=document.getElementById("hud-streak");
-  if(st){ st.textContent="🔥 "+g.streak; st.classList.toggle("lit",g.streak>0&&g.goal_met); st.title=g.goal_met?`${g.streak}-day streak — goal met today!`:`${g.streak}-day streak — earn ${Math.max(0,g.goal-g.daily_xp)} more XP today to keep it`; }
-  const co=document.getElementById("hud-coins"); if(co) co.textContent="🪙 "+g.coins;
+  if(st){ const sn=document.getElementById("hud-streakn"); if(sn) sn.textContent=g.streak; st.classList.toggle("lit",g.streak>0&&g.goal_met); st.title=g.goal_met?`${g.streak}-day streak — goal met today!`:`${g.streak}-day streak — earn ${Math.max(0,g.goal-g.daily_xp)} more XP today to keep it`; }
+  const co=document.getElementById("hud-coins"); if(co) co.innerHTML=ICON.coin+" "+g.coins;
   const ln=document.getElementById("hud-lvln"), xf=document.getElementById("hud-xpfill");
   if(ln) ln.textContent=g.level;
   if(xf) xf.style.width=Math.min(100,Math.round(100*g.level_xp/Math.max(1,g.level_span)))+"%";
 }
 // ---------- Rewards shop ----------
 async function renderRewards(){
-  shell(`<a class="link" id="back">← Back</a>
+  shell(`<a class="link" id="back" href="#" role="button">← Back</a>
     <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:12px">
-      <h1 style="margin:0">🎁 Rewards</h1>
+      <h1 style="margin:0">Rewards</h1>
       <span class="pill" style="font-size:15px;font-weight:800;color:var(--brand-ink)">🪙 <span id="rw-coins">${state.game?state.game.coins:0}</span> coins</span></div>
     <p class="muted" style="margin-top:6px">Earn coins every time you study. Spend them here.</p>
     <div id="rw"></div>`);
@@ -936,7 +1047,7 @@ function paintRewards(box){
   const adInfo=g.adfree_active?`<div class="pill" style="color:var(--good);border-color:var(--good);margin-top:8px">✨ Ad-free active now</div>`:"";
   const discSrc=(g.spin_discount>0&&g.spin_discount>=g.discount_percent)?"You won this on the welcome wheel":"Your level earns you this";
   const discount=g.discount_percent>0
-    ? `<div class="card" style="margin-top:16px;border-color:rgba(139,108,255,.4)"><div style="font-weight:700">🏷️ ${g.discount_percent}% off unlocked</div><div class="muted" style="font-size:13px;margin-top:4px">${discSrc} — ${g.discount_percent}% off a subscription, applied automatically at checkout.</div></div>`
+    ? `<div class="card" style="margin-top:16px;border-color:rgba(47,111,237,.4)"><div style="font-weight:700">🏷️ ${g.discount_percent}% off unlocked</div><div class="muted" style="font-size:13px;margin-top:4px">${discSrc} — ${g.discount_percent}% off a subscription, applied automatically at checkout.</div></div>`
     : `<div class="card muted" style="margin-top:16px;font-size:14px">🏷️ Reach <b>level 10</b> to unlock 10% off a subscription (20% off at level 20).</div>`;
   box.innerHTML=`
     <h2 style="margin:18px 0 10px;font-size:18px">Shop</h2>
@@ -965,7 +1076,7 @@ function paintRewards(box){
     try{ const r=await api("/rewards/buy",{method:"POST",body:{item:b.dataset.item,tz_offset:tzOff()}});
       state.game=r.state; updateHUD(); paintRewards(box);
       toast(b.dataset.item==="freeze"?"🧊 Streak Freeze bought!":"✨ Ad-free for 30 minutes — enjoy!","good");
-      if(b.dataset.item==="adfree") loadUsage();
+      if(b.dataset.item==="adfree") loadUsage(true);   // force: the cached value is what they just paid to change
     }catch(e){ toast(e.message,"bad"); paintRewards(box); }
   });
   box.querySelectorAll(".themebtn:not(.locked)").forEach(t=>t.onclick=async()=>{
@@ -1015,7 +1126,7 @@ function comboHit(anchor){
 }
 function comboBreak(){ _combo=0; const c=document.getElementById("combo-chip"); if(c)c.remove(); }
 function confetti(n){
-  const colors=["#8b6cff","#5b8cff","#3ecf8e","#ffd166","#ff5c7c","#fff"];
+  const colors=["#2f6fed","#58a6ff","#3ecf8e","#ffd166","#ff5c7c","#fff"];
   for(let i=0;i<(n||70);i++){
     const p=document.createElement("div"); p.className="confetti";
     p.style.left=Math.random()*100+"vw";
@@ -1050,7 +1161,7 @@ function maybeSpinWelcome(){
   if(!g||g.spun||_wheelShown) return;
   const prizes=g.spin_prizes||[]; if(!prizes.length) return;
   _wheelShown=true;
-  const N=prizes.length, seg=360/N, cols=["#7c5cff","#5b8cff"];
+  const N=prizes.length, seg=360/N, cols=["#2563eb","#58a6ff"];
   const stops=prizes.map((p,i)=>`${cols[i%2]} ${i*seg}deg ${(i+1)*seg}deg`).join(",");
   const grad=`conic-gradient(from 0deg,${stops})`;
   const labels=prizes.map((p,i)=>`<div class="seg-label" style="transform:rotate(${i*seg+seg/2}deg)"><span>${p.icon}<br>${esc(p.label)}</span></div>`).join("");
@@ -1060,16 +1171,28 @@ function maybeSpinWelcome(){
     <div class="wheel-wrap"><div class="ptr">▼</div>
       <div class="wheel" id="wheel" style="background:${grad}">${labels}</div>
       <div class="wheel-hub">⭐</div></div>
-    <button class="btn" id="spin-btn">Spin the wheel</button>`;
+    <button class="btn" id="spin-btn">Spin the wheel</button>
+    <button class="btn ghost sm" id="spin-skip" style="margin-top:10px">Skip for now</button>`;
   document.body.appendChild(ov);
   const wheel=document.getElementById("wheel"), btn=document.getElementById("spin-btn");
+  const skipBtn=document.getElementById("spin-skip");
   let done=false;
+  // This overlay covers the whole screen and used to have exactly one control.
+  // If the spin request hung, the button sat on "Spinning…" forever and the
+  // app was unusable until a reload.
+  const dismiss=()=>{ document.removeEventListener("keydown",onWheelKey,true); ov.remove(); };
+  const onWheelKey=(e)=>{ if(e.key==="Escape"){ e.preventDefault(); dismiss(); } };
+  document.addEventListener("keydown",onWheelKey,true);
+  if(skipBtn) skipBtn.onclick=dismiss;
+  let guard=null;
   btn.onclick=async()=>{
-    if(done){ ov.remove(); return; }
+    if(done){ dismiss(); return; }
     btn.disabled=true; btn.textContent="Spinning…";
     let r;
+    guard=setTimeout(()=>{ if(!done){ btn.disabled=false; btn.textContent="Spin the wheel"; toast("That took too long — try again.","bad"); } },15000);
     try{ r=await api("/gamify/spin",{method:"POST",body:{tz_offset:tzOff()}}); }
-    catch(e){ if(state.game)state.game.spun=true; toast(e.message||"Couldn't spin right now","bad"); ov.remove(); return; }
+    catch(e){ clearTimeout(guard); if(state.game)state.game.spun=true; toast(e.message||"Couldn't spin right now","bad"); dismiss(); return; }
+    clearTimeout(guard);
     const target=360*6-(r.index*seg+seg/2);
     wheel.style.transform=`rotate(${target}deg)`;
     done=true;
@@ -1079,6 +1202,7 @@ function maybeSpinWelcome(){
       const sub=ov.querySelector(".wsub");
       if(sub) sub.innerHTML=`<b style="color:var(--brand-ink);font-size:19px">${p.icon} You won ${esc(p.label)}!</b><br>${winBlurb(p)}`;
       btn.disabled=false; btn.textContent="Awesome — let's study!";
+      if(skipBtn) skipBtn.remove();
       toast(`${p.icon} You won ${p.label}!`,"good");
       if(r.leveled_up_to) setTimeout(()=>levelUp(r.leveled_up_to),800);
     },4750);
@@ -1094,17 +1218,17 @@ function paintGameStrip(host){
        <circle cx="38" cy="38" r="${R}" fill="none" stroke="var(--surface-3)" stroke-width="8"/>
        <circle cx="38" cy="38" r="${R}" fill="none" stroke="${g.goal_met?"var(--good)":"url(#gg)"}" stroke-width="8"
          stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" transform="rotate(-90 38 38)"/>
-       <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b6cff"/><stop offset="1" stop-color="#5b8cff"/></linearGradient></defs>
+       <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f6fed"/><stop offset="1" stop-color="#58a6ff"/></linearGradient></defs>
        <text x="38" y="36" text-anchor="middle" fill="var(--text)" font-size="13" font-weight="800">${g.daily_xp}</text>
        <text x="38" y="50" text-anchor="middle" fill="var(--muted)" font-size="9">/ ${g.goal} XP</text>
      </svg>
      <div><div style="font-weight:700">${g.goal_met?"Daily goal crushed! ✅":"Today's goal"}</div>
        <div class="muted" style="font-size:13px;margin-top:2px">${g.goal_met?"Streak safe — come back tomorrow!":`Earn ${Math.max(0,g.goal-g.daily_xp)} more XP to keep your streak`}</div>
-       <div style="font-size:13px;margin-top:6px">🔥 <b>${g.streak}</b> day streak · best ${g.best_streak}</div></div>
+       <div style="font-size:13px;margin-top:6px">${ICON.flame} <b>${g.streak}</b> day streak · best ${g.best_streak}</div></div>
    </div>
    <div class="questcard"><div class="row" style="justify-content:space-between;margin-bottom:4px">
-        <div style="font-weight:700;font-size:14px">⚔️ Daily quests</div>
-        <a class="link" id="gs-rewards" style="font-size:12px">🎁 Rewards · 🪙 ${g.coins}</a></div>
+        <div style="font-weight:700;font-size:14px">Daily quests</div>
+        <a class="link" id="gs-rewards" href="#" role="button" style="font-size:12px">${ICON.gift} Rewards · ${g.coins}</a></div>
      ${(g.quests||[]).map(q=>`<div class="quest ${q.done?"done":""}">
         <span>${q.done?"✅":"▫️"}</span><span style="flex:2">${esc(q.name)}</span>
         <span class="qbar"><div style="width:${Math.min(100,Math.round(100*q.progress/Math.max(1,q.target)))}%"></div></span>
@@ -1114,7 +1238,7 @@ function paintGameStrip(host){
 }
 // Weekly leaderboard view.
 async function renderLeaderboard(){
-  shell(`<a class="link" id="back">← Back</a><h1 style="margin-top:12px">🏆 Weekly leaderboard</h1>
+  shell(`<a class="link" id="back" href="#" role="button">← Back</a><h1 style="margin-top:12px">Weekly leaderboard</h1>
     <p class="muted" style="margin-top:0">Most XP earned this week. Resets every Monday.</p>
     <div id="lb"><div class="center" style="min-height:24vh"><div class="spinner"></div></div></div>`);
   document.getElementById("back").onclick=renderHome;
@@ -1188,14 +1312,32 @@ function loadAdsenseScript(clientId){
   sc.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+encodeURIComponent(clientId);
   document.head.appendChild(sc);
 }
-async function loadUsage(){
-  try{ state.usage=await api("/me/usage"); }catch{ state.usage=null; return state.usage; }
+// The plan lives here and nowhere else. Two rules matter:
+//  * a failed fetch must NEVER overwrite a good answer with "free" — that is
+//    how a paying user's Premium state used to vanish mid-session;
+//  * concurrent callers share one request, so a page render can't fire two
+//    /me/usage calls and let the loser's result win.
+let _usageInFlight=null;
+async function loadUsage(force){
+  if(state.usage && !force && !_usageInFlight) return state.usage;
+  if(_usageInFlight) return _usageInFlight;
+  _usageInFlight=(async()=>{
+    try{ state.usage=await api("/me/usage"); }
+    catch{ return state.usage; }   // keep the last known-good plan
+    finally{ _usageInFlight=null; }
+    applyUsage();
+    return state.usage;
+  })();
+  return _usageInFlight;
+}
+// Repaint every part of the UI that depends on the plan.
+function applyUsage(){
+  if(!state.usage) return;
   state.showAds=!!state.usage.show_ads;
-  updatePremiumBtn();
   state.ads=state.usage.ads||{};
   state.adPacing=(state.usage.ads&&state.usage.ads.pacing)||{every_actions:3,min_gap_seconds:150,skip_after_seconds:5};
   if(state.showAds && state.ads.provider==="adsense") loadAdsenseScript(state.ads.client_id);
-  return state.usage;
+  updatePremiumBtn(); updateSetsNote();
 }
 
 // ---------- Paced ad breaks (free users only) ----------
@@ -1234,6 +1376,7 @@ function adGate(next){
   const done=()=>{ skip.disabled=false; skip.textContent="Continue ✓"; };
   if(left<=0){ done(); } else {
     const t=setInterval(()=>{ left--; if(left<=0){ clearInterval(t); done(); } else { skip.textContent=`Continue in ${left}s`; } },1000);
+    onLeaveScreen(()=>clearInterval(t));
   }
   skip.onclick=()=>{ if(!skip.disabled){ close(); next(); } };
 }
@@ -1256,27 +1399,72 @@ function renderAd(host,kind){
 }
 
 async function renderUpgrade(){
-  shell(`<a class="link" id="back">← Back</a><h1 style="margin-top:12px">Upgrade & learn deeper</h1>
-     <p class="muted" style="margin-top:0">Free gets you the answers. Premium gets you a personal AI tutor — in-depth explanations, a personalized review of everything you get wrong, lots more natural AI read-aloud voice, no ads, and AI video lessons.</p>
+  shell(`<a class="link" id="back" href="#" role="button">${ICON.arrowl} Back</a><h1 style="margin-top:12px" id="up-h1">Upgrade & learn deeper</h1>
+     <p class="muted" style="margin-top:0" id="up-sub">Free gets you the answers. Premium gets you a personal AI tutor: in-depth explanations, a personalised review of everything you get wrong, lots more natural AI read-aloud voice, no ads, and AI video lessons.</p>
      <div id="up"></div>`);
   document.getElementById("back").onclick=renderHome;
   const box=document.getElementById("up"); box.innerHTML=`<div class="center" style="min-height:24vh"><div class="spinner"></div></div>`;
   let u; try{u=await api("/me/usage");}catch(e){box.innerHTML=`<p class="error">${esc(e.message)}</p>`;return;}
+  // Keep the shared copy in sync — this screen used to fetch usage and throw it
+  // away, so the header chip and this page could disagree about the plan.
+  state.usage=u; applyUsage();
+
+  const cur=(u.video&&u.video.plan)||"free";
+  const paid=cur==="basic"||cur==="pro";
+  if(paid){
+    // A subscriber landing here (they tapped their own plan chip) must see that
+    // they HAVE a subscription. The old screen showed them "Choose Basic" with
+    // no indication they already owned it — which reads as "my payment didn't
+    // register", and buying again opened a SECOND Stripe subscription.
+    const h1=document.getElementById("up-h1"), sub=document.getElementById("up-sub");
+    if(h1) h1.textContent="Your plan";
+    if(sub) sub.innerHTML=`You're on <b>${esc(u.video.plan_name)}</b> — $${(u.plans[cur]||{}).price_usd}/month. Thanks for supporting StudyForge.`;
+  }
   const plans=Object.entries(u.plans).filter(([k])=>k!=="free");
-  box.innerHTML=`<div class="grid">${plans.map(([k,p])=>`<div class="card">
+  box.innerHTML=`<div class="grid">${plans.map(([k,p])=>{
+     const owned=k===cur;
+     return `<div class="card${owned?" owned-plan":""}">
+       ${owned?`<div class="pill" style="margin-bottom:8px">${ICON.check} Current plan</div>`:""}
        <div style="font-weight:700;font-size:18px">${esc(p.name)}</div>
        <div style="font-weight:800;font-size:22px;margin-top:4px">$${p.price_usd}<span class="muted" style="font-size:13px;font-weight:500">/mo</span></div>
-       <div class="muted" style="font-size:13px;margin-top:8px">✓ <b>Unlimited study sets</b><br>✓ <b>Math step-by-step</b> — how to solve it, not just the answer<br>✓ <b>Sharper AI model</b> (better sets)<br>✓ AI tutor + personalized mistake reviews<br>✓ Lecture audio/video transcription<br>✓ Natural AI voice${p.monthly_tts_chars?` (~${Math.round(p.monthly_tts_chars/1000)}k chars/mo)`:""}<br>✓ No ads · ${p.monthly_videos} AI videos / month</div>
-       <button class="btn upg" data-p="${k}" style="margin-top:14px;width:100%">Choose ${esc(p.name)}</button></div>`).join("")}</div>
-     ${u.billing_provider!=="stripe"?`<div class="muted" style="font-size:12px;margin-top:12px">Demo mode — upgrading here doesn’t charge real money yet. Real payments connect via Stripe.</div>`:""}`;
+       <div class="muted" style="font-size:13px;margin-top:8px">${ICON.check} <b>${p.monthly_sets>=100000?"Unlimited study sets":esc(String(p.monthly_sets))+" study sets / month"}</b><br>${ICON.check} <b>Math step-by-step</b> — how to solve it, not just the answer<br>${ICON.check} <b>Sharper AI model</b> (better sets)<br>${ICON.check} AI tutor + personalised mistake reviews<br>${ICON.check} Lecture audio/video transcription<br>${ICON.check} Natural AI voice${p.monthly_tts_chars?` (~${Math.round(p.monthly_tts_chars/1000)}k chars/mo)`:""}<br>${ICON.check} No ads${(window.SF_FLAGS&&window.SF_FLAGS.videoLive)||(state.usage&&state.usage.video_live)?` · ${p.monthly_videos} AI videos / month`:""}</div>
+       ${owned
+         ? `<button class="btn ghost" disabled style="margin-top:14px;width:100%">Your current plan</button>`
+         : `<button class="btn upg" data-p="${k}" style="margin-top:14px;width:100%">${paid?"Switch to":"Choose"} ${esc(p.name)}</button>`}
+     </div>`;}).join("")}</div>
+     ${paid&&u.billing_provider==="stripe"
+       ? `<button class="btn ghost" id="manage-billing" style="margin-top:16px">Manage or cancel my subscription</button>`
+       : ""}
+     ${u.billing_provider!=="stripe"?`<div class="muted" style="font-size:12px;margin-top:12px">Demo mode — upgrading here doesn't charge real money yet. Real payments connect via Stripe.</div>`:""}`;
+
+  const mb=document.getElementById("manage-billing");
+  if(mb) mb.onclick=async()=>{
+    mb.disabled=true; mb.textContent="Opening…";
+    try{
+      const r=await api("/billing/portal",{method:"POST"});
+      if(r.url){ location.href=r.url; return; }
+      throw new Error("Couldn't open the billing page.");
+    }catch(e){
+      mb.disabled=false; mb.textContent="Manage or cancel my subscription";
+      toast(e.message,"bad");
+    }
+  };
+
   box.querySelectorAll(".upg").forEach(b=>b.onclick=async()=>{
+    // Switching plans while subscribed would start a second subscription in
+    // Stripe rather than replace the first, so send them to the portal instead.
+    if(paid){
+      toast("Use “Manage or cancel my subscription” to switch plans.","");
+      return;
+    }
+    b.disabled=true; const lbl=b.textContent; b.textContent="Opening checkout…";
     try{
       const _p=(u.plans&&u.plans[b.dataset.p])||{};
       track("InitiateCheckout",{content_name:b.dataset.p,value:_p.price_usd||0,currency:"USD"});
       const r=await api("/billing/checkout/plan",{method:"POST",body:{plan:b.dataset.p}});
       if(r.url){toast("Opening secure checkout…");location.href=r.url;return;}
-      toast("You’re upgraded ✓ — ads off","good"); state.showAds=false; renderHome();
-    }catch(e){toast(e.message,"bad");}
+      toast("You're upgraded ✓","good"); await loadUsage(true); renderHome();
+    }catch(e){ b.disabled=false; b.textContent=lbl; toast(e.message,"bad"); }
   });
 }
 
@@ -1287,7 +1475,7 @@ async function renderHome(){
     <div class="gamestrip" id="gamestrip"></div>
     <div class="tabs" style="margin:18px 0 0;flex-wrap:wrap">
       <button class="tab active" data-src="file">File</button>
-      <button class="tab" data-src="math">📷 Math solver</button>
+      <button class="tab" data-src="math">${ICON.camera} Math solver</button>
       <button class="tab" data-src="text">Paste text</button>
       <button class="tab" data-src="link">Web / YouTube</button>
       <button class="tab" data-src="media">Audio/Video</button></div>
@@ -1297,8 +1485,12 @@ async function renderHome(){
     <div id="adbanner" style="margin-top:18px"></div>`);
   const tabs=el.querySelectorAll(".tab");
   tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove("active"));t.classList.add("active");renderSource(t.dataset.src);});
+  // Load the plan BEFORE painting anything plan-dependent. Painting first and
+  // correcting after is what produced the "buy box pops in a second later" feel
+  // — and left a paying user looking at the transcription paywall.
+  await loadUsage();
   renderSource("file"); await loadSets();
-  await loadUsage(); renderAd(document.getElementById("adbanner"),"home"); updateSetsNote();
+  renderAd(document.getElementById("adbanner"),"home"); updateSetsNote();
   const greet=()=>{
     const h1=document.getElementById("home-h1"),sub=document.getElementById("home-sub");
     if(h1&&state.displayName) h1.textContent=`${greetLine()}, ${state.displayName}`;
@@ -1311,7 +1503,7 @@ async function renderHome(){
 function renderSource(src){
   const box=document.getElementById("source");
   if(src==="file"){
-    box.innerHTML=`<div class="dropzone" id="drop"><input id="file" type="file" accept=".pdf,.txt,.png,.jpg,.jpeg" multiple class="hidden"/>
+    box.innerHTML=`<div class="dropzone" id="drop" role="button" tabindex="0"><input id="file" type="file" accept=".pdf,.txt,.png,.jpg,.jpeg" multiple class="hidden"/>
       <div style="font-size:32px">＋</div><div style="font-weight:600;margin-top:6px">Drop file(s) or click to upload</div>
       <div class="muted" style="font-size:13px;margin-top:4px">PDF · TXT · PNG · JPG — up to 25 MB · select several to combine</div></div>`;
     const drop=document.getElementById("drop"),file=document.getElementById("file");
@@ -1336,7 +1528,7 @@ function renderSource(src){
     box.innerHTML=`<div class="card">
       <div style="font-weight:800;font-size:17px">Stuck on a problem? Snap it.</div>
       <div class="muted" style="font-size:13px;margin:6px 0 14px">Take a photo of any math problem and get the answer instantly — free, unlimited.</div>
-      <div class="dropzone" id="mathdrop" style="padding:26px 16px">
+      <div class="dropzone" id="mathdrop" role="button" tabindex="0" style="padding:26px 16px">
         <input id="mathfile" type="file" accept="image/png,image/jpeg,image/webp" capture="environment" class="hidden"/>
         <div style="font-size:32px">📷</div>
         <div style="font-weight:600;margin-top:6px">Take a photo or upload</div>
@@ -1373,17 +1565,25 @@ function renderSource(src){
       startJob(()=>api(isYT?"/uploads/youtube":"/uploads/link",{method:"POST",body:{url}}),url);
     };
   }else{
-    const canT=state.usage&&state.usage.can_transcribe;
+    // Don't decide the paywall before we know the plan — a Pro user who tapped
+    // this tab before /me/usage landed was shown the upgrade card, and it never
+    // re-rendered once the real answer arrived.
+    if(!state.usage){
+      box.innerHTML=`<div class="center" style="min-height:120px"><div class="spinner"></div></div>`;
+      loadUsage().then(()=>{ const t=el.querySelector(".tab.active"); if(t&&t.dataset.src==="media") renderSource("media"); });
+      return;
+    }
+    const canT=state.usage.can_transcribe;
     if(!canT){
-      box.innerHTML=`<div class="card" style="text-align:center;border-color:rgba(139,108,255,.4)">
+      box.innerHTML=`<div class="card" style="text-align:center;border-color:rgba(47,111,237,.4)">
         <div style="font-size:30px">🎙️</div>
         <div style="font-weight:800;font-size:17px;margin-top:6px">Turn lectures into study sets</div>
         <div class="muted" style="font-size:13px;margin:6px 0 14px">Upload a class recording and we'll transcribe it into a full study kit. This is a <b>Premium</b> feature. Free users can still use notes, PDFs, photos, and YouTube links.</div>
-        <button class="btn premium sm" id="media-up">✨ Upgrade to transcribe</button></div>`;
+        <button class="btn premium sm" id="media-up">Upgrade to transcribe</button></div>`;
       const b=document.getElementById("media-up"); if(b)b.onclick=renderUpgrade;
       return;
     }
-    box.innerHTML=`<div class="dropzone" id="mdrop"><input id="mfile" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.mp4,.mov,.webm" class="hidden"/>
+    box.innerHTML=`<div class="dropzone" id="mdrop" role="button" tabindex="0"><input id="mfile" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.mp4,.mov,.webm" class="hidden"/>
         <div style="font-size:30px">🎙️</div><div style="font-weight:600;margin-top:6px">Upload a lecture recording</div>
         <div class="muted" style="font-size:13px;margin-top:4px">MP3 · WAV · M4A · MP4 · MOV · WEBM — we’ll transcribe it</div></div>`;
     const md=document.getElementById("mdrop"),mf=document.getElementById("mfile");
@@ -1433,7 +1633,7 @@ function renderMathResult(r){
         <div style="font-size:22px">🔒</div>
         <div style="font-weight:700;font-size:15px;margin-top:2px">See how it's done</div>
         <div class="muted" style="font-size:13px;margin:4px 0 12px">${esc(r.upgrade||"")}</div>
-        <button class="btn premium sm" id="math-up">✨ Unlock the steps</button>
+        <button class="btn premium sm" id="math-up">Unlock the steps</button>
       </div></div>`;
   }else{
     steps=`<div class="mstep-head">How to solve it</div><ol class="msteps">
@@ -1453,7 +1653,7 @@ function setItemHTML(s){
   const col=MASTERY_COLOR[s.mastery]||"var(--muted)";
   const badge=`<span class="pill" style="color:${col};border-color:${col}">${esc(s.mastery)}</span>`;
   const dueBadge=s.due?`<span class="pill" style="color:var(--bad);border-color:var(--bad)">Review due</span>`:"";
-  return `<div class="set-item" data-id="${s.id}"><div>
+  return `<div class="set-item" data-id="${s.id}" role="button" tabindex="0"><div>
       <div style="font-weight:600">${esc(s.title)}</div>
       <div class="muted" style="font-size:13px">${esc(s.source_filename)} · ${new Date(s.created_at).toLocaleDateString()}</div>
     </div><div class="row" style="gap:6px">${dueBadge}${badge}<span class="pill">Study →</span></div></div>`;
@@ -1466,7 +1666,7 @@ async function loadSets(){
     if(!state.sets.length){
       if(due)due.innerHTML="";
       list.innerHTML=`<div class="empty">
-        <div class="big">🎒</div>
+        <div class="big">${ICON.bag}</div>
         <h2>Let's forge your first kit</h2>
         <p class="muted">Drop anything you're studying above — a PDF, your typed notes, or a web link — and watch it become flashcards, quizzes, and games. Your first study set earns you XP. 🔥</p>
         <div class="steps">
@@ -1491,7 +1691,7 @@ async function loadSets(){
 
 // ---------- Progress dashboard ----------
 async function renderProgress(){
-  shell(`<a class="link" id="back">← Back</a><h1 style="margin-top:12px">Your progress</h1><div id="prog"></div>`);
+  shell(`<a class="link" id="back" href="#" role="button">← Back</a><h1 style="margin-top:12px">Your progress</h1><div id="prog"></div>`);
   document.getElementById("back").onclick=renderHome;
   const box=document.getElementById("prog");
   box.innerHTML=`<div class="center" style="min-height:30vh"><div class="spinner"></div></div>`;
@@ -1503,7 +1703,7 @@ async function renderProgress(){
   const gstats=g?`
     <div class="row" style="gap:12px;flex-wrap:wrap;margin-bottom:16px">
       ${stat("Lv "+g.level,"level · "+g.xp+" XP")}
-      ${stat("🔥 "+g.streak,"day streak (best "+g.best_streak+")")}
+      ${stat(ICON.flame+" "+g.streak,"day streak (best "+g.best_streak+")")}
       ${stat(g.weekly_xp,"XP this week")}
       ${stat(g.badges.length+"/"+(state.badgeCatalog||[]).length,"badges earned")}
     </div>`:"";
@@ -1546,7 +1746,7 @@ function masteryRow(r){
   const col=MASTERY_COLOR[r.mastery]||"var(--muted)";
   const when=r.next_review?new Date(r.next_review):null;
   const sched=r.due?`<span style="color:var(--bad)">Due now</span>`:(when?`Next: ${when.toLocaleDateString()}`:"Not started");
-  return `<div class="set-item" data-id="${r.id}" style="cursor:pointer">
+  return `<div class="set-item" data-id="${r.id}" role="button" tabindex="0" style="cursor:pointer">
      <div><div style="font-weight:600">${esc(r.title)}</div>
        <div class="muted" style="font-size:12px">${sched}</div></div>
      <span class="pill" style="color:${col};border-color:${col}">${esc(r.mastery)}</span></div>`;
@@ -1567,17 +1767,35 @@ async function startJob(createFn,label,isTopic){
      <div class="muted" style="font-size:13px;margin-top:4px">${isTopic?"Researching ":""}“${esc(label)}” · this can take 30s–2 min</div>
      <div class="progress"><div id="bar" style="width:8%"></div></div></div>`;
   const gm=setInterval(()=>{const m=document.getElementById("gen-msg");if(m)m.textContent=pick(msgs);else clearInterval(gm);},2600);
+  onLeaveScreen(()=>clearInterval(gm));
   try{
-    const created=await createFn(); let pct=8; const bar=()=>document.getElementById("bar");
+    const created=await createFn(); let pct=8, fails=0; const bar=()=>document.getElementById("bar");
     const poll=setInterval(async()=>{
+      // The cleanup below is registered after the (awaited) create call, so if
+      // the user navigates while the upload is still in flight it lands on the
+      // NEXT screen's cleanup list and this keeps running. Bail out directly.
+      if(!document.body.contains(job)){ clearInterval(poll); clearInterval(gm); return; }
       pct=Math.min(pct+7,90); if(bar())bar().style.width=pct+"%";
-      let j; try{j=await api("/jobs/"+created.id);}catch{return;}
+      let j;
+      try{ j=await api("/jobs/"+created.id); fails=0; }
+      catch{
+        // A dropped connection used to be swallowed silently and the poll ran
+        // forever behind a spinner that never resolved.
+        if(++fails < 10) return;
+        clearInterval(poll); clearInterval(gm);
+        job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="font-weight:600;color:var(--bad)">Lost connection while building your study set</div>
+          <div class="muted" style="margin-top:6px">It may still have finished — check your study sets, or try again.</div>
+          <button class="btn ghost sm" id="job-dismiss" style="margin-top:14px">Dismiss</button></div>`;
+        const dz=document.getElementById("job-dismiss"); if(dz) dz.onclick=()=>{job.innerHTML="";loadSets();};
+        return;
+      }
       if(j.status==="completed"){clearInterval(poll);clearInterval(gm);if(bar())bar().style.width="100%";job.innerHTML="";track("StudySetCreated",{},true);sendGame("set_created",{});await loadSets();openSet(j.study_set_id);}
       else if(j.status==="failed"){clearInterval(poll);clearInterval(gm);
         job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="font-weight:600;color:var(--bad)">Couldn’t create a study set</div>
           <div class="muted" style="margin-top:6px">${esc(j.error||"Unknown error")}</div>
           <button class="btn ghost sm" style="margin-top:14px" onclick="document.getElementById('job').innerHTML=''">Dismiss</button></div>`;}
     },1200);
+    onLeaveScreen(()=>clearInterval(poll));
   }catch(e){clearInterval(gm);
     if(/upgrade|premium|free study sets/i.test(e.message||"")){ job.innerHTML=""; toast(e.message,"good"); renderUpgrade(); return; }
     job.innerHTML=`<div class="card" style="margin-bottom:20px"><div style="color:var(--bad);font-weight:600">Couldn’t start</div><div class="muted" style="margin-top:6px">${esc(e.message)}</div></div>`;}
@@ -1585,7 +1803,7 @@ async function startJob(createFn,label,isTopic){
 
 // ---------- Study set: the CHOOSER ----------
 const MODES=[
-  {id:"guide", cat:"study", ic:"📖", nm:"Study guide", ds:"Read the condensed notes"},
+  {id:"guide", cat:"study", ic:ICON.book, nm:"Study guide", ds:"Read the condensed notes"},
   {id:"audio", cat:"study", ic:"🎧", nm:"Read aloud",  ds:"Have the notes read to you"},
   {id:"video", cat:"study", ic:"🎬", nm:"Video",       ds:"Narrated slideshow"},
   {id:"cards", cat:"study", ic:"🃏", nm:"Flashcards",  ds:"Flip through key ideas"},
@@ -1599,20 +1817,29 @@ const MODES=[
 
 async function openSet(id){
   shell(`<div class="center" style="min-height:40vh"><div class="spinner"></div></div>`);
-  let s; try{s=await api("/study-sets/"+id);}catch(e){shell(`<p class="error">${esc(e.message)}</p>`);return;}
+  let s;
+  try{ s=await api("/study-sets/"+id); }
+  catch(e){
+    // On a 401 api() already cleared the token and rendered the login form.
+    // Calling shell() here painted the full app chrome over it — leaving a
+    // logged-in-looking screen saying "please log in again" with no way to.
+    if(!state.token) return;
+    shell(`<p class="error">${esc(e.message)}</p>`);
+    return;
+  }
   if(state.showAds===undefined) await loadUsage();
   state.current=s; renderChooser();
 }
 function renderChooser(){
   const s=state.current;
-  shell(`<a class="link" id="back">← All study sets</a>
+  shell(`<a class="link" id="back" href="#" role="button">← All study sets</a>
     <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:12px">
       <h1 style="margin:0">${esc(s.title)}</h1>
-      <button class="btn ghost sm" id="share-btn">🔗 Share</button></div>
+      <button class="btn ghost sm" id="share-btn">${ICON.link} Share</button></div>
     <p class="muted" style="margin-top:6px">How do you want to study this?</p>
     <div id="share-box"></div>
     <div class="tabs" id="mode-tabs" style="margin-top:4px">
-      <button class="tab active" data-cat="study">📚 Study</button>
+      <button class="tab active" data-cat="study">${ICON.stack} Study</button>
       <button class="tab" data-cat="game">🎮 Games</button></div>
     <div class="grid" id="grid" style="margin-top:14px"></div>`);
   document.getElementById("back").onclick=renderHome;
@@ -1624,17 +1851,30 @@ function renderChooser(){
       box.innerHTML=`<div class="card" style="margin-bottom:16px">
          <div style="font-weight:600;font-size:14px">Share this link — anyone can add this set to their library:</div>
          <div class="row" style="gap:8px;margin-top:10px"><input id="share-link" readonly value="${esc(link)}"/>
-           <button class="btn sm" id="copy-link">Copy</button></div></div>`;
+           <button class="btn sm" id="copy-link">Copy</button></div>
+         <button class="btn ghost sm" id="unshare" style="margin-top:10px">Stop sharing</button></div>`;
+      // Share links used to be permanent with no way to take one back.
+      document.getElementById("unshare").onclick=async()=>{
+        try{
+          await api("/study-sets/"+s.id+"/share",{method:"DELETE"});
+          box.innerHTML=""; toast("Sharing turned off","good");
+        }catch(e){ toast(e.message,"bad"); }
+      };
       document.getElementById("copy-link").onclick=()=>{
         const inp=document.getElementById("share-link"); inp.select();
-        navigator.clipboard?.writeText(link).then(()=>toast("Link copied ✓","good"),()=>toast("Copied","good"));
+        // navigator.clipboard is undefined on any non-secure origin (e.g. the
+        // local app reached over http://192.168.x.x), and the optional chain
+        // meant the whole thing silently did nothing — no copy, no message.
+        if(navigator.clipboard&&navigator.clipboard.writeText){
+          navigator.clipboard.writeText(link).then(()=>toast("Link copied","good"),()=>_copyFallback(link));
+        }else{ _copyFallback(link); }
         if(!state._sharedOnce){state._sharedOnce=true;sendGame("share",{},document.getElementById("copy-link"));}
       };
     }catch(e){toast(e.message,"bad");}
   };
   const g=document.getElementById("grid");
   const paint=(cat)=>{
-    g.innerHTML=MODES.filter(m=>m.cat===cat).map(m=>`<div class="mode" data-m="${m.id}"><div class="ic">${m.ic}</div>
+    g.innerHTML=MODES.filter(m=>m.cat===cat).map(m=>`<div class="mode" data-m="${m.id}" role="button" tabindex="0"><div class="ic">${m.ic}</div>
        <div class="nm">${m.nm}</div><div class="ds">${m.ds}</div>
        ${m.id==="video"?'<span class="soon">narrated slideshow · HD AI video later</span>':''}
        ${m.cat==="game"?'<span class="soon" id="hs-'+m.id+'" style="display:none"></span>':''}</div>`).join("");
@@ -1653,7 +1893,7 @@ function renderChooser(){
   paint("study");
 }
 function modeShell(title){
-  shell(`<a class="link" id="back">← Study options</a>
+  shell(`<a class="link" id="back" href="#" role="button">← Study options</a>
     <div class="row" style="justify-content:space-between;margin-top:12px">
       <h1 style="margin:0">${esc(title)}</h1><span class="pill">${esc(state.current.title)}</span></div>
     <div id="view" style="margin-top:16px"></div>`);
@@ -1797,6 +2037,12 @@ function renderVideo(){
     window.speechSynthesis.speak(u);
   };
   pp.onclick=()=>{ if(playing){playing=false;stopSpeech();pp.textContent="▶ Play";} else {playing=true;pp.textContent="⏸ Pause";speakCurrent();} };
+  // shell() calls speechSynthesis.cancel(), and per the Web Speech spec that
+  // fires `end` on the utterance being spoken — so u.onend saw playing===true,
+  // advanced a slide and spoke the next one, reading on through the notes on
+  // whatever screen you'd navigated to. The read-aloud screen already guards
+  // this with state._stopAudio; the video screen did not.
+  state._stopAudio=()=>{ playing=false; try{stopSpeech();}catch{} };
   document.getElementById("prev").onclick=()=>{i=(i-1+slides.length)%slides.length;draw();if(playing)speakCurrent();};
   document.getElementById("next").onclick=()=>{i=(i+1)%slides.length;draw();if(playing)speakCurrent();};
   draw();
@@ -1810,6 +2056,7 @@ async function renderPremium(){
   const prem=document.getElementById("prem"); if(!prem)return;
   prem.innerHTML=`<div class="card"><div class="spinner"></div></div>`;
   let u; try{u=await api("/me/usage");}catch(e){prem.innerHTML="";return;}
+  state.usage=u; applyUsage();   // don't let this screen drift from the header
   const vid=u.video, s=state.current;
   const packs=Object.entries(u.credit_packs).map(([k,p])=>`<button class="btn ghost sm buypack" data-p="${k}">${p.videos} videos · $${p.price_usd}</button>`).join(" ");
   const upgrades=Object.entries(u.plans).filter(([k])=>k!=="free"&&k!==vid.plan).map(([k,p])=>`<button class="btn sm upg" data-p="${k}">${p.name} — ${p.monthly_videos}/mo · $${p.price_usd}/mo</button>`).join(" ");
@@ -1828,7 +2075,16 @@ async function renderPremium(){
     document.getElementById("gen-video").onclick=async()=>{
       const out=document.getElementById("gen-out");
       out.innerHTML=`<div class="spinner"></div><div class="muted" style="margin-top:8px">Starting your video — this can take a minute or two.</div>`;
-      const res=await fetch("/study-sets/"+s.id+"/video",{method:"POST",headers:{"Authorization":"Bearer "+state.token}});
+      let res;
+      try{
+        res=await fetch("/study-sets/"+s.id+"/video",{method:"POST",headers:{"Authorization":"Bearer "+state.token}});
+      }catch(err){
+        // No try/catch here meant a dropped connection rejected the handler and
+        // the "Starting your video…" spinner span forever with no way out.
+        out.innerHTML=`<div style="color:var(--bad);font-weight:600">Couldn't start the video</div>
+          <div class="muted" style="margin-top:6px">Check your connection and try again.</div>`;
+        return;
+      }
       if(res.status===402){ renderPremium(); return; }
       if(!res.ok){ const e=await res.json().catch(()=>({})); out.innerHTML=`<div style="color:var(--bad)">${esc((e.detail&&e.detail.message)||"Couldn’t start.")}</div>`; return; }
       pollVideo(out);
@@ -1855,12 +2111,18 @@ async function renderPremium(){
 
 function showVideoHTML(v){
   if(v.url) return `<video controls playsinline style="width:100%;border-radius:12px" src="${esc(v.url)}"></video>`;
-  return `<div style="color:var(--good);font-weight:600">Video ready ✓ (demo mode)</div>
-     <div class="muted" style="margin-top:6px">${esc(v.note||"Connect a Higgsfield Cloud key to render a real video here.")}</div>`;
+  // It used to say "Video ready ✓" for a placeholder with no video in it, on a
+  // feature sold as "10 AI videos a month".
+  return `<div style="font-weight:600">AI video isn't switched on yet</div>
+     <div class="muted" style="margin-top:6px">${esc(v.note||"This is a preview of the narration. No video was generated and nothing was deducted from your allowance.")}</div>
+     ${v.narration_script?`<div class="card" style="margin-top:12px;background:var(--surface-2)"><div class="muted" style="font-size:12px;margin-bottom:6px">Narration script</div>${esc(v.narration_script)}</div>`:""}`;
 }
 function pollVideo(out){
   const s=state.current;
+  let ticks=0;
   const iv=setInterval(async()=>{
+    // Was polling forever into a detached node once you navigated away.
+    if(!document.body.contains(out) || ++ticks > 200){ clearInterval(iv); return; }
     let d; try{ d=await api("/study-sets/"+s.id+"/video"); }catch{ return; }
     const vv=d.video||{};
     if(vv.status==="ready"){ clearInterval(iv); state.current.video=vv; out.innerHTML=showVideoHTML(vv); }
@@ -1870,13 +2132,23 @@ function pollVideo(out){
         <div class="muted" style="font-size:12px;margin-top:6px">Your credit was refunded.</div>`;
     }
   },3000);
+  onLeaveScreen(()=>clearInterval(iv));
 }
 
 // ---------- Flashcards ----------
+// A study set from before a feature shipped (or a partial import) can have an
+// empty list. Meteor Blitz and Streak Ladder already guarded; the rest threw and
+// left a blank screen under the mode header.
+function emptyMode(v,what){
+  v.innerHTML=`<div class="card" style="text-align:center">
+    <div style="font-weight:700">Nothing to ${esc(what)} in this set yet</div>
+    <div class="muted" style="font-size:13px;margin-top:6px">This study set doesn't have that section. Try another study mode, or create the set again.</div></div>`;
+}
 function renderCards(){
   const v=modeShell("Flashcards"),s=state.current; let i=0,flips=0;
+  if(!s.flashcards||!s.flashcards.length) return emptyMode(v,"flip");
   const draw=()=>{const c=s.flashcards[i];
-    v.innerHTML=`<div class="flash" id="fc"><div class="flash-inner">
+    v.innerHTML=`<div class="flash" id="fc" role="button" tabindex="0" aria-label="Flip card"><div class="flash-inner">
         <div class="flash-face"><span class="flash-tag">Question</span>${esc(c.front)}</div>
         <div class="flash-face flash-back"><span class="flash-tag">Answer</span>${esc(c.back)}</div></div></div>
       <div class="row" style="justify-content:space-between">
@@ -1897,6 +2169,7 @@ function renderCards(){
 // ---------- Quiz ----------
 function renderQuiz(){
   const v=modeShell("Quiz"),s=state.current; let idx=0,score=0,answered=false; const missed=[];
+  if(!s.quiz||!s.quiz.length) return emptyMode(v,"quiz");
   const draw=()=>{const q=s.quiz[idx];
     v.innerHTML=`<div class="progress"><div style="width:${idx/s.quiz.length*100}%"></div></div>
       <div class="card"><div class="muted" style="font-size:13px;font-weight:600">Question ${idx+1} of ${s.quiz.length}</div>
@@ -1937,7 +2210,7 @@ function renderQuiz(){
     document.getElementById("retry").onclick=()=>{idx=0;score=0;missed.length=0;draw();};
     if(missed.length){
       const paid=isPaidPlan();
-      document.getElementById("review-wrap").innerHTML=`<div class="card" style="border-color:rgba(139,108,255,.4)">
+      document.getElementById("review-wrap").innerHTML=`<div class="card" style="border-color:rgba(47,111,237,.4)">
         <div style="font-weight:800;font-size:16px">📘 Personalized review</div>
         <div class="muted" style="font-size:13px;margin:4px 0 12px">${paid?`Get a tutor breakdown of the ${missed.length} question${missed.length>1?"s":""} you missed — why you missed ${missed.length>1?"them":"it"}, and how to remember.`:"Premium turns your wrong answers into a personal tutor session — why you missed each one, and how to lock it in."}</div>
         ${teachBtnHTML("do-review","Review what I missed",!paid)}
@@ -1957,6 +2230,7 @@ function renderQuiz(){
 // ---------- Time Attack (timed quiz + high score) ----------
 function renderTimeAttack(){
   const v=modeShell("Time Attack"),s=state.current;
+  if(!s.quiz||!s.quiz.length) return emptyMode(v,"play");
   const DURATION=45, key="sf_ta_"+s.id;
   const best=parseInt(localStorage.getItem(key)||"0",10);
   v.innerHTML=`<div class="card" style="text-align:center">
@@ -1968,6 +2242,9 @@ function renderTimeAttack(){
     let time=DURATION, score=0, order=[...s.quiz.keys()], i=0, done=false;
     for(let j=order.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[order[j],order[k]]=[order[k],order[j]];}
     const tick=setInterval(()=>{time--; const tEl=document.getElementById("ta-time"); if(tEl)tEl.textContent=time; if(time<=0)finish();},1000);
+    // Leaving mid-game used to leave this running: 45s later it wrote a score,
+    // fired confetti onto whatever screen you were now on, and then threw.
+    onLeaveScreen(()=>clearInterval(tick));
     const draw=()=>{
       const q=s.quiz[order[i%order.length]];
       v.innerHTML=`<div class="row" style="justify-content:space-between"><span class="pill">Score: <b id="ta-score">${score}</b></span><span class="pill">⏱ <b id="ta-time">${time}</b>s</span></div>
@@ -2058,7 +2335,7 @@ function renderMeteor(){
     }
     function boom(x,y){
       const f=field(); if(!f) return;
-      const colors=["#ff8a5b","#ffd166","#ff5c9d","#8b6cff","#fff"];
+      const colors=["#ff8a5b","#ffd166","#ff5c9d","#2f6fed","#fff"];
       for(let i=0;i<14;i++){ const p=document.createElement("div"); p.className="mb-boom";
         p.style.left=x+"px"; p.style.top=y+"px"; p.style.background=colors[i%colors.length];
         const a=Math.random()*6.283, d=28+Math.random()*46;
@@ -2116,6 +2393,7 @@ function renderLadder(){
       const tick=()=>{ const left=Math.max(0,(tEnd-performance.now())/dur); if(bar)bar.style.width=(left*100)+"%";
         if(left<=0){ return end(); } raf=requestAnimationFrame(tick); };
       raf=requestAnimationFrame(tick);
+      onLeaveScreen(()=>cancelAnimationFrame(raf));
       let done=false;
       v.querySelectorAll(".mb-choice").forEach(b=>b.onclick=()=>{
         if(done)return; done=true; cancelAnimationFrame(raf);
@@ -2152,6 +2430,7 @@ function renderLadder(){
 // ---------- Practice test ----------
 function renderTest(){
   const v=modeShell("Practice test"),s=state.current;
+  if(!s.test||!s.test.length) return emptyMode(v,"test");
   const kindLabel={true_false:"True / False",fill_blank:"Fill in the blank",short_answer:"Short answer"};
   v.innerHTML=`<div class="stack">${s.test.map((q,i)=>`
      <div class="card"><div class="muted" style="font-size:13px;font-weight:600">${i+1}. ${kindLabel[q.kind]||""}</div>
@@ -2176,7 +2455,7 @@ function renderTest(){
     toast("📝 Practice test complete!","good");
     if(missed.length){
       const paid=isPaidPlan();
-      document.getElementById("test-review").innerHTML=`<div class="card" style="border-color:rgba(139,108,255,.4)">
+      document.getElementById("test-review").innerHTML=`<div class="card" style="border-color:rgba(47,111,237,.4)">
         <div style="font-weight:800;font-size:16px">📘 Personalized review</div>
         <div class="muted" style="font-size:13px;margin:4px 0 12px">${paid?`Get a step-by-step tutor review of the ${missed.length} you missed.`:"Premium turns everything you missed into a personal tutor session — why, and how to get it right next time."}</div>
         ${teachBtnHTML("test-do-review","Review what I missed",!paid)}
@@ -2196,7 +2475,10 @@ function renderTest(){
     seen.add(i); injectTeach(i); maybeFinish();
   });
   v.querySelectorAll(".tf").forEach(b=>b.onclick=()=>{
-    const i=+b.dataset.i,ok=b.dataset.v===s.test[i].answer;
+    // The model can answer "true", "TRUE" or "True." — a raw === against the
+    // button's "True"/"False" marked both choices wrong.
+    const _n=x=>String(x==null?"":x).trim().toLowerCase().replace(/[.\s]+$/,"");
+    const i=+b.dataset.i,ok=_n(b.dataset.v)===_n(s.test[i].answer);
     if(!seen.has(i)){ if(ok){tfCorrect++;comboHit(b);}else{comboBreak();missed.push({question:s.test[i].question,correct:s.test[i].answer,your_answer:b.dataset.v});} }
     seen.add(i);
     document.getElementById("ans-"+i).innerHTML=(ok?'<span style="color:var(--good)">Correct!</span> ':'<span style="color:var(--bad)">Not quite.</span> ')+`Answer: ${esc(s.test[i].answer)}`;
@@ -2207,14 +2489,15 @@ function renderTest(){
 // ---------- Matching game ----------
 function renderMatch(){
   const v=modeShell("Matching game"),s=state.current;
+  if(!s.matching||!s.matching.length) return emptyMode(v,"match");
   const pairs=s.matching.slice(0,8);
   const terms=pairs.map((p,i)=>({t:p.term,i}));
   const defs=pairs.map((p,i)=>({d:p.definition,i})).sort(()=>Math.random()-0.5);
   let sel=null,done=0;
   v.innerHTML=`<div class="card"><div class="muted" style="font-size:14px">Click a term, then its matching definition.</div>
      <div class="match-cols">
-       <div id="terms">${terms.map(x=>`<div class="match-item term" data-i="${x.i}">${esc(x.t)}</div>`).join("")}</div>
-       <div id="defs">${defs.map(x=>`<div class="match-item def" data-i="${x.i}">${esc(x.d)}</div>`).join("")}</div>
+       <div id="terms">${terms.map(x=>`<div class="match-item term" role="button" tabindex="0" data-i="${x.i}">${esc(x.t)}</div>`).join("")}</div>
+       <div id="defs">${defs.map(x=>`<div class="match-item def" role="button" tabindex="0" data-i="${x.i}">${esc(x.d)}</div>`).join("")}</div>
      </div>
      <div id="mstatus" class="muted" style="margin-top:14px"></div></div>`;
   const status=document.getElementById("mstatus");
@@ -2262,20 +2545,50 @@ async function showImport(token){
   };
 }
 
+// Don't sell a feature that isn't switched on. SF_FLAGS is injected by the
+// server (see main._feature_flags_snippet) so this works logged-out too.
+function applyFeatureFlags(){
+  const live=!!(window.SF_FLAGS&&window.SF_FLAGS.videoLive);
+  if(!live) document.querySelectorAll(".vid-line").forEach(e=>e.remove());
+}
+
 // ---------- boot ----------
 try{applyThemeEarly(localStorage.getItem("sf_theme_id"));}catch{}
 const _params=new URLSearchParams(location.search);
 state.pendingShare=_params.get("s");
 const _checkout=_params.get("checkout");
 if(_checkout==="success") track("Purchase",{currency:"USD",value:0,content_name:"StudyForge subscription"});
-if(_checkout){ history.replaceState({},"",location.pathname);
-  setTimeout(()=>toast(_checkout==="success"?"Payment complete — your account is updated ✓":"Checkout canceled",_checkout==="success"?"good":""),400); }
-const _resetToken=_params.get("reset");
+if(_checkout){ history.replaceState({},"",location.pathname); }
+if(_checkout==="cancel") setTimeout(()=>toast("Checkout canceled",""),400);
+// Stripe sends the browser back the moment the card clears, but the webhook
+// that actually flips the plan can land seconds later. The old code just said
+// "your account is updated ✓" and never looked again — so the very first thing
+// a paying customer saw was the free tier, ads and all.
+if(_checkout==="success"){
+  (async()=>{
+    for(let i=0;i<12;i++){
+      await loadUsage(true);
+      if(isPaidPlan()){ toast("Payment complete — Premium is on ✓","good"); return; }
+      await new Promise(r=>setTimeout(r,1500));
+    }
+    toast("Payment received — activating your plan. Refresh in a moment.","good");
+  })();
+}
+// Reset links now arrive as "#reset=<token>" so the credential is never sent
+// to a server, an access log, Meta Pixel or GA. Links emailed before that
+// change used "?reset=" — still honoured, but scrubbed from the URL at once
+// rather than after a successful reset (it used to sit there while the
+// analytics tags read location.href).
+let _resetToken=null;
+const _hashMatch=(location.hash||"").match(/^#reset=(.+)$/);
+if(_hashMatch){ _resetToken=decodeURIComponent(_hashMatch[1]); history.replaceState({},"",location.pathname); }
+else if(_params.get("reset")){ _resetToken=_params.get("reset"); history.replaceState({},"",location.pathname); }
 if(_resetToken) renderReset(_resetToken);
 else if(state.token) renderHome();
 else if(state.pendingShare) renderAuth("signup");
 else renderLanding();
 renderCookieBar();
+applyFeatureFlags();
 </script>
 </body>
 </html>

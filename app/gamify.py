@@ -36,7 +36,7 @@ SHOP = {
 
 # Cosmetic accent themes, unlocked by reaching a level (no coins needed).
 THEMES = [
-    {"id": "aurora", "name": "Aurora", "level": 1, "brand": "#8b6cff", "brand2": "#5b8cff", "ink": "#b9a9ff"},
+    {"id": "aurora", "name": "Aurora", "level": 1, "brand": "#2f6fed", "brand2": "#58a6ff", "ink": "#9ec5ff"},
     {"id": "mint", "name": "Mint", "level": 3, "brand": "#2fd6a3", "brand2": "#38b6ff", "ink": "#8bf0d0"},
     {"id": "sunset", "name": "Sunset", "level": 5, "brand": "#ff8a5b", "brand2": "#ff5c9d", "ink": "#ffc2a0"},
     {"id": "ocean", "name": "Deep Ocean", "level": 8, "brand": "#3b82f6", "brand2": "#22d3ee", "ink": "#9cc9ff"},
@@ -61,6 +61,14 @@ SPIN_PRIZES = [
     {"id": "xp_300",    "label": "+300 XP",       "icon": "🚀", "kind": "xp",       "amount": 300, "weight": 6},
     {"id": "disc_20",   "label": "20% OFF",       "icon": "💎", "kind": "discount", "amount": 20,  "weight": 2},
 ]
+
+
+# The most XP one calendar day of play can be worth, no matter how many events
+# arrive. Scores are declared by the client, so without this a script could post
+# a few dozen "perfect quiz" events and walk straight to level 20 — which
+# auto-applies a 20% coupon to every subscription payment (see payments.py).
+# A genuinely heavy day of studying lands around 400-600.
+DAILY_XP_CAP = 1200
 
 
 def discount_for(level: int) -> int:
@@ -129,18 +137,25 @@ def level_for_xp(xp: int) -> int:
 
 # ---------- display names ----------
 
-_ADJ = ["Swift", "Clever", "Brave", "Mighty", "Golden", "Cosmic", "Turbo",
-        "Lucky", "Silent", "Blazing", "Frost", "Shadow", "Neon", "Atomic",
-        "Crimson", "Electric", "Epic", "Nimble", "Solar", "Thunder"]
-_NOUN = ["Falcon", "Tiger", "Wizard", "Comet", "Panda", "Dragon", "Otter",
-         "Phoenix", "Wolf", "Raven", "Koala", "Viper", "Knight", "Fox",
-         "Orca", "Lynx", "Griffin", "Badger", "Hawk", "Yeti"]
+# The old list plus a trailing 2-digit number produced names like
+# "NeonViper65" — which reads like a crypto bot, not a student, and it is the
+# name that shows on the leaderboard and in "Good afternoon, ___". Calmer words
+# and a two-word name (no digits unless there's a collision to break).
+_ADJ = ["Quiet", "Bright", "Steady", "Clever", "Curious", "Patient", "Keen",
+        "Focused", "Calm", "Sharp", "Eager", "Bold", "Kind", "Swift",
+        "Careful", "Quick", "Deep", "Open", "Warm", "Nimble"]
+_NOUN = ["Falcon", "Otter", "Heron", "Fox", "Sparrow", "Badger", "Marten",
+         "Wren", "Hare", "Owl", "Finch", "Lynx", "Crane", "Ibis",
+         "Robin", "Swift", "Kite", "Tern", "Vole", "Stoat"]
 
 
 def generate_display_name(seed: str) -> str:
     h = int(hashlib.sha256(seed.encode()).hexdigest(), 16)
     rng = random.Random(h)
-    return f"{rng.choice(_ADJ)}{rng.choice(_NOUN)}{rng.randint(10, 99)}"
+    name = f"{rng.choice(_ADJ)} {rng.choice(_NOUN)}"
+    # 400 combinations is thin for a leaderboard, so add a discriminator that
+    # is derived (not random) and only two characters wide.
+    return f"{name} {h % 97 + 1}"
 
 
 # ---------- badges ----------
@@ -448,11 +463,15 @@ def apply_event(user, etype: str, data: Optional[dict], tz_offset_min: int = 0) 
 
     # --- XP ---
     gained = _base_xp(etype, data)
-    state["daily"]["xp"] += gained
     quest_bonus = _quest_progress(state["quests"]["items"], etype, data,
-                                  state["daily"]["xp"])
+                                  state["daily"]["xp"] + gained)
     gained += quest_bonus
-    state["daily"]["xp"] += quest_bonus
+    # Enforce the daily ceiling before anything banks it. Counters, streaks and
+    # quests still advance — only XP (and so levels, coins and the discount) is
+    # capped, because the scores that produce it are declared by the client.
+    room = max(0, DAILY_XP_CAP - state["daily"]["xp"])
+    gained = min(gained, room)
+    state["daily"]["xp"] += gained
 
     # --- streak: extends the day the daily goal is met ---
     streak_extended = False
@@ -479,7 +498,8 @@ def apply_event(user, etype: str, data: Optional[dict], tz_offset_min: int = 0) 
     state["level"] = level_for_xp(state["xp"])
     new_badges = _check_badges(state, now.hour)
     if new_badges:
-        badge_xp = BADGE_REWARD_XP * len(new_badges)
+        badge_xp = min(BADGE_REWARD_XP * len(new_badges),
+                       max(0, DAILY_XP_CAP - state["daily"]["xp"]))
         gained += badge_xp
         state["xp"] += badge_xp
         state["week"]["xp"] += badge_xp

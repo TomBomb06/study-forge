@@ -44,7 +44,8 @@ def _stub_asset(study_set) -> dict:
         "status": "ready",
         "url": None,
         "narration_script": _narration_script(study_set),
-        "note": "Demo placeholder — real AI video renders here once a Higgsfield Cloud key is connected.",
+        "demo": True,
+        "note": "Preview only — AI video isn't switched on yet. This didn't use any of your video allowance.",
     }
 
 
@@ -139,6 +140,16 @@ class HiggsfieldVideoProvider:
 
 
 # ---------------------------------------------------------------- entry
+
+def is_live() -> bool:
+    """True when a real video provider is configured and can actually render.
+
+    Everything user-facing keys off this: a placeholder must never be sold as,
+    charged for, or described as an AI video.
+    """
+    s = get_settings()
+    return s.video_provider == "higgsfield" and bool(s.higgsfield_credentials)
+
 
 def generate_video_asset(study_set, client: Optional[httpx.Client] = None) -> dict:
     settings = get_settings()

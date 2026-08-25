@@ -101,6 +101,18 @@ def test_free_user_blocked_with_upgrade_and_packs(client, auth_headers):
     assert detail["credit_packs"]
 
 
+@pytest.fixture(autouse=True)
+def _video_live(monkeypatch):
+    """Metering tests must exercise the charging path.
+
+    The route now short-circuits when no real video provider is connected (a
+    placeholder must not spend a paid allowance), so force the "live" branch
+    here. The demo behaviour has its own test at the bottom of this file.
+    """
+    from app.pipeline import video
+    monkeypatch.setattr(video, "is_live", lambda: True)
+
+
 def test_upgrade_then_generate_async(client, auth_headers):
     ss_id = _make_set(client, auth_headers)
     client.post("/me/plan", headers=auth_headers, json={"plan": "basic"})
@@ -145,3 +157,30 @@ def test_ads_shown_for_free_not_paid(client, auth_headers):
     client.post("/billing/checkout/plan", headers=auth_headers, json={"plan": "basic"})
     u2 = client.get("/me/usage", headers=auth_headers).json()
     assert u2["show_ads"] is False
+
+
+# -------------- demo mode must never charge for a placeholder --------------
+
+def test_demo_mode_returns_a_preview_without_spending_an_allowance(
+    client, auth_headers, monkeypatch
+):
+    """With VIDEO_PROVIDER=stub nothing is rendered. Deducting one of a
+    subscriber's 10 monthly videos for a placeholder is taking something they
+    paid for — and it was silent."""
+    from app.pipeline import video
+    monkeypatch.setattr(video, "is_live", lambda: False)
+
+    ss_id = _make_set(client, auth_headers)
+    client.post("/me/plan", headers=auth_headers, json={"plan": "pro"})
+
+    before = client.get("/me/usage", headers=auth_headers).json()
+    assert before["video_live"] is False
+    left = before["video"]["total_remaining"]
+
+    r = client.post(f"/study-sets/{ss_id}/video", headers=auth_headers)
+    assert r.status_code in (200, 202), r.text
+    assert r.json().get("demo") is True
+    assert r.json()["video"].get("demo") is True
+
+    after = client.get("/me/usage", headers=auth_headers).json()
+    assert after["video"]["total_remaining"] == left, "a placeholder consumed a paid video"

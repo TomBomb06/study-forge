@@ -37,9 +37,29 @@ class User(Base):
     stripe_customer_id: Mapped[Optional[str]] = mapped_column(
         String(64), nullable=True, index=True
     )
+    # The subscription they are actually paying on. Stripe fires events for
+    # every subscription a customer has ever had — including dead checkout
+    # attempts. Without this we cannot tell "your live plan was cancelled"
+    # from "an abandoned attempt from last week just expired", and we used to
+    # downgrade paying customers on the latter.
+    stripe_subscription_id: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True, index=True
+    )
 
     # Gamification: public display name (anonymous, auto-generated) and the
     # game-state blob (xp, streak, quests, badges, weekly score...).
+    # Bumped whenever every existing session must be cut off (password reset).
+    # Without this a stolen 7-day bearer token survived the exact remedy the
+    # "your password changed" email tells the user to perform.
+    token_version: Mapped[int] = mapped_column(Integer, default=0)
+
+    # The user's UTC offset in minutes, pinned on first sight. The client used
+    # to send this on every request and the daily XP cap was keyed on the
+    # resulting local date — so alternating -840/+840 re-rolled "today" and
+    # refilled the cap at will (4800 XP against a 1200 cap, measured), which
+    # buys levels, and level 20 auto-applies a 20% Stripe coupon for life.
+    tz_offset_min: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
     display_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     game: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
@@ -80,6 +100,12 @@ class StudySet(Base):
     source_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     share_token: Mapped[Optional[str]] = mapped_column(
         String(32), unique=True, nullable=True, index=True
+    )
+    # Which shared set this was copied from, if any. Import used to have no
+    # duplicate guard and no quota, so a free user who had run out of study
+    # sets could loop one share link and fill the database for free.
+    imported_from: Mapped[Optional[str]] = mapped_column(
+        String(32), nullable=True, index=True
     )
     summary: Mapped[str] = mapped_column(Text)  # study-guide notes
     flashcards: Mapped[list] = mapped_column(JSON)
@@ -131,3 +157,19 @@ class PasswordResetToken(Base):
     used_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+
+
+class ProcessedStripeEvent(Base):
+    """One row per Stripe event we have already applied.
+
+    Stripe redelivers events whenever our endpoint is slow, restarting, or
+    returns anything but a 2xx — duplicate delivery is documented behaviour,
+    not an edge case. Without this table a retried credit-pack purchase adds
+    the credits again every time it lands.
+    """
+
+    __tablename__ = "processed_stripe_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # Stripe evt_...
+    kind: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

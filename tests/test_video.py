@@ -113,3 +113,4 @@ def test_stub_provider_is_default():
     assert asset["provider"] == "stub"
     assert asset["status"] == "ready"
     assert asset["url"] is None
+

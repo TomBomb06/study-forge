@@ -77,14 +77,36 @@ def _guard_url(url: str) -> None:
             raise ExtractionError("That link points to a private address and can't be fetched.")
 
 
+_MAX_REDIRECTS = 5
+
+
 def fetch_url_text(url: str) -> tuple[str, str]:
-    """Return (title, text) for a web page. Raises ExtractionError on failure."""
+    """Return (title, text) for a web page. Raises ExtractionError on failure.
+
+    Redirects are followed BY HAND so every hop is checked. httpx's
+    follow_redirects=True checked only the URL the user typed: a page on a
+    public host could answer `302 Location: http://169.254.169.254/...` (cloud
+    metadata) or any internal address, and the response body was then stored as
+    the study set's notes and read straight back out. That is a full read-SSRF
+    with exfiltration, from an unprivileged account.
+    """
     url = url.strip()
     _guard_url(url)
     headers = {"User-Agent": "StudyForgeBot/1.0 (+study-kit generator)"}
     try:
-        with httpx.Client(follow_redirects=True, timeout=20.0, headers=headers) as client:
-            resp = client.get(url)
+        with httpx.Client(follow_redirects=False, timeout=20.0, headers=headers) as client:
+            resp = None
+            for _hop in range(_MAX_REDIRECTS + 1):
+                resp = client.get(url)
+                if resp.status_code not in (301, 302, 303, 307, 308):
+                    break
+                location = resp.headers.get("location")
+                if not location:
+                    break
+                url = str(httpx.URL(url).join(location))
+                _guard_url(url)          # <- the check the old code skipped
+            else:
+                raise ExtractionError("That link redirects too many times.")
             resp.raise_for_status()
             ctype = resp.headers.get("content-type", "")
             if "html" not in ctype and "text" not in ctype:
