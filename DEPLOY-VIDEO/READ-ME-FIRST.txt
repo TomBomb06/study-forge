@@ -1,0 +1,15 @@
+AI VIDEO — 6 changed files. Drag these into GitHub.
+
+  app/pipeline/video.py      <- the new cartoon-video pipeline
+  app/config.py              <- new provider settings
+  app/routers/billing.py     <- serves the finished .mp4
+  tests/test_video.py        <- rewritten for the new pipeline
+  tests/test_billing.py      <- fixture no longer calls the real renderer
+  web/index.html             <- copy fix
+
+Drag the folders app, tests and web (3 items). GitHub only replaces the files
+inside them that you drop, so nothing else is touched. 6 files total, well
+under the 100-file cap.
+
+AFTER Railway finishes rebuilding, I flip VIDEO_PROVIDER to "openai" and the
+feature is live. Do not set it before the deploy — the old code would ignore it.
