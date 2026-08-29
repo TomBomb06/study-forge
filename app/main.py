@@ -134,7 +134,9 @@ async def security_headers(request, call_next):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-    response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), payment=()")
+    # microphone=(self): the lecture recorder needs it, and ONLY our own
+    # origin gets it — an embedded third-party frame still cannot ask.
+    response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(self), payment=()")
     # The session token lives in localStorage, so a CSP is the difference
     # between "an XSS somewhere" and "every account". Kept to exactly the
     # third parties actually loaded: Meta Pixel, GA, AdSense, Google Fonts.

@@ -113,6 +113,14 @@
   .tab{flex:1;padding:10px;border-radius:10px;background:transparent;color:var(--muted);font-weight:600;font-size:14px;transition:.15s}
   .tab:hover{color:var(--text)}
   .tab.active{background:var(--grad);color:#fff;box-shadow:0 6px 16px -6px rgba(47,111,237,.6)}
+  .rec-dot-row{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:14px;letter-spacing:.02em;color:var(--muted)}
+  .rec-dot{width:10px;height:10px;border-radius:50%;background:#e5484d;animation:recpulse 1.4s ease-in-out infinite}
+  .rec-dot.paused{background:var(--faint);animation:none}
+  @keyframes recpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+  .rec-time{font-size:46px;font-weight:800;letter-spacing:-.02em;margin:10px 0 14px;font-variant-numeric:tabular-nums}
+  .rec-meter{height:6px;border-radius:999px;background:var(--surface-3);overflow:hidden;max-width:280px;margin:0 auto}
+  .rec-meter-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--brand-2));transition:width .08s linear}
+  @media (prefers-reduced-motion:reduce){.rec-dot{animation:none}.rec-meter-fill{transition:none}}
   .dropzone{border:1.5px dashed var(--border-2);border-radius:var(--radius);padding:44px 24px;text-align:center;transition:.18s;cursor:pointer;background:var(--surface)}
   .dropzone:hover,.dropzone.drag{border-color:var(--brand);background:var(--surface-2);box-shadow:var(--glow)}
   .set-item{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border:1px solid var(--border);border-radius:14px;margin-bottom:10px;background:var(--surface);cursor:pointer;transition:.16s;box-shadow:var(--shadow)}
@@ -1515,7 +1523,8 @@ async function renderHome(){
       <button class="tab" data-src="math">${ICON.camera} Math solver</button>
       <button class="tab" data-src="text">Paste text</button>
       <button class="tab" data-src="link">Web / YouTube</button>
-      <button class="tab" data-src="media">Audio/Video</button></div>
+      <button class="tab" data-src="media">Audio/Video</button>
+      <button class="tab" data-src="record">${ICON.mic} Record lecture</button></div>
     <div id="sets-note" style="margin:10px 0 0"></div>
     <div id="source" style="margin:16px 0"></div>
     <div id="job"></div><div id="due"></div><div id="list" class="stack"></div>
@@ -1601,6 +1610,23 @@ function renderSource(src){
       const isYT=/youtube\.com|youtu\.be/i.test(url);
       startJob(()=>api(isYT?"/uploads/youtube":"/uploads/link",{method:"POST",body:{url}}),url);
     };
+  }else if(src==="record"){
+    // Same paywall as Audio/Video — it is the same transcription cost.
+    if(!state.usage){
+      box.innerHTML=`<div class="center" style="min-height:120px"><div class="spinner"></div></div>`;
+      loadUsage().then(()=>{ const t=el.querySelector(".tab.active"); if(t&&t.dataset.src==="record") renderSource("record"); });
+      return;
+    }
+    if(!state.usage.can_transcribe){
+      box.innerHTML=`<div class="card" style="text-align:center;border-color:rgba(47,111,237,.4)">
+        <div style="font-size:30px">${ICON.mic}</div>
+        <div style="font-weight:800;font-size:17px;margin-top:6px">Record your lecture, get a study kit</div>
+        <div class="muted" style="font-size:13px;margin:6px 0 14px">Hit record at the start of class. When it ends, StudyForge writes the notes, flashcards, quiz and games for you. This is a <b>Premium</b> feature — free users can still use notes, PDFs, photos and YouTube links.</div>
+        <button class="btn premium sm" id="rec-up">Upgrade to record</button></div>`;
+      const b=document.getElementById("rec-up"); if(b)b.onclick=renderUpgrade;
+      return;
+    }
+    renderRecorder(box);
   }else{
     // Don't decide the paywall before we know the plan — a Pro user who tapped
     // this tab before /me/usage landed was shown the upgrade card, and it never
@@ -1628,6 +1654,264 @@ function renderSource(src){
     mf.onchange=()=>{ if(mf.files[0]){const form=new FormData();form.append("file",mf.files[0]);startJob(()=>api("/uploads/media",{method:"POST",form}),mf.files[0].name);} };
   }
 }
+// ---------- Lecture recorder ----------
+// Press record, go to class, press stop. The audio is transcribed and turned
+// into a study set through the same /uploads/media path an upload uses.
+//
+// Bitrate is deliberately low (32 kbps mono Opus). Speech stays perfectly
+// legible to Whisper, and it keeps a ~100-minute lecture under the
+// transcription API's 25 MB per-file ceiling instead of failing at the end of
+// a class you can never record again.
+const REC = {
+  MIME: ["audio/webm;codecs=opus","audio/webm","audio/mp4;codecs=mp4a.40.2","audio/mp4","audio/ogg;codecs=opus"],
+  BITS: 32000,
+  SLICE_MS: 5000,           // flush to a chunk every 5s: bounded memory, and a
+                            // crash costs 5 seconds instead of the whole class
+  SOFT_LIMIT_S: 100 * 60,   // warn — approaching the 25 MB transcription ceiling
+  HARD_LIMIT_S: 180 * 60,   // stop by itself rather than lose everything
+};
+let rec = null;   // { mr, stream, chunks, startedAt, accMs, paused, timer, ac, wake, ext }
+
+function recPickMime(){
+  if(typeof MediaRecorder === "undefined") return null;
+  for(const m of REC.MIME){ try{ if(MediaRecorder.isTypeSupported(m)) return m; }catch(e){} }
+  return "";   // let the browser choose
+}
+function recFmt(s){
+  s = Math.max(0, Math.floor(s));
+  const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = s%60;
+  return (h? h+":"+String(m).padStart(2,"0") : String(m)) + ":" + String(x).padStart(2,"0");
+}
+function recElapsedS(){
+  if(!rec) return 0;
+  return (rec.accMs + (rec.paused ? 0 : Date.now()-rec.startedAt)) / 1000;
+}
+function recSupported(){
+  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && typeof MediaRecorder !== "undefined");
+}
+
+function renderRecorder(box){
+  if(!recSupported()){
+    box.innerHTML = `<div class="card">
+      <div style="font-weight:700">This browser can't record audio</div>
+      <div class="muted" style="margin-top:6px">Recording needs a modern browser on a secure (https) connection. You can still use the <b>Audio/Video</b> tab to upload a recording made with your phone's voice memo app.</div></div>`;
+    return;
+  }
+  box.innerHTML = `<div class="card" id="rec-card" style="text-align:center">
+      <div id="rec-idle">
+        <div style="font-size:30px">${ICON.mic}</div>
+        <div style="font-weight:800;font-size:17px;margin-top:6px">Record your lecture</div>
+        <div class="muted" style="font-size:13px;margin:6px auto 16px;max-width:44ch">Press record when class starts and stop when it ends — however long that is. We'll transcribe it and build the whole study kit from it.</div>
+        <button class="btn" id="rec-start">${ICON.mic} Start recording</button>
+        <div class="muted" style="font-size:12px;margin-top:10px">Your browser will ask for microphone access.</div>
+      </div>
+      <div id="rec-live" class="hidden">
+        <div class="rec-dot-row"><span class="rec-dot" id="rec-dot"></span><span id="rec-state">Recording</span></div>
+        <div class="rec-time" id="rec-time">0:00</div>
+        <div class="rec-meter" aria-hidden="true"><div class="rec-meter-fill" id="rec-level"></div></div>
+        <div class="row" style="justify-content:center;gap:10px;margin-top:18px">
+          <button class="btn ghost sm" id="rec-pause">Pause</button>
+          <button class="btn sm" id="rec-stop">Stop &amp; build study set</button>
+        </div>
+        <div class="muted" style="font-size:12px;margin-top:12px" id="rec-hint">Keep this tab open. You can lock your phone — recording continues.</div>
+      </div>
+    </div>`;
+
+  const start = document.getElementById("rec-start");
+  if(start) start.onclick = recStart;
+  const pause = document.getElementById("rec-pause");
+  if(pause) pause.onclick = recTogglePause;
+  const stop = document.getElementById("rec-stop");
+  if(stop) stop.onclick = ()=>recStop(true);
+
+  // Leaving the screen must release the mic. A recording indicator that stays
+  // lit after you navigate away is the fastest way to lose a user's trust.
+  onLeaveScreen(()=>recTeardown());
+}
+
+async function recStart(){
+  const btn = document.getElementById("rec-start");
+  if(btn){ btn.disabled = true; btn.textContent = "Waiting for microphone…"; }
+  let stream;
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ audio:{
+      channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true } });
+  }catch(e){
+    if(btn){ btn.disabled = false; btn.innerHTML = ICON.mic + " Start recording"; }
+    const name = (e && e.name) || "";
+    const msg = /NotAllowed|Security/i.test(name)
+        ? "Microphone access was blocked. Allow it for this site in your browser's address-bar settings, then try again."
+      : /NotFound|Overconstrained/i.test(name)
+        ? "No microphone found. Plug one in (or check your system input) and try again."
+      : /NotReadable|Track/i.test(name)
+        ? "Your microphone is being used by another app. Close it and try again."
+        : "Couldn't start the microphone. " + (e && e.message ? e.message : "");
+    toast(msg, "bad");
+    return;
+  }
+
+  const mime = recPickMime();
+  let mr;
+  try{ mr = new MediaRecorder(stream, mime ? { mimeType:mime, audioBitsPerSecond:REC.BITS } : { audioBitsPerSecond:REC.BITS }); }
+  catch(e){
+    try{ mr = new MediaRecorder(stream); }
+    catch(e2){
+      stream.getTracks().forEach(t=>t.stop());
+      if(btn){ btn.disabled = false; btn.innerHTML = ICON.mic + " Start recording"; }
+      toast("This browser can't record audio. Try Chrome, or upload a recording instead.", "bad");
+      return;
+    }
+  }
+
+  const actual = (mr.mimeType || mime || "audio/webm");
+  rec = { mr, stream, chunks: [], startedAt: Date.now(), accMs: 0, paused: false,
+          timer: null, ac: null, wake: null, aborted: false,
+          ext: /mp4|m4a|aac/i.test(actual) ? ".m4a" : (/ogg/i.test(actual) ? ".webm" : ".webm"),
+          type: actual.split(";")[0] };
+
+  // Bind the handlers to THIS session object, not to the `rec` global. Stopping
+  // the recorder fires one last `dataavailable` after teardown has already
+  // cleared `rec`, and reading `rec.chunks` there threw on every navigation
+  // away from a live recording.
+  const self = rec;
+  mr.ondataavailable = e => { if(e.data && e.data.size) self.chunks.push(e.data); };
+  // The OS can end the track on its own — unplugged headset, a call coming in,
+  // another app grabbing the mic. Bank what we have rather than silently
+  // recording nothing for the rest of the hour.
+  stream.getAudioTracks().forEach(t => t.onended = () => { if(rec === self && !self.aborted) recStop(true, "Your microphone stopped, so we saved what was recorded."); });
+  mr.onerror = () => { if(rec === self && !self.aborted) recStop(true, "Recording hit an error, so we saved what we had."); };
+
+  mr.start(REC.SLICE_MS);
+  recMeter();
+  recWakeLock();
+  window.addEventListener("beforeunload", recBeforeUnload);
+
+  document.getElementById("rec-idle").classList.add("hidden");
+  document.getElementById("rec-live").classList.remove("hidden");
+  rec.timer = setInterval(recTick, 250);
+  recTick();
+}
+
+function recTick(){
+  if(!rec) return;
+  const s = recElapsedS();
+  const t = document.getElementById("rec-time");
+  if(t) t.textContent = recFmt(s);
+  const hint = document.getElementById("rec-hint");
+  if(hint && s > REC.SOFT_LIMIT_S && !rec.paused){
+    hint.textContent = "That's over 100 minutes — close to the transcription limit. Stop soon so nothing is lost.";
+    hint.style.color = "var(--warn, #e0a33e)";
+  }
+  if(s >= REC.HARD_LIMIT_S) recStop(true, "Reached the 3-hour limit, so we saved the recording.");
+}
+
+function recTogglePause(){
+  if(!rec) return;
+  const b = document.getElementById("rec-pause"), st = document.getElementById("rec-state"), dot = document.getElementById("rec-dot");
+  if(rec.paused){
+    try{ rec.mr.resume(); }catch(e){}
+    rec.paused = false; rec.startedAt = Date.now();
+    if(b) b.textContent = "Pause";
+    if(st) st.textContent = "Recording";
+    if(dot) dot.classList.remove("paused");
+  }else{
+    try{ rec.mr.pause(); }catch(e){}
+    rec.accMs += Date.now() - rec.startedAt;
+    rec.paused = true;
+    if(b) b.textContent = "Resume";
+    if(st) st.textContent = "Paused";
+    if(dot) dot.classList.add("paused");
+  }
+}
+
+function recMeter(){
+  // Purely so you can see it is hearing you. A recorder with no feedback is a
+  // recorder you don't trust, and people re-record whole lectures over it.
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    const ac = new AC();
+    // Chrome can hand back a suspended context; an unresumed one reports pure
+    // silence, which reads to the user as "it isn't hearing me".
+    if(ac.state === "suspended"){ try{ ac.resume(); }catch(e){} }
+    const src = ac.createMediaStreamSource(rec.stream);
+    const an = ac.createAnalyser(); an.fftSize = 512;
+    src.connect(an);
+    const buf = new Uint8Array(an.frequencyBinCount);
+    rec.ac = ac;
+    const draw = () => {
+      if(!rec || rec.ac !== ac) return;
+      an.getByteTimeDomainData(buf);
+      let peak = 0;
+      for(let i=0;i<buf.length;i++){ const v = Math.abs(buf[i]-128)/128; if(v>peak) peak=v; }
+      const bar = document.getElementById("rec-level");
+      if(bar) bar.style.width = Math.min(100, Math.round(peak*160)) + "%";
+      rec._raf = requestAnimationFrame(draw);
+    };
+    draw();
+  }catch(e){}
+}
+
+async function recWakeLock(){
+  // A phone that sleeps mid-lecture can suspend the recorder. Best-effort.
+  try{ if(navigator.wakeLock && navigator.wakeLock.request) rec.wake = await navigator.wakeLock.request("screen"); }catch(e){}
+}
+function recBeforeUnload(e){ if(rec && !rec.aborted){ e.preventDefault(); e.returnValue = ""; return ""; } }
+
+function recTeardown(){
+  if(!rec) return;
+  const r = rec; rec = null; r.aborted = true;
+  try{ if(r.mr && r.mr.state !== "inactive") r.mr.stop(); }catch(e){}
+  try{ r.stream.getTracks().forEach(t=>t.stop()); }catch(e){}
+  try{ if(r._raf) cancelAnimationFrame(r._raf); }catch(e){}
+  try{ if(r.ac) r.ac.close(); }catch(e){}
+  try{ if(r.wake) r.wake.release(); }catch(e){}
+  clearInterval(r.timer);
+  window.removeEventListener("beforeunload", recBeforeUnload);
+}
+
+function recStop(build, note){
+  if(!rec) return;
+  const r = rec;
+  const seconds = recElapsedS();
+  const stopBtn = document.getElementById("rec-stop");
+  if(stopBtn){ stopBtn.disabled = true; stopBtn.textContent = "Finishing…"; }
+
+  let finished = false;
+  const finish = () => {
+    if(finished || !r) return;
+    finished = true;
+    const type = r.type || "audio/webm";
+    const blob = new Blob(r.chunks, { type });
+    // Release the mic BEFORE the upload so the recording indicator goes out
+    // the moment they press stop, not two minutes later.
+    rec = r; recTeardown();
+    if(note) toast(note, "good");
+    if(!build) return;
+    if(seconds < 10 || blob.size < 8000){
+      renderSource("record");
+      toast("That recording was too short to study from. Try recording at least a few sentences.", "bad");
+      return;
+    }
+    const stamp = new Date().toISOString().slice(0,16).replace("T"," ").replace(":","-");
+    const name = `Lecture ${stamp}${r.ext}`;
+    const form = new FormData();
+    form.append("file", new File([blob], name, { type }));
+    renderSource("record");
+    startJob(()=>api("/uploads/media",{method:"POST",form}), name);
+  };
+
+  try{
+    if(r.mr && r.mr.state !== "inactive"){
+      // onstop fires after the final ondataavailable, so the last slice is in.
+      r.mr.onstop = finish;
+      r.mr.stop();
+      return;
+    }
+  }catch(e){}
+  finish();
+}
+
 function flashError(msg){document.getElementById("job").innerHTML=`<div class="card" style="margin-bottom:20px"><div style="color:var(--bad);font-weight:600">${esc(msg)}</div></div>`;}
 
 // ---------- Math solver ----------
