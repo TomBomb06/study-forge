@@ -34,6 +34,70 @@ def _snippet_text(snip) -> str:
     return getattr(snip, "text", "") or ""
 
 
+SUPADATA_URL = "https://api.supadata.ai/v1/youtube/transcript"
+
+
+def _supadata_transcript(video_id: str):
+    """Fetch captions through Supadata, or return None if it isn't configured.
+
+    YouTube refuses caption requests from datacenter IPs, which is every
+    request this server makes. Supadata runs the requests from IPs YouTube
+    will talk to, so the blocking problem becomes someone else's job to keep
+    solved — which is worth more than renting a proxy pool and discovering
+    it's been blocked too.
+    """
+    from ..config import get_settings
+
+    key = (get_settings().supadata_api_key or "").strip()
+    if not key:
+        return None
+
+    import httpx
+
+    try:
+        r = httpx.get(
+            SUPADATA_URL,
+            params={"videoId": video_id, "text": "true"},
+            headers={"x-api-key": key},
+            timeout=45.0,
+        )
+    except Exception:
+        raise ExtractionError(
+            "Couldn't reach the transcript service. Try again in a moment, or "
+            "paste the transcript in the text box instead."
+        )
+
+    if r.status_code in (401, 403):
+        # Our key, our problem. Never make the user feel it's their link.
+        raise ExtractionError(
+            "Our YouTube transcript service isn't set up correctly. Paste the "
+            "transcript or your notes in the text box and it'll work."
+        )
+    if r.status_code == 429:
+        raise ExtractionError(
+            "We've hit this month's YouTube transcript limit. Paste the "
+            "transcript or your notes in the text box instead."
+        )
+    if r.status_code == 404:
+        raise ExtractionError(
+            "This video doesn't have captions we can read. Try a video with "
+            "captions, or paste the text directly."
+        )
+    if r.status_code >= 400:
+        raise ExtractionError(
+            "Couldn't fetch this video's captions. Paste the transcript or "
+            "your notes in the text box instead and it'll work."
+        )
+
+    try:
+        content = r.json().get("content")
+    except Exception:
+        content = None
+    if isinstance(content, list):  # timestamped chunks, if text=true is ignored
+        content = " ".join(_snippet_text(c) for c in content)
+    return (content or "").strip()
+
+
 def _proxy_session():
     """A requests session pinned to the YouTube proxy, or None.
 
@@ -82,6 +146,14 @@ def _fetch_snippets(video_id: str):
 def fetch_youtube_transcript(url: str) -> tuple[str, str]:
     """Return (title, text). Title falls back to the video id."""
     video_id = _video_id(url)
+    # Hosted service first when we have a key; it is the only path that works
+    # from a datacenter IP without renting one.
+    text = _supadata_transcript(video_id)
+    if text is not None:
+        if len(text) < 40:
+            raise ExtractionError("This video's transcript was too short to use.")
+        return f"YouTube video {video_id}", text
+
     try:
         import youtube_transcript_api  # noqa: F401
     except ImportError:
