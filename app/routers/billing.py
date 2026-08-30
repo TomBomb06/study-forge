@@ -9,9 +9,12 @@ later (a successful subscription/checkout webhook flips the plan or adds
 packs). They let you exercise the whole flow now without real payments.
 """
 
+import os
+import re
 import time
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -272,6 +275,23 @@ def generate_video(
 
     background.add_task(run_video_job, ss.id)
     return {"video": ss.video, "remaining": remaining}
+
+
+@router.get("/media/videos/{name}")
+def serve_video(name: str):
+    """Stream a generated video.
+
+    The filename is a random 128-bit hex, which is the capability — the same
+    unguessable-URL model every media host uses. It is validated strictly so a
+    crafted name can never walk out of the videos directory.
+    """
+    if not re.fullmatch(r"[0-9a-f]{32}\.mp4", name or ""):
+        raise HTTPException(status_code=404, detail="Not found.")
+    path = os.path.join(video.video_dir(), name)
+    if not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="Not found.")
+    return FileResponse(path, media_type="video/mp4",
+                        headers={"Cache-Control": "private, max-age=86400"})
 
 
 @router.get("/study-sets/{study_set_id}/video")

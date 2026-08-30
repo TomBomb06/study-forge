@@ -109,8 +109,16 @@ def _video_live(monkeypatch):
     placeholder must not spend a paid allowance), so force the "live" branch
     here. The demo behaviour has its own test at the bottom of this file.
     """
-    from app.pipeline import video
+    from app.pipeline import jobs, video
     monkeypatch.setattr(video, "is_live", lambda: True)
+    # Stand in for the renderer in the BACKGROUND job only. These tests are
+    # about the money path and must never call ffmpeg or the image API. The
+    # route's own demo branch still uses the real stub, so the demo test below
+    # keeps testing the real thing.
+    monkeypatch.setattr(jobs, "generate_video_asset", lambda ss: {
+        "provider": "test", "status": "ready",
+        "url": "/media/videos/" + ("0" * 32) + ".mp4",
+    })
 
 
 def test_upgrade_then_generate_async(client, auth_headers):
