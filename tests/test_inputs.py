@@ -130,3 +130,36 @@ def test_media_upload_accepts_video_extension_for_paid(client, auth_headers):
 def test_media_requires_auth(client):
     files = {"file": ("x.mp3", io.BytesIO(b"data"), "audio/mpeg")}
     assert client.post("/uploads/media", files=files).status_code == 401
+
+
+class _RequestBlocked(Exception):
+    """Stands in for youtube_transcript_api's RequestBlocked."""
+
+
+def test_blocked_by_youtube_does_not_blame_the_user(monkeypatch):
+    """A datacenter-IP block is our problem, and the copy has to say so.
+
+    The old message told the user their video probably had no captions, which
+    sent them off to find a different video that failed exactly the same way.
+    """
+    import sys
+    import types
+
+    # Keep the test honest on machines without the package installed.
+    monkeypatch.setitem(sys.modules, "youtube_transcript_api",
+                        types.SimpleNamespace(YouTubeTranscriptApi=object))
+
+    def boom(_vid):
+        raise _RequestBlocked("YouTube is blocking requests from your IP")
+
+    monkeypatch.setattr(youtube, "_fetch_snippets", boom)
+    with pytest.raises(youtube.ExtractionError) as e:
+        youtube.fetch_youtube_transcript("https://youtu.be/abcd1234XYZ")
+    msg = str(e.value)
+    assert "on our side" in msg
+    assert "no captions" not in msg
+
+
+def test_proxy_session_is_none_without_configuration():
+    """No proxy configured means no proxy — never a half-configured session."""
+    assert youtube._proxy_session() is None
