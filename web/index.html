@@ -557,7 +557,10 @@ function _copyFallback(text){
 
 // ---------- Voice (read-aloud) ----------
 async function loadVoiceOptions(){
-  if(state.voiceOpts!==undefined) return state.voiceOpts;
+  if(state.voiceOpts) return state.voiceOpts;
+  // A failed fetch used to be cached, which silently downgraded the whole
+  // session to the browser's built-in robot voice with no way back and no
+  // explanation. Never cache the failure; just try again on the next screen.
   try{ state.voiceOpts=await api("/voice/options"); }catch{ state.voiceOpts=null; }
   return state.voiceOpts;
 }
@@ -2347,23 +2350,68 @@ function renderVideo(){
        <button class="btn ghost sm" id="next">▶</button>
      </div>
      <div class="muted" style="text-align:center;font-size:13px;margin-top:8px" id="vcount"></div>
-     <div class="muted" style="text-align:center;font-size:12px;margin-top:10px">${(window.SF_FLAGS&&window.SF_FLAGS.videoLive)?"Quick read-through, narrated by your device. Scroll down for the AI cartoon version.":"Narrated by your device\u2019s voice. AI video is a paid add-on we can switch on later."}</div>
+     <div class="muted" style="text-align:center;font-size:12px;margin-top:10px">${(window.SF_FLAGS&&window.SF_FLAGS.videoLive)?"Quick read-through, narrated in your chosen voice. Scroll down for the AI cartoon version.":"Narrated in your chosen voice. AI video is a paid add-on we can switch on later."}</div>
    </div>`;
   const slideEl=document.getElementById("slide"),bar=document.getElementById("vbar"),count=document.getElementById("vcount"),pp=document.getElementById("playpause");
   const draw=()=>{slideEl.textContent=slides[i];bar.style.width=((i+1)/slides.length*100)+"%";count.textContent=`Slide ${i+1} of ${slides.length}`;};
-  const speakCurrent=()=>{
+  // Narration. This screen was hard-wired to SpeechSynthesisUtterance — the
+  // browser's flat built-in voice — for everyone, including accounts that have
+  // studio AI voice sitting right there. A tester hit this screen first and
+  // reported, fairly, that the app "uses a weird computer robot voice". Now it
+  // speaks with the same voice as Read aloud, and only drops to the device
+  // voice when AI genuinely isn't available — and says so out loud when it does.
+  const nar=new Audio();
+  let aiVoice=false, aiReady=false, aiUrls={}, aiWarned=false, aiFails=0;
+  const voiceId=()=>state.voicePref||savedVoice()||((state.voiceOpts||{}).default)||"nova";
+  const ensureAi=async()=>{
+    if(aiReady)return; aiReady=true;
+    const o=await loadVoiceOptions(); aiVoice=!!(o&&o.ai_available);
+  };
+  const advance=()=>{ if(!playing)return;
+    if(i<slides.length-1){i++;draw();speakCurrent();} else {playing=false;pp.textContent="▶ Play";} };
+  const deviceSpeak=()=>{
     if(!("speechSynthesis" in window))return;
     stopSpeech(); const u=new SpeechSynthesisUtterance(slides[i]); u.rate=1;
-    u.onend=()=>{ if(playing){ if(i<slides.length-1){i++;draw();speakCurrent();} else {playing=false;pp.textContent="▶ Play";} } };
+    u.onend=advance;
     window.speechSynthesis.speak(u);
   };
-  pp.onclick=()=>{ if(playing){playing=false;stopSpeech();pp.textContent="▶ Play";} else {playing=true;pp.textContent="⏸ Pause";speakCurrent();} };
+  const aiPrefetch=async(n)=>{
+    if(!aiVoice||n>=slides.length||aiUrls[n]!==undefined)return;
+    try{ aiUrls[n]=await ttsFetch(slides[n].slice(0,3800),voiceId(),1); aiFails=0; }
+    catch(e){
+      aiUrls[n]=null; aiFails++;
+      // One odd slide shouldn't cost the whole video its good voice; a spent
+      // allowance or a run of failures should, and the user gets told why.
+      if(e.code===402||aiFails>=2){ aiVoice=false;
+        if(!aiWarned){ aiWarned=true;
+          toast(e.code===402
+            ? "That's this month's free AI voice used up — switching to your device voice"
+            : "AI voice isn't available right now — using your device voice","");
+        }
+      }
+    }
+  };
+  const speakCurrent=async()=>{
+    stopSpeech(); try{nar.pause();}catch{}
+    await ensureAi();
+    if(aiVoice){
+      if(aiUrls[i]===undefined) await aiPrefetch(i);
+      if(aiUrls[i]){ nar.src=aiUrls[i]; await nar.play().catch(()=>{}); aiPrefetch(i+1); return; }
+    }
+    deviceSpeak();
+  };
+  nar.onended=advance;
+  // Warm the first slide so Play starts talking immediately instead of after a
+  // two-second silence while the MP3 is fetched.
+  (async()=>{ await ensureAi(); aiPrefetch(0); })();
+  pp.onclick=()=>{ if(playing){playing=false;stopSpeech();try{nar.pause();}catch{}pp.textContent="▶ Play";}
+    else {playing=true;pp.textContent="⏸ Pause";speakCurrent();} };
   // shell() calls speechSynthesis.cancel(), and per the Web Speech spec that
   // fires `end` on the utterance being spoken — so u.onend saw playing===true,
   // advanced a slide and spoke the next one, reading on through the notes on
   // whatever screen you'd navigated to. The read-aloud screen already guards
   // this with state._stopAudio; the video screen did not.
-  state._stopAudio=()=>{ playing=false; try{stopSpeech();}catch{} };
+  state._stopAudio=()=>{ playing=false; try{stopSpeech();}catch{} try{nar.pause();}catch{} };
   document.getElementById("prev").onclick=()=>{i=(i-1+slides.length)%slides.length;draw();if(playing)speakCurrent();};
   document.getElementById("next").onclick=()=>{i=(i+1)%slides.length;draw();if(playing)speakCurrent();};
   draw();
