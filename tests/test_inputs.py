@@ -163,3 +163,53 @@ def test_blocked_by_youtube_does_not_blame_the_user(monkeypatch):
 def test_proxy_session_is_none_without_configuration():
     """No proxy configured means no proxy — never a half-configured session."""
     assert youtube._proxy_session() is None
+
+
+def test_supadata_is_skipped_when_no_key():
+    """No key means the hosted path is invisible, not half-on."""
+    config.get_settings.cache_clear()
+    assert youtube._supadata_transcript("abcd1234XYZ") is None
+
+
+def test_supadata_transcript_used_when_configured(monkeypatch):
+    """With a key, the hosted service answers and the blocked library is skipped."""
+    import httpx
+
+    monkeypatch.setenv("SUPADATA_API_KEY", "sk-test")
+    config.get_settings.cache_clear()
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        assert headers["x-api-key"] == "sk-test"
+        assert params["videoId"] == "abcd1234XYZ"
+        return httpx.Response(200, json={"content": LECTURE, "lang": "en"})
+
+    monkeypatch.setattr(httpx, "get", fake_get)
+
+    def never(_vid):
+        raise AssertionError("the blocked library path should not be reached")
+
+    monkeypatch.setattr(youtube, "_fetch_snippets", never)
+    try:
+        title, text = youtube.fetch_youtube_transcript("https://youtu.be/abcd1234XYZ")
+        assert "Newton" in text
+        assert "abcd1234XYZ" in title
+    finally:
+        config.get_settings.cache_clear()
+
+
+def test_supadata_quota_error_tells_the_user_what_to_do(monkeypatch):
+    """A 429 is our bill, not the user's mistake — say so and offer the way out."""
+    import httpx
+
+    monkeypatch.setenv("SUPADATA_API_KEY", "sk-test")
+    config.get_settings.cache_clear()
+    monkeypatch.setattr(
+        httpx, "get",
+        lambda *a, **k: httpx.Response(429, json={"error": "quota"}),
+    )
+    try:
+        with pytest.raises(youtube.ExtractionError) as e:
+            youtube.fetch_youtube_transcript("https://youtu.be/abcd1234XYZ")
+        assert "paste" in str(e.value).lower()
+    finally:
+        config.get_settings.cache_clear()
