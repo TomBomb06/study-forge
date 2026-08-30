@@ -2347,7 +2347,7 @@ function renderVideo(){
        <button class="btn ghost sm" id="next">▶</button>
      </div>
      <div class="muted" style="text-align:center;font-size:13px;margin-top:8px" id="vcount"></div>
-     <div class="muted" style="text-align:center;font-size:12px;margin-top:10px">Narrated by your Mac’s voice. High-definition AI video is a paid add-on we can switch on later.</div>
+     <div class="muted" style="text-align:center;font-size:12px;margin-top:10px">${(window.SF_FLAGS&&window.SF_FLAGS.videoLive)?"Quick read-through, narrated by your device. Scroll down for the AI cartoon version.":"Narrated by your device\u2019s voice. AI video is a paid add-on we can switch on later."}</div>
    </div>`;
   const slideEl=document.getElementById("slide"),bar=document.getElementById("vbar"),count=document.getElementById("vcount"),pp=document.getElementById("playpause");
   const draw=()=>{slideEl.textContent=slides[i];bar.style.width=((i+1)/slides.length*100)+"%";count.textContent=`Slide ${i+1} of ${slides.length}`;};
