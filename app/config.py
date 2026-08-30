@@ -58,9 +58,16 @@ class Settings(BaseSettings):
 
     # YouTube link ingestion. YouTube blocks transcript requests coming from
     # datacenter IPs — every request from this container comes back
-    # RequestBlocked — so links only work through a residential proxy. Set
-    # YOUTUBE_PROXY_URL to something like http://user:pass@host:port and the
-    # YouTube fetch (and only the YouTube fetch) goes through it.
+    # RequestBlocked — so links need someone else's IP to work.
+    #
+    # Two ways in, tried in this order:
+    #   SUPADATA_API_KEY  — a hosted transcript API that owns the unblocked-IP
+    #                       problem for us. Preferred: their free tier covers
+    #                       100 videos a month and there is nothing to babysit.
+    #   YOUTUBE_PROXY_URL — http://user:pass@host:port for a rotating
+    #                       residential proxy, if we'd rather run it ourselves.
+    # With neither set, YouTube links fail and the user is told to paste text.
+    supadata_api_key: str = ""
     youtube_proxy_url: str = ""
 
     # Natural read-aloud voice. "none" = browser/device voices only (free).
