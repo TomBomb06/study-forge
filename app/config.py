@@ -56,6 +56,13 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     whisper_model: str = "whisper-1"
 
+    # YouTube link ingestion. YouTube blocks transcript requests coming from
+    # datacenter IPs — every request from this container comes back
+    # RequestBlocked — so links only work through a residential proxy. Set
+    # YOUTUBE_PROXY_URL to something like http://user:pass@host:port and the
+    # YouTube fetch (and only the YouTube fetch) goes through it.
+    youtube_proxy_url: str = ""
+
     # Natural read-aloud voice. "none" = browser/device voices only (free).
     # "openai" = studio-quality AI voices (reuses OPENAI_API_KEY; costs money).
     tts_provider: str = "none"  # "none" | "openai"
