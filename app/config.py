@@ -34,7 +34,7 @@ class Settings(BaseSettings):
 
     # Premium AI video. "stub" = metering works, no real video yet (no cost).
     # "higgsfield" = call the real Cloud API (requires a key + spends money).
-    video_provider: str = "stub"  # "stub" | "higgsfield"
+    video_provider: str = "stub"  # "stub" | "openai" | "higgsfield"
 
     # Higgsfield Cloud API (get a key at cloud.higgsfield.ai). Credentials are
     # the "KEY_ID:KEY_SECRET" pair. Endpoint/model come from your dashboard —
@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     higgsfield_base_url: str = "https://platform.higgsfield.ai"
     higgsfield_video_endpoint: str = "/v1/image2video/dop"
     higgsfield_video_model: str = "dop-turbo"
+    # AI video is built from still cartoon scenes, not a text-to-video model:
+    # ~0.9 credits a video instead of ~7.5 for five seconds of footage.
+    higgsfield_image_endpoint: str = "/v1/text2image/soul"
+    higgsfield_image_model: str = "z_image"
+    video_image_model_openai: str = "gpt-image-1"
     # Optional still image to animate (text-to-video models can ignore this).
     higgsfield_video_start_image: str = ""
 
