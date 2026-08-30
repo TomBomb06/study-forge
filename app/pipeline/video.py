@@ -116,7 +116,7 @@ def _storyboard(study_set) -> list:
 
             client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
             resp = client.messages.create(
-                model=settings.generator_model,
+                model=settings.claude_model,
                 max_tokens=2000,
                 messages=[{"role": "user", "content": _STORYBOARD_PROMPT.format(
                     n=SCENES, title=title, notes=notes[:4000])}],
@@ -158,7 +158,10 @@ def _fallback_scenes(title: str, notes: str) -> list:
     scenes = []
     for i in range(0, len(sentences), per):
         chunk = " ".join(sentences[i:i + per])[:400]
-        scenes.append({"narration": chunk, "art": f"{title}, {chunk[:120]}"})
+        # Raw notes make a terrible drawing prompt and routinely trip the
+        # image model's safety filter. Keep the art generic; the narration
+        # carries the teaching.
+        scenes.append({"narration": chunk, "art": _safe_art(len(scenes))})
         if len(scenes) == SCENES:
             break
     return scenes
@@ -207,7 +210,7 @@ class OpenAIImages(_ImageProvider):
             raise
         except Exception as e:
             logger.exception("openai image generation failed")
-            raise VideoGenerationError(f"Couldn't draw a scene: {e}")
+            raise VideoGenerationError("Couldn't draw a scene.")
         with open(dest, "wb") as f:
             f.write(data)
 
@@ -338,6 +341,47 @@ def _audio_seconds(path: str) -> float:
         return 8.0
 
 
+def _safe_art(index: int) -> str:
+    """A neutral visual no image model will refuse.
+
+    Study sets are legitimately about war, medicine, crime and disease, and
+    image models refuse prompts on all of those. When the real prompt is
+    rejected we still owe the user a video.
+    """
+    motifs = [
+        "an open notebook and a pencil on a desk",
+        "a friendly cartoon student reading at a desk",
+        "a stack of books beside a mug",
+        "a simple lightbulb above an open book",
+        "a chalkboard with blank space",
+        "a backpack, a notebook and a pair of glasses",
+    ]
+    return f"{motifs[index % len(motifs)]}, calm and encouraging"
+
+
+def _colour_card(ff: str, dest: str) -> None:
+    """Last resort frame: a plain brand-coloured card."""
+    _run([ff, "-y", "-loglevel", "error", "-f", "lavfi",
+          "-i", f"color=c=0x0B1D3A:s={WIDTH}x{HEIGHT}",
+          "-frames:v", "1", dest])
+
+
+def _render_scene(provider, scene: dict, index: int, dest: str, ff: str) -> None:
+    """Draw one scene, degrading rather than failing.
+
+    Real prompt -> neutral prompt -> plain card. A single refused image is
+    not a reason to throw away five other scenes and the user's credit.
+    """
+    for prompt in (f'{scene["art"]}. {ART_STYLE}',
+                   f'{_safe_art(index)}. {ART_STYLE}'):
+        try:
+            provider.render(prompt, dest)
+            return
+        except VideoGenerationError:
+            logger.exception("scene %s refused; falling back to a safer prompt", index)
+    _colour_card(ff, dest)
+
+
 def _build(scenes: list, work: str, out_path: str) -> None:
     ff = _ffmpeg()
     if not ff:
@@ -348,9 +392,9 @@ def _build(scenes: list, work: str, out_path: str) -> None:
     clips = []
     for i, scene in enumerate(scenes):
         img = os.path.join(work, f"scene{i}.png")
-        # The house style is applied here, once, so the two providers can
-        # never drift into drawing different-looking videos.
-        provider.render(f'{scene["art"]}. {ART_STYLE}', img)
+        # The house style is applied in _render_scene, once, so the two
+        # providers can never drift into drawing different-looking videos.
+        _render_scene(provider, scene, i, img, ff)
 
         audio = None
         seconds = 8.0
