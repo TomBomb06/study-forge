@@ -383,7 +383,10 @@
   .lp-feat.f-video:hover{border-color:rgba(167,139,250,.42)}
   .lp-shot{margin-top:16px;border-radius:12px;overflow:hidden;background:#0a1020;border:1px solid rgba(255,255,255,.06);line-height:0}
   .lp-shot svg{width:100%;height:auto;display:block}
-  .lp-heroart{max-width:940px;margin:38px auto 0;padding:0 24px}
+  /* The landing container is a flex column, so a plain block child shrinks to
+     its content instead of filling. Without width:100% the product shot
+     rendered at 348px instead of 940. */
+  .lp-heroart{width:100%;max-width:940px;margin:38px auto 0;padding:0 24px;align-self:center}
   .lp-heroart svg{width:100%;height:auto;display:block;border-radius:18px;
     box-shadow:0 24px 70px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06)}
   .lp-feat h3{font-size:17px;margin:12px 0 4px}
