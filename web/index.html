@@ -361,6 +361,31 @@
   .lp-feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
   .lp-feat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
   .lp-feat .fi{width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:22px;background:rgba(47,111,237,.14);border:1px solid rgba(47,111,237,.22)}
+  /* Every feature icon used to be the same blue on the same navy card, which
+     made six different products read as one grey list. Each mode now owns a
+     hue, and each card shows a miniature of the thing itself rather than an
+     abstract glyph — a visitor should be able to see what they get without
+     having to imagine it. */
+  .lp-feat .fi[data-c] svg{stroke:currentColor}
+  .fi.c-guide{color:#ffd166;background:rgba(255,209,102,.13);border-color:rgba(255,209,102,.28)}
+  .fi.c-cards{color:#ff8a5b;background:rgba(255,138,91,.13);border-color:rgba(255,138,91,.28)}
+  .fi.c-quiz{color:#3ecf8e;background:rgba(62,207,142,.13);border-color:rgba(62,207,142,.28)}
+  .fi.c-game{color:#ff5c9d;background:rgba(255,92,157,.13);border-color:rgba(255,92,157,.28)}
+  .fi.c-audio{color:#58a6ff;background:rgba(88,166,255,.13);border-color:rgba(88,166,255,.28)}
+  .fi.c-video{color:#a78bfa;background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.30)}
+  .lp-feat{transition:transform .18s ease,border-color .18s ease}
+  .lp-feat:hover{transform:translateY(-3px)}
+  .lp-feat.f-guide:hover{border-color:rgba(255,209,102,.42)}
+  .lp-feat.f-cards:hover{border-color:rgba(255,138,91,.42)}
+  .lp-feat.f-quiz:hover{border-color:rgba(62,207,142,.42)}
+  .lp-feat.f-game:hover{border-color:rgba(255,92,157,.42)}
+  .lp-feat.f-audio:hover{border-color:rgba(88,166,255,.42)}
+  .lp-feat.f-video:hover{border-color:rgba(167,139,250,.42)}
+  .lp-shot{margin-top:16px;border-radius:12px;overflow:hidden;background:#0a1020;border:1px solid rgba(255,255,255,.06);line-height:0}
+  .lp-shot svg{width:100%;height:auto;display:block}
+  .lp-heroart{max-width:940px;margin:38px auto 0;padding:0 24px}
+  .lp-heroart svg{width:100%;height:auto;display:block;border-radius:18px;
+    box-shadow:0 24px 70px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.06)}
   .lp-feat h3{font-size:17px;margin:12px 0 4px}
   .lp-feat p{color:var(--muted);font-size:14px;margin:0;line-height:1.5}
   .lp-price{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;max-width:860px;margin:0 auto}
@@ -683,14 +708,170 @@ function wireStickyCta(){
   io.observe(hero);
 }
 
+// Miniature previews of each study mode. Drawn as inline SVG so they cost no
+// extra requests, stay sharp on any screen, and can be restyled with the rest
+// of the page. They are deliberately literal: a flashcard looks like a
+// flashcard, a quiz shows a right answer being marked green.
+const SHOT={
+  guide:`<svg viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="150" fill="#0a1020"/>
+    <rect x="20" y="20" width="96" height="11" rx="5.5" fill="#ffd166"/>
+    <rect x="20" y="46" width="252" height="7" rx="3.5" fill="#26334a"/>
+    <rect x="20" y="62" width="228" height="7" rx="3.5" fill="#26334a"/>
+    <rect x="20" y="78" width="244" height="7" rx="3.5" fill="#26334a"/>
+    <rect x="20" y="102" width="70" height="9" rx="4.5" fill="#ffd166" opacity=".55"/>
+    <rect x="20" y="122" width="196" height="7" rx="3.5" fill="#26334a"/>
+  </svg>`,
+  cards:`<svg viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="150" fill="#0a1020"/>
+    <rect x="52" y="26" width="196" height="94" rx="12" fill="#141d31" stroke="#26334a"/>
+    <rect x="40" y="34" width="220" height="96" rx="13" fill="#18233a" stroke="#ff8a5b" stroke-opacity=".55"/>
+    <rect x="62" y="60" width="120" height="10" rx="5" fill="#ff8a5b"/>
+    <rect x="62" y="82" width="168" height="7" rx="3.5" fill="#2b3950"/>
+    <circle cx="230" cy="112" r="8" fill="#ff8a5b" opacity=".28"/>
+  </svg>`,
+  quiz:`<svg viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="150" fill="#0a1020"/>
+    <rect x="20" y="18" width="150" height="8" rx="4" fill="#2b3950"/>
+    <rect x="20" y="42" width="260" height="26" rx="8" fill="#141d31" stroke="#26334a"/>
+    <rect x="34" y="51" width="86" height="8" rx="4" fill="#2b3950"/>
+    <rect x="20" y="76" width="260" height="26" rx="8" fill="#12291f" stroke="#3ecf8e"/>
+    <rect x="34" y="85" width="104" height="8" rx="4" fill="#3ecf8e"/>
+    <path d="M258 89l5 5 9-10" stroke="#3ecf8e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="20" y="110" width="260" height="26" rx="8" fill="#141d31" stroke="#26334a"/>
+    <rect x="34" y="119" width="72" height="8" rx="4" fill="#2b3950"/>
+  </svg>`,
+  game:`<svg viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="150" fill="#0a1020"/>
+    <rect x="22" y="22" width="76" height="42" rx="10" fill="#221430" stroke="#ff5c9d"/>
+    <rect x="112" y="22" width="76" height="42" rx="10" fill="#141d31" stroke="#26334a"/>
+    <rect x="202" y="22" width="76" height="42" rx="10" fill="#12291f" stroke="#3ecf8e"/>
+    <rect x="22" y="74" width="76" height="42" rx="10" fill="#141d31" stroke="#26334a"/>
+    <rect x="112" y="74" width="76" height="42" rx="10" fill="#2a2113" stroke="#ffd166"/>
+    <rect x="202" y="74" width="76" height="42" rx="10" fill="#141d31" stroke="#26334a"/>
+    <rect x="22" y="126" width="86" height="16" rx="8" fill="#173a2b"/>
+    <rect x="34" y="131" width="46" height="6" rx="3" fill="#3ecf8e"/>
+    <rect x="196" y="126" width="82" height="16" rx="8" fill="#3a2f14"/>
+    <rect x="208" y="131" width="52" height="6" rx="3" fill="#ffd166"/>
+  </svg>`,
+  audio:`<svg viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="150" fill="#0a1020"/>
+    <circle cx="46" cy="75" r="22" fill="#12233d" stroke="#58a6ff"/>
+    <path d="M40 66l14 9-14 9z" fill="#58a6ff"/>
+    <rect x="84" y="66" width="7" height="18" rx="3.5" fill="#2b3950"/>
+    <rect x="98" y="56" width="7" height="38" rx="3.5" fill="#58a6ff"/>
+    <rect x="112" y="46" width="7" height="58" rx="3.5" fill="#58a6ff"/>
+    <rect x="126" y="60" width="7" height="30" rx="3.5" fill="#58a6ff"/>
+    <rect x="140" y="40" width="7" height="70" rx="3.5" fill="#9ec5ff"/>
+    <rect x="154" y="62" width="7" height="26" rx="3.5" fill="#58a6ff"/>
+    <rect x="168" y="50" width="7" height="50" rx="3.5" fill="#58a6ff"/>
+    <rect x="182" y="66" width="7" height="18" rx="3.5" fill="#2b3950"/>
+    <rect x="196" y="56" width="7" height="38" rx="3.5" fill="#2b3950"/>
+    <rect x="210" y="64" width="7" height="22" rx="3.5" fill="#2b3950"/>
+    <rect x="224" y="58" width="7" height="34" rx="3.5" fill="#2b3950"/>
+    <rect x="238" y="68" width="7" height="14" rx="3.5" fill="#2b3950"/>
+  </svg>`,
+  video:`<svg viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="150" fill="#0a1020"/>
+    <rect x="20" y="16" width="260" height="98" rx="12" fill="#151029" stroke="#a78bfa" stroke-opacity=".45"/>
+    <circle cx="150" cy="65" r="24" fill="#241a44"/>
+    <path d="M143 54l18 11-18 11z" fill="#a78bfa"/>
+    <rect x="20" y="126" width="260" height="6" rx="3" fill="#1e2436"/>
+    <rect x="20" y="126" width="112" height="6" rx="3" fill="#a78bfa"/>
+    <circle cx="132" cy="129" r="6" fill="#a78bfa"/>
+  </svg>`,
+};
+
+// A product shot for the hero. The page had no image of the product anywhere,
+// which meant a first-time visitor had to take every claim on faith.
+const HERO_ART=`<svg viewBox="0 0 940 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ha-bg" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#0b1526"/><stop offset="1" stop-color="#0a0f1c"/></linearGradient>
+    <linearGradient id="ha-br" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2f6fed"/><stop offset="1" stop-color="#58a6ff"/></linearGradient>
+  </defs>
+  <rect width="940" height="420" rx="18" fill="url(#ha-bg)"/>
+  <rect x="0" y="0" width="940" height="46" rx="18" fill="#0d1526"/>
+  <rect x="0" y="30" width="940" height="16" fill="#0d1526"/>
+  <circle cx="26" cy="23" r="5" fill="#2b3950"/><circle cx="44" cy="23" r="5" fill="#2b3950"/>
+  <circle cx="62" cy="23" r="5" fill="#2b3950"/>
+  <rect x="88" y="15" width="150" height="16" rx="8" fill="#141d31"/>
+
+  <!-- the input -->
+  <rect x="36" y="78" width="238" height="300" rx="14" fill="#101a2c" stroke="#1f2c44"/>
+  <rect x="58" y="102" width="96" height="10" rx="5" fill="#58a6ff"/>
+  <rect x="58" y="128" width="192" height="7" rx="3.5" fill="#22304a"/>
+  <rect x="58" y="146" width="176" height="7" rx="3.5" fill="#22304a"/>
+  <rect x="58" y="164" width="188" height="7" rx="3.5" fill="#22304a"/>
+  <rect x="58" y="182" width="150" height="7" rx="3.5" fill="#22304a"/>
+  <rect x="58" y="208" width="192" height="7" rx="3.5" fill="#22304a"/>
+  <rect x="58" y="226" width="164" height="7" rx="3.5" fill="#22304a"/>
+  <rect x="58" y="244" width="182" height="7" rx="3.5" fill="#22304a"/>
+  <rect x="58" y="270" width="130" height="7" rx="3.5" fill="#22304a"/>
+  <rect x="58" y="330" width="112" height="26" rx="13" fill="#16233a"/>
+  <rect x="72" y="340" width="84" height="6" rx="3" fill="#58a6ff"/>
+
+  <!-- the arrow -->
+  <path d="M300 228h44m0 0l-12-11m12 11l-12 11" stroke="url(#ha-br)" stroke-width="4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- the six outputs -->
+  <g>
+    <rect x="376" y="78" width="172" height="92" rx="12" fill="#141d31" stroke="#ffd166" stroke-opacity=".45"/>
+    <rect x="396" y="100" width="62" height="9" rx="4.5" fill="#ffd166"/>
+    <rect x="396" y="120" width="128" height="6" rx="3" fill="#26334a"/>
+    <rect x="396" y="134" width="108" height="6" rx="3" fill="#26334a"/>
+    <rect x="396" y="148" width="118" height="6" rx="3" fill="#26334a"/>
+
+    <rect x="566" y="78" width="172" height="92" rx="12" fill="#18233a" stroke="#ff8a5b" stroke-opacity=".45"/>
+    <rect x="588" y="106" width="84" height="9" rx="4.5" fill="#ff8a5b"/>
+    <rect x="588" y="126" width="122" height="6" rx="3" fill="#2b3950"/>
+    <circle cx="716" cy="152" r="6" fill="#ff8a5b" opacity=".4"/>
+
+    <rect x="756" y="78" width="148" height="92" rx="12" fill="#151029" stroke="#a78bfa" stroke-opacity=".45"/>
+    <circle cx="830" cy="118" r="19" fill="#241a44"/>
+    <path d="M824 108l14 10-14 10z" fill="#a78bfa"/>
+    <rect x="776" y="150" width="108" height="5" rx="2.5" fill="#1e2436"/>
+    <rect x="776" y="150" width="48" height="5" rx="2.5" fill="#a78bfa"/>
+
+    <rect x="376" y="188" width="172" height="92" rx="12" fill="#12291f" stroke="#3ecf8e" stroke-opacity=".45"/>
+    <rect x="396" y="208" width="104" height="7" rx="3.5" fill="#2b3950"/>
+    <rect x="396" y="226" width="132" height="20" rx="7" fill="#0f3527" stroke="#3ecf8e" stroke-opacity=".6"/>
+    <path d="M508 234l4 4 7-8" stroke="#3ecf8e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="396" y="254" width="132" height="14" rx="6" fill="#141d31"/>
+
+    <rect x="566" y="188" width="172" height="92" rx="12" fill="#1c1226" stroke="#ff5c9d" stroke-opacity=".45"/>
+    <rect x="586" y="208" width="60" height="28" rx="8" fill="#221430" stroke="#ff5c9d" stroke-opacity=".6"/>
+    <rect x="656" y="208" width="60" height="28" rx="8" fill="#141d31" stroke="#26334a"/>
+    <rect x="586" y="246" width="60" height="24" rx="8" fill="#141d31" stroke="#26334a"/>
+    <rect x="656" y="246" width="60" height="24" rx="8" fill="#2a2113" stroke="#ffd166" stroke-opacity=".6"/>
+
+    <rect x="756" y="188" width="148" height="92" rx="12" fill="#0f1c30" stroke="#58a6ff" stroke-opacity=".45"/>
+    <rect x="778" y="228" width="6" height="16" rx="3" fill="#2b3950"/>
+    <rect x="790" y="218" width="6" height="36" rx="3" fill="#58a6ff"/>
+    <rect x="802" y="208" width="6" height="56" rx="3" fill="#58a6ff"/>
+    <rect x="814" y="222" width="6" height="28" rx="3" fill="#58a6ff"/>
+    <rect x="826" y="204" width="6" height="64" rx="3" fill="#9ec5ff"/>
+    <rect x="838" y="224" width="6" height="24" rx="3" fill="#58a6ff"/>
+    <rect x="850" y="214" width="6" height="44" rx="3" fill="#58a6ff"/>
+    <rect x="862" y="228" width="6" height="16" rx="3" fill="#2b3950"/>
+    <rect x="874" y="220" width="6" height="32" rx="3" fill="#2b3950"/>
+  </g>
+
+  <rect x="376" y="300" width="528" height="78" rx="12" fill="#0d1626" stroke="#1e4fb0" stroke-opacity=".5"/>
+  <rect x="400" y="322" width="132" height="10" rx="5" fill="#58a6ff"/>
+  <rect x="400" y="346" width="330" height="7" rx="3.5" fill="#22304a"/>
+</svg>`;
+
 function renderLanding(){
   const feats=[
-    [ICON.book,"Study guide","Clean, organized notes that pull out what actually matters."],
-    [ICON.cards,"Flashcards","Flip-through cards for fast, active recall of key terms."],
-    [ICON.question,"Quizzes & tests","Multiple-choice quizzes and mixed practice tests with instant feedback."],
-    [ICON.puzzle,"Study games","A matching game and a timed Time Attack mode to make it stick."],
-    [ICON.headphones,"Read aloud","Have your notes read to you — study on the go, hands-free."],
-    [ICON.film,"AI video lessons","Premium narrated video lessons generated from your material."],
+    [ICON.book,"Study guide","Clean, organized notes that pull out what actually matters.","guide"],
+    [ICON.cards,"Flashcards","Flip-through cards for fast, active recall of key terms.","cards"],
+    [ICON.question,"Quizzes & tests","Multiple-choice quizzes and mixed practice tests with instant feedback.","quiz"],
+    [ICON.puzzle,"Study games","A matching game and a timed Time Attack mode to make it stick.","game"],
+    [ICON.headphones,"Read aloud","Have your notes read to you — study on the go, hands-free.","audio"],
+    [ICON.film,"AI video lessons","Premium narrated video lessons generated from your material.","video"],
   ];
   el.innerHTML=`
   <nav class="lp-nav">
@@ -716,10 +897,11 @@ function renderLanding(){
     </div>
     <div class="lp-note">Free to start · No credit card required</div>
   </header>
+  <div class="lp-heroart">${HERO_ART}</div>
   <section class="lp-section" id="features">
     <h2>Every way to study, from one upload</h2>
     <p class="lead">One upload becomes six ways to learn — pick whatever fits how your brain studies.</p>
-    <div class="lp-feats">${feats.map(f=>`<div class="lp-feat"><div class="fi">${f[0]}</div><h3>${f[1]}</h3><p>${f[2]}</p></div>`).join("")}</div>
+    <div class="lp-feats">${feats.map(f=>`<div class="lp-feat f-${f[3]}"><div class="fi c-${f[3]}">${f[0]}</div><h3>${f[1]}</h3><p>${f[2]}</p><div class="lp-shot">${SHOT[f[3]]}</div></div>`).join("")}</div>
   </section>
   <section class="lp-section" id="how">
     <h2>How it works</h2>
