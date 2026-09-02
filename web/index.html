@@ -249,22 +249,51 @@
   .sticky-cta .sc-text span{font-size:12px;color:var(--muted)}
   @media (max-width:720px){ .sticky-cta.show{display:flex} }
   .pill{display:inline-block;padding:4px 12px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);font-size:12px;color:var(--muted);font-weight:600}
-  /* Math solver: the answer is the reward, the locked steps are the pitch. */
+  /* Math solver. The answer AND the working are free — the wall sits on the
+     reasoning ("why does this step work") and on the alternative methods. */
   .mathres{border-color:rgba(47,111,237,.45)}
   .manswer{font-family:Sora,Inter,sans-serif;font-size:34px;font-weight:800;letter-spacing:-.02em;
     background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
     margin:2px 0 16px;word-break:break-word}
   .mstep-head{font-weight:700;font-size:14px;margin-bottom:8px}
-  ol.msteps{margin:0;padding-left:20px;font-size:14.5px;line-height:1.6}
-  ol.msteps li{margin:7px 0}
-  .mcheck{margin-top:14px;padding:10px 12px;border-radius:12px;background:var(--surface-2);
-    border:1px solid var(--border);font-size:13px;color:var(--muted)}
-  .msteps-lock{border-top:1px solid var(--border);padding-top:14px}
+  .mcheck{margin-top:14px;padding:10px 12px;border-radius:12px;background:rgba(62,207,142,.09);
+    border:1px solid rgba(62,207,142,.26);font-size:13px;color:var(--muted)}
+  .mcheck b{color:#3ecf8e}
+  /* method switcher */
+  .mways{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 14px;padding-top:14px;
+    border-top:1px solid var(--border)}
+  .mway{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:12px;
+    background:var(--surface-2);border:1px solid var(--border);color:var(--muted);
+    font-weight:600;font-size:13.5px;cursor:pointer;transition:.15s;text-align:left}
+  .mway:hover{color:var(--text);border-color:var(--brand-2)}
+  .mway.on{background:rgba(47,111,237,.16);border-color:rgba(88,166,255,.6);color:var(--text)}
+  .mway .mwl{color:#ffd166;display:inline-flex}
+  .mway svg.ic{width:14px;height:14px}
+  .mway-tag{font-size:12.5px;color:var(--muted);margin:-4px 0 12px}
+  /* steps */
+  ol.msteps{margin:0;padding-left:22px;font-size:14.5px;line-height:1.6}
+  ol.msteps li{margin:10px 0}
+  ol.msteps li::marker{color:var(--brand-2);font-weight:700}
+  .mwhy{margin-top:6px;padding:9px 12px;border-radius:10px;font-size:13.5px;line-height:1.55;
+    background:rgba(167,139,250,.10);border:1px solid rgba(167,139,250,.28);color:#cdbdfb}
+  .mwhy b{color:#a78bfa}
+  .mwhy-btn{margin-top:6px;display:inline-flex;align-items:center;gap:6px;padding:4px 11px;
+    border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s;
+    color:#a78bfa;background:rgba(167,139,250,.11);border:1px solid rgba(167,139,250,.3)}
+  .mwhy-btn:hover{background:rgba(167,139,250,.22);border-color:rgba(167,139,250,.6)}
+  .mwhy-btn svg.ic{width:12px;height:12px}
+  .mwhy-pitch{display:flex;align-items:center;gap:12px;margin-top:16px;padding:13px 15px;
+    border-radius:14px;background:rgba(167,139,250,.10);border:1px solid rgba(167,139,250,.3);flex-wrap:wrap}
+  .mwhy-pitch .mwl-i{font-size:20px;color:#a78bfa;display:inline-flex}
+  .mwhy-pitch>div:nth-child(2){flex:1;min-width:180px}
+  /* locked method */
   .mblurwrap{position:relative;margin-bottom:6px}
-  .mstep-blur{font-size:14.5px;line-height:1.6;color:var(--muted);margin:7px 0;
+  .mstep-blur{font-size:14.5px;line-height:1.6;color:var(--muted);margin:9px 0;
     filter:blur(4.5px);user-select:none;pointer-events:none}
   .mstep-blur:first-child{filter:blur(2.5px)}
   .mfade{position:absolute;inset:0;background:linear-gradient(180deg,transparent,var(--surface) 82%)}
+  .mlock{text-align:center;margin-top:-6px;position:relative}
+  .mlock .mli{font-size:22px;color:#ffd166}
   .stack>*+*{margin-top:12px}
   .big-score{font-size:46px;font-weight:800;letter-spacing:-.03em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   a.link{color:var(--brand-2);cursor:pointer;text-decoration:none;font-weight:600}
@@ -1035,8 +1064,8 @@ function renderLanding(){
     <p class="lead">Start free. Upgrade when you want no ads and AI video lessons.</p>
     <div class="lp-price">
       <div class="lp-plan"><div class="pn">Free</div><div class="pp">$0</div><ul><li>5 study sets / month</li><li><b>Unlimited</b> math photo answers</li><li>All study modes + games</li><li>Natural AI voice (limited)</li><li>Supported by ads</li></ul></div>
-      <div class="lp-plan feat"><div class="lp-badge">Most popular</div><div class="pn">Basic</div><div class="pp">$9<span>/mo</span></div><ul><li>120 study sets / month</li><li><b>Math steps</b> — how to solve it</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Lots more natural AI voice</li><li>No ads<span class="vid-line"> · 10 AI videos/mo</span></li></ul></div>
-      <div class="lp-plan"><div class="pn">Pro</div><div class="pp">$19<span>/mo</span></div><ul><li>Unlimited study sets</li><li><b>Math steps</b> — how to solve it</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Most natural AI voice</li><li>No ads<span class="vid-line"> · 40 AI videos/mo</span></li></ul></div>
+      <div class="lp-plan feat"><div class="lp-badge">Most popular</div><div class="pn">Basic</div><div class="pp">$9<span>/mo</span></div><ul><li>120 study sets / month</li><li><b>Math “why”</b> — every method, every reason</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Lots more natural AI voice</li><li>No ads<span class="vid-line"> · 10 AI videos/mo</span></li></ul></div>
+      <div class="lp-plan"><div class="pn">Pro</div><div class="pp">$19<span>/mo</span></div><ul><li>Unlimited study sets</li><li><b>Math “why”</b> — every method, every reason</li><li>Sharper AI + tutor & reviews</li><li>Lecture transcription</li><li>Most natural AI voice</li><li>No ads<span class="vid-line"> · 40 AI videos/mo</span></li></ul></div>
     </div>
     <div style="text-align:center;margin-top:28px"><button class="btn" data-auth="signup" style="font-size:16px;padding:14px 26px">Get started free</button></div>
   </section>
@@ -1758,7 +1787,7 @@ async function renderUpgrade(){
        ${owned?`<div class="pill" style="margin-bottom:8px">${ICON.check} Current plan</div>`:""}
        <div style="font-weight:700;font-size:18px">${esc(p.name)}</div>
        <div style="font-weight:800;font-size:22px;margin-top:4px">$${p.price_usd}<span class="muted" style="font-size:13px;font-weight:500">/mo</span></div>
-       <div class="muted" style="font-size:13px;margin-top:8px">${ICON.check} <b>${p.monthly_sets>=100000?"Unlimited study sets":esc(String(p.monthly_sets))+" study sets / month"}</b><br>${ICON.check} <b>Math step-by-step</b> — how to solve it, not just the answer<br>${ICON.check} <b>Sharper AI model</b> (better sets)<br>${ICON.check} AI tutor + personalised mistake reviews<br>${ICON.check} Lecture audio/video transcription<br>${ICON.check} Natural AI voice${p.monthly_tts_chars?` (~${Math.round(p.monthly_tts_chars/1000)}k chars/mo)`:""}<br>${ICON.check} No ads${(window.SF_FLAGS&&window.SF_FLAGS.videoLive)||(state.usage&&state.usage.video_live)?` · ${p.monthly_videos} AI videos / month`:""}</div>
+       <div class="muted" style="font-size:13px;margin-top:8px">${ICON.check} <b>${p.monthly_sets>=100000?"Unlimited study sets":esc(String(p.monthly_sets))+" study sets / month"}</b><br>${ICON.check} <b>Math: why every step works</b> + every solving method<br>${ICON.check} <b>Sharper AI model</b> (better sets)<br>${ICON.check} AI tutor + personalised mistake reviews<br>${ICON.check} Lecture audio/video transcription<br>${ICON.check} Natural AI voice${p.monthly_tts_chars?` (~${Math.round(p.monthly_tts_chars/1000)}k chars/mo)`:""}<br>${ICON.check} No ads${(window.SF_FLAGS&&window.SF_FLAGS.videoLive)||(state.usage&&state.usage.video_live)?` · ${p.monthly_videos} AI videos / month`:""}</div>
        ${owned
          ? `<button class="btn ghost" disabled style="margin-top:14px;width:100%">Your current plan</button>`
          : `<button class="btn upg" data-p="${k}" style="margin-top:14px;width:100%">${paid?"Switch to":"Choose"} ${esc(p.name)}</button>`}
@@ -2219,42 +2248,80 @@ async function solveMath(fn){
   try{
     const r=await fn();
     renderMathResult(r);
-    track("MathSolve",{locked:!!r.locked},true);
+    track("MathSolve",{why_locked:!!r.why_locked,locked_methods:r.locked_methods||0},true);
   }catch(e){
     mathErr((e&&e.message)||"Couldn't solve that one. Try a clearer photo.");
   }
 }
+// The result screen. Everything a free user needs to finish the problem is on
+// the page: the answer, the check, and one method worked out in full. The two
+// upgrade prompts sit on the things Premium actually sells — the reason each
+// step works, and the other ways to solve it.
 function renderMathResult(r){
   const out=document.getElementById("math-out");
   if(!out) return;
+  const methods=r.methods||[];
   const topic=r.topic?`<span class="pill">${esc(r.topic)}</span>`:"";
   const problem=r.problem?`<div class="muted" style="font-size:13px;margin-bottom:8px">${esc(r.problem)}</div>`:"";
-  let steps;
-  if(r.locked){
-    const n=r.step_count||3;
-    const blur=Array.from({length:Math.min(n,4)},(_,i)=>
-      `<div class="mstep-blur">${esc(i===0&&r.teaser?r.teaser:"—————— —— ———— ————— —— ———— ——————")}</div>`).join("");
-    steps=`<div class="msteps-lock">
-      <div class="mstep-head">How to solve it — ${n} step${n===1?"":"s"}</div>
-      <div class="mblurwrap">${blur}<div class="mfade"></div></div>
-      <div style="text-align:center;margin-top:-6px;position:relative">
-        <div style="font-size:22px">${ICON.lock}</div>
-        <div style="font-weight:700;font-size:15px;margin-top:2px">See how it's done</div>
-        <div class="muted" style="font-size:13px;margin:4px 0 12px">${esc(r.upgrade||"")}</div>
-        <button class="btn premium sm" id="math-up">Unlock the steps</button>
-      </div></div>`;
-  }else{
-    steps=`<div class="mstep-head">How to solve it</div><ol class="msteps">
-      ${(r.steps||[]).map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
-      ${r.check?`<div class="mcheck">✓ <b>Check it:</b> ${esc(r.check)}</div>`:""}`;
-  }
+
+  // One method needs no switcher — a row of tabs with a single tab in it just
+  // looks like something failed to load.
+  const ways = methods.length>1 ? `<div class="mways" id="mways">${methods.map((m,i)=>
+      `<button class="mway${i===0?" on":""}" data-i="${i}">${m.locked?`<span class="mwl">${ICON.lock}</span>`:""}${esc(m.name)}</button>`
+    ).join("")}</div>` : "";
+
   out.innerHTML=`<div class="card mathres">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <div class="muted" style="font-size:12px;letter-spacing:.04em;text-transform:uppercase">Answer</div>${topic}</div>
     ${problem}
     <div class="manswer">${esc(r.answer||"")}</div>
-    ${steps}</div>`;
-  const up=document.getElementById("math-up"); if(up) up.onclick=renderUpgrade;
+    ${r.check?`<div class="mcheck">${ICON.check} <b>Check it:</b> ${esc(r.check)}</div>`:""}
+    ${ways}
+    <div id="mbody"></div></div>`;
+
+  const body=document.getElementById("mbody");
+  const paintMethod=(i)=>{
+    const m=methods[i]; if(!m){body.innerHTML="";return;}
+    const tag=m.tagline?`<div class="mway-tag">${esc(m.tagline)}</div>`:"";
+    if(m.locked){
+      const n=m.step_count||3;
+      const blur=Array.from({length:Math.min(n,4)},(_,k)=>
+        `<div class="mstep-blur">${esc(k===0&&m.teaser?m.teaser:"—————— —— ———— ————— —— ———— ——————")}</div>`).join("");
+      body.innerHTML=`${tag}
+        <div class="mstep-head">${esc(m.name)} — ${n} step${n===1?"":"s"}</div>
+        <div class="mblurwrap">${blur}<div class="mfade"></div></div>
+        <div class="mlock">
+          <div class="mli">${ICON.lock}</div>
+          <div style="font-weight:700;font-size:15px;margin-top:2px">Solve it this way too</div>
+          <div class="muted" style="font-size:13px;margin:4px auto 12px;max-width:340px">${esc(r.upgrade_methods||"")}</div>
+          <button class="btn premium sm" data-up="1">Unlock every method</button>
+        </div>`;
+    }else{
+      const head=methods.length>1?"":`<div class="mstep-head">How to solve it</div>`;
+      // One compact chip per step, then a single clear pitch underneath — three
+      // full-width "Why does this work?" buttons stacked up read as nagging.
+      const pitch=(m.steps||[]).some(st=>st.why_locked)
+        ? `<div class="mwhy-pitch">
+             <div class="mwl-i">${ICON.lock}</div>
+             <div><div style="font-weight:700;font-size:14px">Why does each step work?</div>
+               <div class="muted" style="font-size:13px;margin-top:2px">${esc(r.upgrade_why||"")}</div></div>
+             <button class="btn premium sm" data-up="1">Unlock</button></div>` : "";
+      body.innerHTML=`${tag}${head}
+        <ol class="msteps">${(m.steps||[]).map(st=>`<li>${esc(st.do)}
+          ${st.why?`<div class="mwhy"><b>Why:</b> ${esc(st.why)}</div>`
+            :st.why_locked?`<button class="mwhy-btn" data-up="1">${ICON.lock} Why?</button>`:""}
+        </li>`).join("")}</ol>${pitch}`;
+    }
+    // One handler for every upgrade affordance on the panel, whichever it is.
+    body.querySelectorAll("[data-up]").forEach(b=>b.onclick=renderUpgrade);
+  };
+  paintMethod(0);
+
+  const tabs=out.querySelectorAll("#mways .mway");
+  tabs.forEach(t=>t.onclick=()=>{
+    tabs.forEach(x=>x.classList.remove("on")); t.classList.add("on");
+    paintMethod(parseInt(t.dataset.i,10));
+  });
 }
 
 function setItemHTML(s){
