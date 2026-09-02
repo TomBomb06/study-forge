@@ -2,7 +2,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import (JSON, DateTime, ForeignKey, Integer, String, Text,
+                        UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -173,3 +174,30 @@ class ProcessedStripeEvent(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)  # Stripe evt_...
     kind: Mapped[str] = mapped_column(String(64), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class PageHit(Base):
+    """Daily page-view counts, by page and by where the visitor came from.
+
+    Aggregate counts only. No cookies, no IP addresses, no user agents, no
+    identifiers of any kind — there is nothing in this table that could single
+    out a person, and that is the entire point of it.
+
+    Why it exists: both the Meta Pixel and Google Analytics sit behind the
+    cookie banner, so a visitor who ignores the banner (most of them) is
+    invisible to both. The server sees every request regardless of what anyone
+    clicks, and counting in aggregate needs no consent because there is nothing
+    here to consent to. Without this table the honest answer to "how many
+    people visited the site today" was "no idea".
+    """
+
+    __tablename__ = "page_hits"
+    __table_args__ = (
+        UniqueConstraint("day", "path", "source", name="uq_page_hits_day_path_source"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    day: Mapped[str] = mapped_column(String(10), index=True)   # "YYYY-MM-DD" UTC
+    path: Mapped[str] = mapped_column(String(64))              # "/", "/privacy", ...
+    source: Mapped[str] = mapped_column(String(40), index=True)  # "tiktok", "direct", ...
+    views: Mapped[int] = mapped_column(Integer, default=0)

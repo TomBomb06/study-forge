@@ -113,6 +113,11 @@ class Settings(BaseSettings):
     # accepts cookies.
     ga_measurement_id: str = ""   # "G-XXXXXXXXXX"
 
+    # Server-side traffic dashboard at /admin/stats. Empty = the route does not
+    # exist and returns the normal 404, so there is nothing to find or attack.
+    # Set it to a long random string to switch the dashboard on.
+    admin_key: str = ""
+
 
     # ---- Transactional email (password reset) ----
     # "console" prints the email to the server log — fine for development,

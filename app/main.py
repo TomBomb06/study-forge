@@ -1,6 +1,6 @@
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -8,8 +8,8 @@ from sqlalchemy import inspect, text
 
 from .config import get_settings, looks_like_production, verify_production_config
 from .db import Base, engine
-from .routers import (auth, billing, gamify, math, shares, study_sets, tutor,
-                      uploads, voice)
+from .routers import (auth, billing, gamify, math, shares, stats, study_sets,
+                      tutor, uploads, voice)
 
 # MVP: create tables on startup. Move to Alembic migrations before production.
 Base.metadata.create_all(bind=engine)
@@ -157,6 +157,7 @@ app.include_router(gamify.router)
 app.include_router(tutor.router)
 app.include_router(voice.router)
 app.include_router(math.router)
+app.include_router(stats.router)
 
 
 @app.get("/health", tags=["meta"])
@@ -263,8 +264,35 @@ def _feature_flags_snippet() -> str:
     )
 
 
-def _html(name: str):
+def _count(request, path: str) -> None:
+    """Record the visit. Swallows everything — analytics never breaks a page."""
+    if request is None:
+        return
+    db = None
+    try:
+        from . import analytics
+        from .db import SessionLocal
+        db = SessionLocal()
+        analytics.record(
+            db, path,
+            request.headers.get("referer", ""),
+            request.headers.get("user-agent", ""),
+            dict(request.query_params),
+        )
+    except Exception:
+        pass
+    finally:
+        if db is not None:
+            try:
+                db.close()
+            except Exception:
+                pass
+
+
+def _html(name: str, request: Request = None, count_as: str = ""):
     """Serve an HTML page, injecting the Meta Pixel when one is configured."""
+    if count_as:
+        _count(request, count_as)
     path = os.path.join(_WEB_DIR, name)
     snippet = _meta_pixel_snippet() + _ga_snippet() + _feature_flags_snippet()
     if not snippet:
@@ -285,16 +313,16 @@ if os.path.isdir(_WEB_DIR):
     app.mount("/app", StaticFiles(directory=_WEB_DIR, html=True), name="web")
 
     @app.get("/", include_in_schema=False)
-    def _root():
-        return _html("index.html")
+    def _root(request: Request):
+        return _html("index.html", request, "/")
 
     @app.get("/privacy", include_in_schema=False)
-    def _privacy():
-        return _html("privacy.html")
+    def _privacy(request: Request):
+        return _html("privacy.html", request, "/privacy")
 
     @app.get("/terms", include_in_schema=False)
-    def _terms():
-        return _html("terms.html")
+    def _terms(request: Request):
+        return _html("terms.html", request, "/terms")
 
     @app.get("/og.png", include_in_schema=False)
     def _og():
