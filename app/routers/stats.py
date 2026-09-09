@@ -94,7 +94,7 @@ a{{color:var(--blue)}}
 
 <div class="cards">
   <div class="c v1"><div class="k">Page views</div><div class="v">{d["views_total"]}</div>
-    <div class="s">last {n} days</div></div>
+    <div class="s">last {n} days · {d["internal_views"]} more were people already on the site</div></div>
   <div class="c v2"><div class="k">Signups</div><div class="v">{d["users_window"]}</div>
     <div class="s">{d["users_today"]} today · {d["users_total"]} all time</div></div>
   <div class="c v3"><div class="k">Visit → signup</div><div class="v">{rate}</div>
