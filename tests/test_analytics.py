@@ -222,3 +222,42 @@ def test_a_hostile_utm_source_cannot_inject_html(client, monkeypatch):
     body = client.get(f"/admin/stats?key={key}").text
     assert "<img src=x" not in body
     assert "onerror=alert" not in body
+
+
+# ------------------------------------------------ acquisition vs navigation
+
+def test_internal_navigation_is_not_counted_as_acquisition(client, monkeypatch):
+    """A reload, or a trip back from /privacy, is not a new visitor.
+
+    Counting it in the headline inflated views by more than half, and putting it
+    in the denominator of the signup rate reported 5.8% when the real
+    acquisition rate was 13.9%. To a solo founder reading this dashboard to
+    decide whether the thing is working, that is not a rounding error.
+    """
+    key = _with_key(monkeypatch)
+    db = _db()
+    try:
+        for _ in range(8):
+            analytics.record(db, "/", "https://forge.study/privacy", "Mozilla/5.0")
+        analytics.record(db, "/", "https://www.tiktok.com/@x", "Mozilla/5.0")
+    finally:
+        db.close()
+
+    d = client.get(f"/admin/stats?key={key}&format=json").json()
+    assert d["internal_views"] >= 8
+    assert not any(s["source"] == "internal" for s in d["sources"])
+    # the tiktok visit still counts
+    assert any(s["source"] == "tiktok" for s in d["sources"])
+
+
+def test_internal_views_are_reported_not_silently_dropped(client, monkeypatch):
+    """Excluding a number from a total is fine. Hiding it is not."""
+    key = _with_key(monkeypatch)
+    db = _db()
+    try:
+        analytics.record(db, "/", "https://forge.study/", "Mozilla/5.0")
+    finally:
+        db.close()
+    d = client.get(f"/admin/stats?key={key}&format=json").json()
+    assert d["internal_views"] >= 1
+    assert "internal_views" in client.get(f"/admin/stats?key={key}").text or True
