@@ -1111,6 +1111,7 @@ function renderForgot(prefill){
     try{
       const r=await api("/auth/forgot-password",{method:"POST",body:{email}});
       const done=document.getElementById("fp-done");
+      if(!done) return;
       done.style.display="block";
       done.innerHTML=`✅ ${esc(r.message)}<div class="muted" style="font-size:13px;margin-top:8px">The link expires in 1 hour and can only be used once.</div>`;
       btn.style.display="none";
@@ -1373,6 +1374,7 @@ async function renderRewards(){
     <div id="rw"></div>`);
   document.getElementById("back").onclick=renderHome;
   const box=document.getElementById("rw");
+  if(!box) return;
   if(!state.game){ box.innerHTML=`<div class="center" style="min-height:24vh"><div class="spinner"></div></div>`; await loadGame(); }
   paintRewards(box);
 }
@@ -1599,6 +1601,7 @@ async function renderLeaderboard(){
     <div id="lb"><div class="center" style="min-height:24vh"><div class="spinner"></div></div></div>`);
   document.getElementById("back").onclick=renderHome;
   const box=document.getElementById("lb");
+  if(!box) return;
   let d; try{d=await api("/leaderboard?tz_offset="+tzOff());}catch(e){box.innerHTML=`<p class="error">${esc(e.message)}</p>`;return;}
   // Numbered ranks with a medal for the top three. The emoji medals rendered
   // as three different pictures depending on the device.
@@ -1763,7 +1766,7 @@ async function renderUpgrade(){
      <p class="muted" style="margin-top:0" id="up-sub">Free gets you the answers. Premium gets you a personal AI tutor: in-depth explanations, a personalised review of everything you get wrong, lots more natural AI read-aloud voice, no ads, and AI video lessons.</p>
      <div id="up"></div>`);
   document.getElementById("back").onclick=renderHome;
-  const box=document.getElementById("up"); box.innerHTML=`<div class="center" style="min-height:24vh"><div class="spinner"></div></div>`;
+  const box=document.getElementById("up"); if(!box) return; box.innerHTML=`<div class="center" style="min-height:24vh"><div class="spinner"></div></div>`;
   let u; try{u=await api("/me/usage");}catch(e){box.innerHTML=`<p class="error">${esc(e.message)}</p>`;return;}
   // Keep the shared copy in sync — this screen used to fetch usage and throw it
   // away, so the header chip and this page could disagree about the plan.
@@ -1863,6 +1866,11 @@ async function renderHome(){
 }
 function renderSource(src){
   const box=document.getElementById("source");
+  // renderHome awaits loadUsage() before calling this. If that await ends with
+  // the screen replaced — a 401 renders the login form, or the user navigated —
+  // #source no longer exists, and throwing here aborts the rest of renderHome.
+  // Every paint-into-a-container function below guards for the same reason.
+  if(!box) return;
   if(src==="file"){
     box.innerHTML=`<div class="dropzone" id="drop" role="button" tabindex="0"><input id="file" type="file" accept=".pdf,.txt,.png,.jpg,.jpeg" multiple class="hidden"/>
       <div class="dz-plus">＋</div><div style="font-weight:700;font-size:16px">Drop file(s) or click to upload</div>
@@ -2335,6 +2343,7 @@ function setItemHTML(s){
 }
 async function loadSets(){
   const list=document.getElementById("list"), due=document.getElementById("due");
+  if(!list) return;
   list.innerHTML=`<div class="stack">${'<div class="skeleton" style="height:64px"></div>'.repeat(2)}</div>`;
   try{
     state.sets=await api("/study-sets");
@@ -2369,6 +2378,7 @@ async function renderProgress(){
   shell(`<a class="link" id="back" href="#" role="button">← Back</a><h1 style="margin-top:12px">Your progress</h1><div id="prog"></div>`);
   document.getElementById("back").onclick=renderHome;
   const box=document.getElementById("prog");
+  if(!box) return;
   box.innerHTML=`<div class="center" style="min-height:30vh"><div class="spinner"></div></div>`;
   let p; try{p=await api("/me/progress");}catch(e){box.innerHTML=`<p class="error">${esc(e.message)}</p>`;return;}
   const t=p.totals;
@@ -2436,6 +2446,7 @@ function handleFiles(fileList){
 function startFileUpload(f){const form=new FormData();form.append("file",f);startJob(()=>api("/uploads",{method:"POST",form}),f.name);}
 async function startJob(createFn,label,isTopic){
   const job=document.getElementById("job");
+  if(!job) return;
   const msgs=isTopic?TOPIC_MSGS:GEN_MSGS;
   job.innerHTML=`<div class="card" style="text-align:center;margin-bottom:20px"><div class="spinner"></div>
      <div style="font-weight:700;margin-top:14px" id="gen-msg">${pick(msgs)}</div>
@@ -2548,6 +2559,7 @@ function renderChooser(){
     }catch(e){toast(e.message,"bad");}
   };
   const g=document.getElementById("grid");
+  if(!g) return;
   const paint=(cat)=>{
     g.innerHTML=MODES.filter(m=>m.cat===cat).map(m=>`<div class="mode" data-m="${m.id}" role="button" tabindex="0"><div class="ic">${m.ic}</div>
        <div class="nm">${m.nm}</div><div class="ds">${m.ds}</div>
@@ -2794,6 +2806,7 @@ async function renderPremium(){
   const wireGen=()=>{
     document.getElementById("gen-video").onclick=async()=>{
       const out=document.getElementById("gen-out");
+      if(!out) return;
       out.innerHTML=`<div class="spinner"></div><div class="muted" style="margin-top:8px">Starting your video — this can take a minute or two.</div>`;
       let res;
       try{
