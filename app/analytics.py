@@ -171,11 +171,21 @@ def summary(db, days: int = 14) -> dict:
 
     rows = db.query(PageHit).filter(PageHit.day >= start_s).all()
 
+    # "internal" is a visit that arrived from forge.study itself: someone
+    # already on the site reloading, or coming back from /privacy. That is
+    # navigation, not acquisition. Counting it in the headline inflated views by
+    # more than half and, worse, put it in the denominator of the signup rate —
+    # which reported 5.8% when the acquisition-based rate was 13.9%. It is
+    # still reported, separately, so the number is never silently dropped.
     by_day: dict[str, int] = {}
     by_source: dict[str, int] = {}
     by_page: dict[str, int] = {}
+    internal_views = 0
     for r in rows:
         v = r.views or 0
+        if r.source == "internal":
+            internal_views += v
+            continue
         by_day[r.day] = by_day.get(r.day, 0) + v
         by_source[r.source] = by_source.get(r.source, 0) + v
         by_page[r.path] = by_page.get(r.path, 0) + v
@@ -199,6 +209,7 @@ def summary(db, days: int = 14) -> dict:
         "window_days": days,
         "since": start_s,
         "views_total": total_views,
+        "internal_views": internal_views,
         "daily": daily,
         "sources": sorted(({"source": k, "views": v} for k, v in by_source.items()),
                           key=lambda d: -d["views"]),
